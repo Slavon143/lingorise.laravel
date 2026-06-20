@@ -1,0 +1,94 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Http\Requests\StoreBookRequest;
+use App\Models\Book;
+use App\Services\EpubTextExtractor;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+use Illuminate\View\View;
+use RuntimeException;
+
+class LibraryController extends Controller
+{
+    public function index(Request $request): View
+    {
+        $books = $request->user()
+            ->books()
+            ->latest()
+            ->get();
+
+        return view('library.index', compact('books'));
+    }
+
+    public function create(): View
+    {
+        return view('library.create');
+    }
+
+    public function store(StoreBookRequest $request, EpubTextExtractor $epubExtractor): RedirectResponse
+    {
+        $content = trim((string) $request->input('content'));
+        $sourceType = 'text';
+        $coverPath = null;
+
+        if ($request->hasFile('book_file')) {
+            $file = $request->file('book_file');
+            $sourceType = strtolower($file->getClientOriginalExtension());
+
+            try {
+                $content = $sourceType === 'epub'
+                    ? $epubExtractor->extract($file->getRealPath())
+                    : trim((string) file_get_contents($file->getRealPath()));
+
+                if ($sourceType === 'epub' && ! $request->hasFile('cover_file')) {
+                    $cover = $epubExtractor->extractCover($file->getRealPath());
+
+                    if ($cover) {
+                        $coverPath = 'book-covers/'.Str::uuid().'.'.$cover['extension'];
+                        Storage::disk('public')->put($coverPath, $cover['contents']);
+                    }
+                }
+            } catch (RuntimeException $exception) {
+                return back()->withInput()->withErrors(['book_file' => $exception->getMessage()]);
+            }
+        }
+
+        if ($content === '') {
+            return back()->withInput()->withErrors(['content' => 'The book content is empty.']);
+        }
+
+        if ($request->hasFile('cover_file')) {
+            $coverPath = $request->file('cover_file')->store('book-covers', 'public');
+        }
+
+        $request->user()->books()->create([
+            ...$request->safe()->only([
+                'title',
+                'author',
+                'category',
+                'language_locale',
+                'level',
+                'visibility',
+            ]),
+            'source_type' => $sourceType,
+            'cover_path' => $coverPath,
+            'content' => $content,
+            'total_words' => Str::wordCount(strip_tags($content)),
+            'processing_status' => 'ready',
+        ]);
+
+        return redirect()->route('library.index')->with('status', 'Your book is ready to read.');
+    }
+
+    public function destroy(Request $request, Book $book): RedirectResponse
+    {
+        abort_unless($book->owner_id === $request->user()->id, 403);
+        $book->delete();
+
+        return back()->with('status', 'The book has been removed.');
+    }
+}

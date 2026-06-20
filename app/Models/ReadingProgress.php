@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class ReadingProgress extends Model
 {
     protected $fillable = [
+        'book_id',
         'current_page',
         'words_read',
         'completed_at',

@@ -26,7 +26,7 @@
                     <svg viewBox="0 0 22 22" fill="none"><path d="M4 10.5 11 4l7 6.5V18a1 1 0 0 1-1 1h-4v-5H9v5H5a1 1 0 0 1-1-1v-7.5Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
                     <span>Home</span>
                 </a>
-                <a href="#">
+                <a href="{{ route('library.index') }}">
                     <svg viewBox="0 0 22 22" fill="none"><path d="M5 4h10a2 2 0 0 1 2 2v12H7a2 2 0 0 1-2-2V4Zm0 10h12M8 7h6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
                     <span>My library</span>
                 </a>
@@ -246,7 +246,7 @@
                     <article class="quick-actions-card">
                         <div class="card-heading"><div><span>Quick actions</span><h2>What next?</h2></div></div>
                         <div class="quick-actions">
-                            <a href="#"><span>＋</span><div><strong>Upload a text</strong><small>TXT or EPUB</small></div></a>
+                            <a href="{{ route('library.create') }}"><span>＋</span><div><strong>Upload a text</strong><small>TXT or EPUB</small></div></a>
                             <a href="#"><span>Aa</span><div><strong>Review vocabulary</strong><small>0 words waiting</small></div></a>
                             <a href="#"><span>◉</span><div><strong>Speaking practice</strong><small>Start with a phrase</small></div></a>
                         </div>
