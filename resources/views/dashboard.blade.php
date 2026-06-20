@@ -104,38 +104,69 @@
                 </section>
 
                 @unless ($preference)
-                    <section class="onboarding-card" id="language-setup">
+                    <section class="onboarding-card onboarding-card-expanded" id="language-setup">
                         <div class="onboarding-copy">
                             <span class="section-kicker">First things first</span>
-                            <h2>Which language<br>do you want to bring to life?</h2>
+                            <h2>Which language do you<br>want to bring to life?</h2>
                             <p>We’ll use your native language for translations and explanations. The app interface stays in English.</p>
+                            <div class="onboarding-note">
+                                <span>i</span>
+                                <p>You can change both languages at any time.</p>
+                            </div>
                         </div>
-                        <form class="language-form" method="POST" action="{{ route('settings.languages') }}">
+                        <form class="language-choice-form" method="POST" action="{{ route('settings.languages') }}">
                             @csrf
                             @method('PUT')
-                            <label>
-                                <span>I speak</span>
-                                <select name="native_locale" required>
-                                    <option value="de" selected>German</option>
-                                    <option value="ru">Russian</option>
-                                    <option value="sv">Swedish</option>
-                                    <option value="es">Spanish</option>
-                                    <option value="fr">French</option>
-                                    <option value="uk">Ukrainian</option>
-                                </select>
-                            </label>
-                            <span class="language-arrow">→</span>
-                            <label>
-                                <span>I want to learn</span>
-                                <select name="learning_locale" required>
-                                    <option value="en" selected>English</option>
-                                    <option value="de">German</option>
-                                    <option value="es">Spanish</option>
-                                    <option value="fr">French</option>
-                                    <option value="sv">Swedish</option>
-                                </select>
-                            </label>
-                            <button type="submit">Save and continue <span>→</span></button>
+
+                            <fieldset class="language-choice-group">
+                                <legend><span>1</span> I speak</legend>
+                                <div class="language-options" data-language-group>
+                                    @foreach ([
+                                        'de' => ['DE', 'German', 'Deutsch'],
+                                        'ru' => ['RU', 'Russian', 'Русский'],
+                                        'sv' => ['SV', 'Swedish', 'Svenska'],
+                                        'es' => ['ES', 'Spanish', 'Español'],
+                                        'fr' => ['FR', 'French', 'Français'],
+                                        'uk' => ['UK', 'Ukrainian', 'Українська'],
+                                    ] as $code => [$flag, $name, $nativeName])
+                                        <label class="language-option @if(old('native_locale', 'de') === $code) is-selected @endif">
+                                            <input type="radio" name="native_locale" value="{{ $code }}" @checked(old('native_locale', 'de') === $code) required>
+                                            <span class="option-flag">{{ $flag }}</span>
+                                            <span><strong>{{ $name }}</strong><small>{{ $nativeName }}</small></span>
+                                            <i>✓</i>
+                                        </label>
+                                    @endforeach
+                                </div>
+                            </fieldset>
+
+                            <div class="language-direction" aria-hidden="true">
+                                <span></span><strong>→</strong><span></span>
+                            </div>
+
+                            <fieldset class="language-choice-group">
+                                <legend><span>2</span> I want to learn</legend>
+                                <div class="language-options language-options-learning" data-language-group>
+                                    @foreach ([
+                                        'en' => ['EN', 'English', 'English'],
+                                        'de' => ['DE', 'German', 'Deutsch'],
+                                        'es' => ['ES', 'Spanish', 'Español'],
+                                        'fr' => ['FR', 'French', 'Français'],
+                                        'sv' => ['SV', 'Swedish', 'Svenska'],
+                                    ] as $code => [$flag, $name, $nativeName])
+                                        <label class="language-option @if(old('learning_locale', 'en') === $code) is-selected @endif">
+                                            <input type="radio" name="learning_locale" value="{{ $code }}" @checked(old('learning_locale', 'en') === $code) required>
+                                            <span class="option-flag">{{ $flag }}</span>
+                                            <span><strong>{{ $name }}</strong><small>{{ $nativeName }}</small></span>
+                                            <i>✓</i>
+                                        </label>
+                                    @endforeach
+                                </div>
+                            </fieldset>
+
+                            <div class="language-choice-footer">
+                                <p>Your explanations will appear in <strong data-native-summary>German</strong> while you read in <strong data-learning-summary>English</strong>.</p>
+                                <button type="submit">Save and start learning <span>→</span></button>
+                            </div>
                         </form>
                         @error('native_locale') <small class="onboarding-error">{{ $message }}</small> @enderror
                         @error('learning_locale') <small class="onboarding-error">{{ $message }}</small> @enderror

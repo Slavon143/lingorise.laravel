@@ -84,3 +84,36 @@ const appSidebar = document.querySelector('.app-sidebar');
 mobileMenuButton?.addEventListener('click', () => {
     appSidebar?.classList.toggle('is-open');
 });
+
+const languageNames = {
+    de: 'German',
+    ru: 'Russian',
+    sv: 'Swedish',
+    es: 'Spanish',
+    fr: 'French',
+    uk: 'Ukrainian',
+    en: 'English',
+};
+
+document.querySelectorAll('[data-language-group]').forEach((group) => {
+    group.addEventListener('change', (event) => {
+        const input = event.target;
+
+        if (!(input instanceof HTMLInputElement)) {
+            return;
+        }
+
+        group.querySelectorAll('.language-option').forEach((option) => {
+            option.classList.toggle('is-selected', option.contains(input));
+        });
+
+        const summarySelector = input.name === 'native_locale'
+            ? '[data-native-summary]'
+            : '[data-learning-summary]';
+        const summary = document.querySelector(summarySelector);
+
+        if (summary) {
+            summary.textContent = languageNames[input.value] ?? input.value;
+        }
+    });
+});
