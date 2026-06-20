@@ -29,8 +29,8 @@
             </nav>
 
             <div class="header-actions">
-                <a class="login-link" href="#">Log in</a>
-                <a class="button button-small" href="#start">Start for free</a>
+                <a class="login-link" href="{{ route('login') }}">Log in</a>
+                <a class="button button-small" href="{{ route('register') }}">Start for free</a>
             </div>
         </header>
 
@@ -45,7 +45,7 @@
                     </p>
 
                     <div class="hero-actions" id="start">
-                        <a class="button button-primary" href="#">
+                        <a class="button button-primary" href="{{ route('register') }}">
                             Try it for free
                             <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
                                 <path d="M4 10h12m-5-5 5 5-5 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
@@ -244,7 +244,7 @@
                         <span class="cta-dot"></span>
                         <p><strong>Your next language</strong> can begin with one good story.</p>
                     </div>
-                    <a class="button button-primary" href="#start">
+                    <a class="button button-primary" href="{{ route('register') }}">
                         Choose your language
                         <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
                             <path d="M4 10h12m-5-5 5 5-5 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
@@ -382,7 +382,7 @@
                         </div>
                     </div>
 
-                    <a class="button button-primary" href="#start">
+                    <a class="button button-primary" href="{{ route('register') }}">
                         Start speaking
                         <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
                             <path d="M4 10h12m-5-5 5 5-5 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
@@ -477,7 +477,7 @@
                             <li><span>✓</span> Personal vocabulary list</li>
                             <li><span>✓</span> Basic reading progress</li>
                         </ul>
-                        <a class="plan-button plan-button-secondary" href="#start">Start for free</a>
+                        <a class="plan-button plan-button-secondary" href="{{ route('register') }}">Start for free</a>
                     </article>
 
                     <article class="price-card price-card-featured">
@@ -498,7 +498,7 @@
                             <li><span>✓</span> Speaking feedback and pronunciation scores</li>
                             <li><span>✓</span> Advanced progress insights</li>
                         </ul>
-                        <a class="plan-button plan-button-primary" href="#start">Try Pro for free <span>→</span></a>
+                        <a class="plan-button plan-button-primary" href="{{ route('register') }}">Try Pro for free <span>→</span></a>
                         <small class="trial-note">7-day free trial · Cancel anytime</small>
                     </article>
                 </div>
@@ -515,7 +515,7 @@
                     <span class="section-kicker">Your next chapter</span>
                     <h2 id="final-cta-title">A new language is<br>one story away.</h2>
                     <p>Choose what interests you. We’ll turn it into a learning journey made for you.</p>
-                    <a class="button final-cta-button" href="#start">
+                    <a class="button final-cta-button" href="{{ route('register') }}">
                         Start learning for free
                         <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
                             <path d="M4 10h12m-5-5 5 5-5 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>

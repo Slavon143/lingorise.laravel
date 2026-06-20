@@ -44,3 +44,43 @@ recordButton?.addEventListener('click', () => {
         recordHint.textContent = isRecording ? 'Speak the phrase naturally' : 'Tap the microphone and repeat';
     }
 });
+
+document.querySelectorAll('.password-toggle').forEach((button) => {
+    button.addEventListener('click', () => {
+        const input = button.closest('.password-field')?.querySelector('input');
+
+        if (!input) {
+            return;
+        }
+
+        const showPassword = input.type === 'password';
+        input.type = showPassword ? 'text' : 'password';
+        button.textContent = showPassword ? 'Hide' : 'Show';
+        button.setAttribute('aria-label', showPassword ? 'Hide password' : 'Show password');
+    });
+});
+
+const languageModal = document.querySelector('[data-language-modal]');
+
+document.querySelectorAll('[data-open-languages]').forEach((button) => {
+    button.addEventListener('click', () => {
+        if (languageModal) {
+            languageModal.hidden = false;
+        }
+    });
+});
+
+document.querySelectorAll('[data-close-languages]').forEach((button) => {
+    button.addEventListener('click', () => {
+        if (languageModal) {
+            languageModal.hidden = true;
+        }
+    });
+});
+
+const mobileMenuButton = document.querySelector('.mobile-menu-button');
+const appSidebar = document.querySelector('.app-sidebar');
+
+mobileMenuButton?.addEventListener('click', () => {
+    appSidebar?.classList.toggle('is-open');
+});
