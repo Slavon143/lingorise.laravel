@@ -25,6 +25,7 @@
                 <a href="#how">How it works</a>
                 <a href="#practice">Practice</a>
                 <a href="#library">Library</a>
+                <a href="#pricing">Pricing</a>
             </nav>
 
             <div class="header-actions">
@@ -143,11 +144,11 @@
                     <span class="feature-number">02</span>
                     <div><strong>Understand</strong><p>One-tap translation</p></div>
                 </div>
-                <div class="feature-item" id="practice">
+                <div class="feature-item">
                     <span class="feature-number">03</span>
                     <div><strong>Listen</strong><p>Natural pronunciation</p></div>
                 </div>
-                <div class="feature-item" id="library">
+                <div class="feature-item">
                     <span class="feature-number">04</span>
                     <div><strong>Speak</strong><p>Practice with feedback</p></div>
                 </div>
@@ -251,7 +252,327 @@
                     </a>
                 </div>
             </section>
+
+            <section class="library-section" id="library" aria-labelledby="library-title">
+                <div class="library-heading">
+                    <div>
+                        <span class="section-kicker">Your library</span>
+                        <h2 id="library-title">Find a story that<br>pulls you in.</h2>
+                    </div>
+                    <div class="library-copy">
+                        <p>
+                            Explore short stories, classics, and practical reads selected
+                            for language learners—or bring a book of your own.
+                        </p>
+                        <div class="library-filters" aria-label="Library filters">
+                            <button class="filter-chip is-active" type="button" data-filter="all">All stories</button>
+                            <button class="filter-chip" type="button" data-filter="beginner">Beginner</button>
+                            <button class="filter-chip" type="button" data-filter="intermediate">Intermediate</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="book-grid">
+                    <article class="book-card" data-level="beginner">
+                        <div class="book-cover cover-garden">
+                            <span class="cover-language">English</span>
+                            <div class="cover-art flower-art">
+                                <i></i><i></i><i></i><i></i><i></i>
+                            </div>
+                            <div class="cover-title">
+                                <small>Frances Hodgson Burnett</small>
+                                <strong>The Secret<br>Garden</strong>
+                            </div>
+                        </div>
+                        <div class="book-info">
+                            <div>
+                                <span class="level-pill level-easy">A2</span>
+                                <span>18 min read</span>
+                            </div>
+                            <button aria-label="Open The Secret Garden">
+                                <svg viewBox="0 0 20 20" fill="none"><path d="M4 10h12m-5-5 5 5-5 5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            </button>
+                        </div>
+                    </article>
+
+                    <article class="book-card" data-level="intermediate">
+                        <div class="book-cover cover-sea">
+                            <span class="cover-language">English</span>
+                            <div class="cover-art moon-art"><i></i><span></span></div>
+                            <div class="cover-title">
+                                <small>Oscar Wilde</small>
+                                <strong>The Happy<br>Prince</strong>
+                            </div>
+                        </div>
+                        <div class="book-info">
+                            <div>
+                                <span class="level-pill level-mid">B1</span>
+                                <span>24 min read</span>
+                            </div>
+                            <button aria-label="Open The Happy Prince">
+                                <svg viewBox="0 0 20 20" fill="none"><path d="M4 10h12m-5-5 5 5-5 5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            </button>
+                        </div>
+                    </article>
+
+                    <article class="book-card" data-level="beginner">
+                        <div class="book-cover cover-city">
+                            <span class="cover-language">English</span>
+                            <div class="cover-art city-art"><i></i><i></i><i></i><i></i></div>
+                            <div class="cover-title">
+                                <small>LingoRise original</small>
+                                <strong>A Day in<br>London</strong>
+                            </div>
+                        </div>
+                        <div class="book-info">
+                            <div>
+                                <span class="level-pill level-easy">A1</span>
+                                <span>8 min read</span>
+                            </div>
+                            <button aria-label="Open A Day in London">
+                                <svg viewBox="0 0 20 20" fill="none"><path d="M4 10h12m-5-5 5 5-5 5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            </button>
+                        </div>
+                    </article>
+
+                    <article class="book-card upload-card" data-level="all">
+                        <div class="upload-icon">
+                            <svg viewBox="0 0 28 28" fill="none"><path d="M14 19V7m0 0-5 5m5-5 5 5M7 18v3h14v-3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        </div>
+                        <span class="upload-label">Your own material</span>
+                        <h3>Upload a book<br>you already love.</h3>
+                        <p>TXT and EPUB files up to 10 MB.</p>
+                        <button class="upload-button" type="button">Choose a file</button>
+                    </article>
+                </div>
+
+                <div class="library-footer">
+                    <p><span>120+</span> learner-friendly stories and growing</p>
+                    <a href="#">Browse the full library <span>→</span></a>
+                </div>
+            </section>
+
+            <section class="practice-section" id="practice" aria-labelledby="practice-title">
+                <div class="practice-copy">
+                    <span class="section-kicker">Speaking practice</span>
+                    <h2 id="practice-title">Build the confidence<br>to say it out loud.</h2>
+                    <p>
+                        Practise useful phrases from your reading. Listen to natural speech,
+                        record your voice, and get clear feedback on pronunciation.
+                    </p>
+
+                    <div class="practice-points">
+                        <div>
+                            <span class="point-icon">
+                                <svg viewBox="0 0 22 22" fill="none"><path d="M4 9v4h4l5 4V5L8 9H4Zm12-.5c1.1 1.4 1.1 3.6 0 5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            </span>
+                            <div><strong>Hear natural rhythm</strong><small>Multiple voices and playback speeds</small></div>
+                        </div>
+                        <div>
+                            <span class="point-icon">
+                                <svg viewBox="0 0 22 22" fill="none"><rect x="7" y="3" width="8" height="12" rx="4" stroke="currentColor" stroke-width="1.7"/><path d="M4.5 11.5c0 3.6 2.9 6.5 6.5 6.5s6.5-2.9 6.5-6.5M11 18v2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+                            </span>
+                            <div><strong>Speak without pressure</strong><small>Private practice at your own pace</small></div>
+                        </div>
+                        <div>
+                            <span class="point-icon">
+                                <svg viewBox="0 0 22 22" fill="none"><path d="m4 12 4 4L18 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            </span>
+                            <div><strong>Know what to improve</strong><small>Instant, focused pronunciation feedback</small></div>
+                        </div>
+                    </div>
+
+                    <a class="button button-primary" href="#start">
+                        Start speaking
+                        <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                            <path d="M4 10h12m-5-5 5 5-5 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </a>
+                </div>
+
+                <div class="speaking-demo">
+                    <div class="demo-glow"></div>
+                    <div class="conversation-card">
+                        <div class="conversation-topbar">
+                            <div>
+                                <span>Speaking session</span>
+                                <strong>At the coffee shop</strong>
+                            </div>
+                            <span class="difficulty-badge">A2</span>
+                        </div>
+
+                        <div class="conversation-body">
+                            <div class="speaker-row">
+                                <span class="speaker-avatar">EM</span>
+                                <div class="speech-bubble">
+                                    <small>Listen and repeat</small>
+                                    <p>Could I have a cup of coffee, please?</p>
+                                    <button class="play-phrase" type="button" aria-label="Play phrase">
+                                        <svg viewBox="0 0 18 18"><path d="m7 5 5 4-5 4V5Z" fill="currentColor"/></svg>
+                                        <span class="phrase-wave"><i></i><i></i><i></i><i></i><i></i><i></i></span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="record-panel">
+                                <div class="record-state">
+                                    <span class="record-dot"></span>
+                                    <div><strong>Your turn</strong><small>Tap the microphone and repeat</small></div>
+                                </div>
+                                <button class="record-button" type="button" aria-label="Start voice recording">
+                                    <svg viewBox="0 0 26 26" fill="none"><rect x="9" y="4" width="8" height="13" rx="4" stroke="currentColor" stroke-width="1.8"/><path d="M6 13c0 3.87 3.13 7 7 7s7-3.13 7-7M13 20v3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+                                </button>
+                                <div class="record-wave" aria-hidden="true">
+                                    <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+                                </div>
+                            </div>
+
+                            <div class="feedback-panel">
+                                <div class="score-circle"><strong>88</strong><small>score</small></div>
+                                <div class="feedback-copy">
+                                    <span>Great pronunciation</span>
+                                    <p>Your rhythm sounds natural. Keep the final <mark>please</mark> a little softer.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="conversation-progress">
+                            <span>Phrase 3 of 8</span>
+                            <div><i></i></div>
+                            <button type="button">Next <span>→</span></button>
+                        </div>
+                    </div>
+
+                    <div class="floating-stat stat-words">
+                        <span>+12</span>
+                        <small>words practised</small>
+                    </div>
+                    <div class="floating-stat stat-confidence">
+                        <svg viewBox="0 0 20 20" fill="none"><path d="m4 11 4 4 8-9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        <small>Confidence up</small>
+                    </div>
+                </div>
+            </section>
+
+            <section class="pricing-section" id="pricing" aria-labelledby="pricing-title">
+                <div class="pricing-heading">
+                    <span class="section-kicker">Simple pricing</span>
+                    <h2 id="pricing-title">Start with a story.<br>Grow at your pace.</h2>
+                    <p>Try the core experience for free. Upgrade when you want deeper practice and unlimited reading.</p>
+                </div>
+
+                <div class="pricing-grid">
+                    <article class="price-card">
+                        <div class="price-card-head">
+                            <div>
+                                <span class="plan-label">Free</span>
+                                <h3>Explore LingoRise</h3>
+                            </div>
+                            <div class="price"><strong>€0</strong><span>forever</span></div>
+                        </div>
+                        <p class="plan-description">A relaxed way to discover reading-based language learning.</p>
+                        <ul class="plan-features">
+                            <li><span>✓</span> Access to selected stories</li>
+                            <li><span>✓</span> Instant word translation</li>
+                            <li><span>✓</span> Personal vocabulary list</li>
+                            <li><span>✓</span> Basic reading progress</li>
+                        </ul>
+                        <a class="plan-button plan-button-secondary" href="#start">Start for free</a>
+                    </article>
+
+                    <article class="price-card price-card-featured">
+                        <div class="popular-label">Most popular</div>
+                        <div class="price-card-head">
+                            <div>
+                                <span class="plan-label">LingoRise Pro</span>
+                                <h3>Make it a daily habit</h3>
+                            </div>
+                            <div class="price"><strong>€9</strong><span>per month</span></div>
+                        </div>
+                        <p class="plan-description">Everything you need to read, listen, remember, and speak with confidence.</p>
+                        <ul class="plan-features">
+                            <li><span>✓</span> Full learner library</li>
+                            <li><span>✓</span> Upload unlimited TXT and EPUB books</li>
+                            <li><span>✓</span> AI explanations in your native language</li>
+                            <li><span>✓</span> Natural text-to-speech</li>
+                            <li><span>✓</span> Speaking feedback and pronunciation scores</li>
+                            <li><span>✓</span> Advanced progress insights</li>
+                        </ul>
+                        <a class="plan-button plan-button-primary" href="#start">Try Pro for free <span>→</span></a>
+                        <small class="trial-note">7-day free trial · Cancel anytime</small>
+                    </article>
+                </div>
+            </section>
+
+            <section class="final-cta" aria-labelledby="final-cta-title">
+                <div class="cta-orbit cta-orbit-one"></div>
+                <div class="cta-orbit cta-orbit-two"></div>
+                <span class="cta-word cta-word-hallo">Hallo!</span>
+                <span class="cta-word cta-word-hello">Hello!</span>
+                <span class="cta-word cta-word-hola">¡Hola!</span>
+
+                <div class="final-cta-content">
+                    <span class="section-kicker">Your next chapter</span>
+                    <h2 id="final-cta-title">A new language is<br>one story away.</h2>
+                    <p>Choose what interests you. We’ll turn it into a learning journey made for you.</p>
+                    <a class="button final-cta-button" href="#start">
+                        Start learning for free
+                        <svg viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                            <path d="M4 10h12m-5-5 5 5-5 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </a>
+                    <small>No credit card required</small>
+                </div>
+            </section>
         </main>
+
+        <footer class="site-footer">
+            <div class="footer-main">
+                <div class="footer-brand">
+                    <a class="brand brand-light" href="/" aria-label="LingoRise">
+                        <span class="brand-mark" aria-hidden="true">
+                            <svg viewBox="0 0 32 32" fill="none">
+                                <path d="M8 24V9.5C8 7.57 9.57 6 11.5 6H24v15.5c0 1.38-1.12 2.5-2.5 2.5H8Z" stroke="currentColor" stroke-width="2.2"/>
+                                <path d="M12 11h7M12 15h5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+                                <path d="M8 24c0-1.66 1.34-3 3-3h13" stroke="currentColor" stroke-width="2.2"/>
+                            </svg>
+                        </span>
+                        <span>Lingo<span>Rise</span></span>
+                    </a>
+                    <p>Learn languages through stories worth reading.</p>
+                </div>
+
+                <div class="footer-links">
+                    <div>
+                        <strong>Product</strong>
+                        <a href="#how">How it works</a>
+                        <a href="#library">Library</a>
+                        <a href="#practice">Speaking practice</a>
+                        <a href="#pricing">Pricing</a>
+                    </div>
+                    <div>
+                        <strong>Company</strong>
+                        <a href="#">About</a>
+                        <a href="#">Contact</a>
+                        <a href="#">Help center</a>
+                    </div>
+                    <div>
+                        <strong>Legal</strong>
+                        <a href="#">Privacy</a>
+                        <a href="#">Terms</a>
+                        <a href="#">Cookies</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="footer-bottom">
+                <span>© {{ date('Y') }} LingoRise. All rights reserved.</span>
+                <div>
+                    <button type="button">English <span>⌄</span></button>
+                    <span>Made for curious minds.</span>
+                </div>
+            </div>
+        </footer>
     </div>
 </body>
 </html>
