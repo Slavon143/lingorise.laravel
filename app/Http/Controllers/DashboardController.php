@@ -34,12 +34,16 @@ class DashboardController extends Controller
             $continueTotalPages = count($pages);
             $continuePercentage = $continueTotalPages > 0 ? (int) round(($continuePage / $continueTotalPages) * 100) : 0;
 
-            $pageBlocks = $pages[$continuePage - 1] ?? [];
-            $pageWordCount = array_sum(array_map(
-                fn (array $block): int => count(preg_split('/\s+/u', trim($block['text']), -1, PREG_SPLIT_NO_EMPTY) ?: []),
-                $pageBlocks,
+            $totalWords = $continueBook->total_words ?? array_sum(array_map(
+                fn (array $blocks): int => array_sum(array_map(
+                    fn (array $block): int => count(preg_split('/\s+/u', trim($block['text']), -1, PREG_SPLIT_NO_EMPTY) ?: []),
+                    $blocks,
+                )),
+                $pages,
             ));
-            $continueReadingTime = max(1, (int) ceil($pageWordCount / 200));
+            $wordsRead = $lastProgress->words_read ?? 0;
+            $wordsRemaining = max(0, $totalWords - $wordsRead);
+            $continueReadingTime = max(1, (int) ceil($wordsRemaining / 200));
         }
 
         $recentEntries = $user->dictionaryEntries()->count();
@@ -52,6 +56,33 @@ class DashboardController extends Controller
 
         $dailyGoal = 10;
         $dailyMinutes = min($dailyMinutes, $dailyGoal);
+
+        $streakDates = $user->readingProgress()
+            ->whereNotNull('last_read_at')
+            ->selectRaw('DATE(last_read_at) as read_date')
+            ->distinct()
+            ->pluck('read_date')
+            ->sort()
+            ->reverse()
+            ->values();
+
+        $streak = 0;
+        $checkDate = today()->toDateString();
+        if ($streakDates->isNotEmpty()) {
+            if ($streakDates->first() === $checkDate || $streakDates->first() === today()->subDay()->toDateString()) {
+                if ($streakDates->first() !== $checkDate) {
+                    $checkDate = today()->subDay()->toDateString();
+                }
+                foreach ($streakDates as $date) {
+                    if ($date === $checkDate) {
+                        $streak++;
+                        $checkDate = \Carbon\Carbon::parse($checkDate)->subDay()->toDateString();
+                    } elseif ($date < $checkDate) {
+                        break;
+                    }
+                }
+            }
+        }
 
         $learningLocale = $user->languagePreference?->learning_locale;
 
@@ -104,6 +135,7 @@ class DashboardController extends Controller
             'greeting' => $greeting,
             'learningLanguageName' => $learningLanguageName,
             'languageNames' => $languageNames,
+            'streak' => $streak,
         ]);
     }
 

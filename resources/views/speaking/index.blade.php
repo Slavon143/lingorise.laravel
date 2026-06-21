@@ -42,9 +42,9 @@
                         </svg>
                     </button>
                     <div>
-                        <span>Say this in English</span>
+                        <span>Say this in {{ $languageName }}</span>
                         <h2>{{ $entry->original_text }}</h2>
-                        <p>{{ $entry->translated_text }}</p>
+                        <p class="speaking-translation">{{ $entry->translated_text }}</p>
                     </div>
                 </div>
                 <p class="speaking-ai-disclosure">The pronunciation voice is AI-generated.</p>

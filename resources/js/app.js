@@ -807,15 +807,30 @@ if (speakingPractice) {
             recordButton.querySelector('strong').textContent = 'Start recording';
         });
 
+        let micBlocked = false;
+
         recognition.addEventListener('error', (event) => {
-            supportNode.textContent = event.error === 'not-allowed'
-                ? 'Microphone access was not allowed.'
-                : 'I could not hear that. Please try again.';
+            if (event.error === 'not-allowed') {
+                micBlocked = true;
+                const isLocalhost = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+                supportNode.innerHTML = 'Microphone access was denied.'
+                    + (isLocalhost
+                        ? ' Open <strong>chrome://settings/content/microphone</strong> and allow localhost,'
+                        : ' Click the <strong>🔒</strong> in the address bar and allow the microphone,')
+                    + ' then <button type="button" data-retry-mic style="background:var(--lime);color:var(--ink);border:0;border-radius:999px;padding:4px 12px;font-size:10px;font-weight:800;cursor:pointer;">try again</button>.';
+                return;
+            }
+            supportNode.textContent = 'I could not hear that. Please try again.';
         });
 
         recordButton?.addEventListener('click', () => {
             if (recording) {
                 recognition.stop();
+                return;
+            }
+
+            if (micBlocked) {
+                supportNode.textContent = 'Microphone access is blocked. Update your browser permissions.';
                 return;
             }
 
@@ -825,6 +840,14 @@ if (speakingPractice) {
             recordButton.querySelector('strong').textContent = 'Stop recording';
             supportNode.textContent = 'Listening…';
             recognition.start();
+        });
+
+        supportNode.addEventListener('click', (event) => {
+            if (event.target.matches('[data-retry-mic]')) {
+                micBlocked = false;
+                supportNode.textContent = 'Requesting microphone access…';
+                recognition.start();
+            }
         });
     }
 }

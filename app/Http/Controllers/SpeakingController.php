@@ -18,11 +18,19 @@ class SpeakingController extends Controller
         $entry = $entries->get($currentIndex) ?? $entries->first();
         $nextEntry = $entries->isNotEmpty() ? $entries->get(($currentIndex + 1) % $entries->count()) : null;
 
+        $languageNames = [
+            'en' => 'English', 'de' => 'German', 'es' => 'Spanish',
+            'fr' => 'French', 'sv' => 'Swedish',
+        ];
+        $locale = $entry?->book?->language_locale ?? 'en';
+        $languageName = $languageNames[$locale] ?? 'English';
+
         return view('speaking.index', [
             'entry' => $entry,
             'nextEntry' => $nextEntry,
             'totalEntries' => $entries->count(),
             'position' => $entry ? $currentIndex + 1 : 0,
+            'languageName' => $languageName,
         ]);
     }
 }

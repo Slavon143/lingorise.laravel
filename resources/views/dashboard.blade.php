@@ -107,7 +107,7 @@
                     </div>
                     <div class="streak-summary">
                         <span>◆</span>
-                        <div><strong>1 day</strong><small>Current streak</small></div>
+                        <div><strong>{{ $streak }} {{ Str::plural('day', $streak) }}</strong><small>Current streak</small></div>
                     </div>
                 </section>
 
