@@ -176,6 +176,7 @@ const wordCard = document.querySelector('[data-word-card]');
 
 if (readerPage && readingText && wordCard) {
     const selectedWord = wordCard.querySelector('[data-selected-word]');
+    const selectionLabel = wordCard.querySelector('[data-selection-label]');
     const translationInput = wordCard.querySelector('[data-word-translation]');
     const contextNode = wordCard.querySelector('[data-word-context]');
     const statusNode = wordCard.querySelector('[data-word-status]');
@@ -186,6 +187,9 @@ if (readerPage && readingText && wordCard) {
     const explanationNode = wordCard.querySelector('[data-word-explanation]');
     let translationRequest = null;
     let activeToken = null;
+    let activeTokens = [];
+    let selectionAnchor = null;
+    let suppressNextClick = false;
     const fontSelect = document.querySelector('[data-reader-font]');
     const fontAliases = {
         literata: 'kindle',
@@ -222,28 +226,33 @@ if (readerPage && readingText && wordCard) {
 
     const closeWordCard = () => {
         wordCard.hidden = true;
-        activeToken?.classList.remove('is-selected');
+        activeTokens.forEach((token) => token.classList.remove('is-selected'));
         activeToken = null;
+        activeTokens = [];
+        selectionAnchor = null;
     };
 
     const positionWordCard = () => {
         if (!activeToken || wordCard.hidden) return;
 
-        const rect = activeToken.getBoundingClientRect();
+        const firstRect = activeTokens[0]?.getBoundingClientRect();
+        const lastRect = activeTokens.at(-1)?.getBoundingClientRect();
+        if (!firstRect || !lastRect) return;
         const viewportPadding = 12;
         const gap = 13;
         const cardWidth = wordCard.offsetWidth;
         const cardHeight = wordCard.offsetHeight;
-        const tokenCenter = rect.left + (rect.width / 2);
+        const roomBelow = window.innerHeight - lastRect.bottom;
+        const placeAbove = roomBelow < cardHeight + gap && firstRect.top > cardHeight + gap;
+        const anchorRect = placeAbove ? firstRect : lastRect;
+        const tokenCenter = anchorRect.left + (anchorRect.width / 2);
         const left = Math.min(
             window.innerWidth - cardWidth - viewportPadding,
             Math.max(viewportPadding, tokenCenter - (cardWidth / 2)),
         );
-        const roomBelow = window.innerHeight - rect.bottom;
-        const placeAbove = roomBelow < cardHeight + gap && rect.top > cardHeight + gap;
         const top = placeAbove
-            ? Math.max(viewportPadding, rect.top - cardHeight - gap)
-            : Math.min(window.innerHeight - cardHeight - viewportPadding, rect.bottom + gap);
+            ? Math.max(viewportPadding, firstRect.top - cardHeight - gap)
+            : Math.min(window.innerHeight - cardHeight - viewportPadding, lastRect.bottom + gap);
         const arrowLeft = Math.min(cardWidth - 25, Math.max(18, tokenCenter - left - 7));
 
         wordCard.classList.toggle('is-above', placeAbove);
@@ -252,24 +261,29 @@ if (readerPage && readingText && wordCard) {
         wordCard.style.setProperty('--word-card-arrow-left', `${arrowLeft}px`);
     };
 
-    readingText.addEventListener('click', (event) => {
-        const token = event.target.closest('.reader-token');
+    const allTokens = [...readingText.querySelectorAll('.reader-token')];
 
-        if (!token || !token.dataset.readerWord) {
-            return;
-        }
+    const openTranslation = (tokens) => {
+        const selectedTokens = tokens.slice(0, 10);
+        if (!selectedTokens.length) return;
 
-        activeToken?.classList.remove('is-selected');
-        activeToken = token;
-        token.classList.add('is-selected');
+        activeTokens.forEach((token) => token.classList.remove('is-selected'));
+        activeTokens = selectedTokens;
+        activeToken = selectedTokens[0];
+        activeTokens.forEach((token) => token.classList.add('is-selected'));
 
-        const tokens = [...readingText.querySelectorAll('.reader-token')];
-        const index = tokens.indexOf(token);
+        const firstIndex = allTokens.indexOf(selectedTokens[0]);
+        const lastIndex = allTokens.indexOf(selectedTokens.at(-1));
         const context = tokens
-            .slice(Math.max(0, index - 6), Math.min(tokens.length, index + 7))
+            ? allTokens
+            .slice(Math.max(0, firstIndex - 6), Math.min(allTokens.length, lastIndex + 7))
             .map((item) => item.textContent)
-            .join(' ');
-        selectedWord.textContent = token.dataset.readerWord;
+            .join(' ')
+            : '';
+        const phrase = selectedTokens.map((token) => token.dataset.readerWord).join(' ');
+
+        selectionLabel.textContent = selectedTokens.length > 1 ? 'Selected phrase' : 'Selected word';
+        selectedWord.textContent = phrase;
         contextNode.textContent = context;
         translationInput.textContent = '';
         pronunciationNode.hidden = true;
@@ -290,7 +304,7 @@ if (readerPage && readingText && wordCard) {
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content ?? '',
             },
             body: JSON.stringify({
-                word: token.dataset.readerWord,
+                word: phrase,
                 context,
             }),
             signal: translationRequest.signal,
@@ -301,7 +315,7 @@ if (readerPage && readingText && wordCard) {
                 return result;
             })
             .then((result) => {
-                if (activeToken !== token) return;
+                if (activeTokens[0] !== selectedTokens[0]) return;
                 translationInput.textContent = result.translation;
                 pronunciationNode.textContent = result.pronunciation;
                 pronunciationNode.hidden = !result.pronunciation;
@@ -311,22 +325,78 @@ if (readerPage && readingText && wordCard) {
                 positionWordCard();
             })
             .catch((error) => {
-                if (error.name !== 'AbortError' && activeToken === token) {
+                if (error.name !== 'AbortError' && activeTokens[0] === selectedTokens[0]) {
                     statusNode.textContent = error.message;
                     positionWordCard();
                 }
             })
             .finally(() => {
-                if (activeToken === token) wordCard.classList.remove('is-loading');
+                if (activeTokens[0] === selectedTokens[0]) wordCard.classList.remove('is-loading');
             });
+    };
+
+    readingText.addEventListener('click', (event) => {
+        const token = event.target.closest('.reader-token');
+        if (!token || !token.dataset.readerWord) return;
+
+        if (suppressNextClick) {
+            suppressNextClick = false;
+            return;
+        }
+
+        if (event.shiftKey && selectionAnchor) {
+            const start = allTokens.indexOf(selectionAnchor);
+            const end = allTokens.indexOf(token);
+            const from = Math.min(start, end);
+            const to = Math.max(start, end);
+
+            if (to - from + 1 > 10) {
+                statusNode.textContent = 'Select up to 10 words.';
+                openTranslation(allTokens.slice(from, from + 10));
+                return;
+            }
+
+            openTranslation(allTokens.slice(from, to + 1));
+            return;
+        }
+
+        selectionAnchor = token;
+        openTranslation([token]);
+    });
+
+    readingText.addEventListener('mouseup', () => {
+        const selection = window.getSelection();
+        if (!selection || selection.isCollapsed || !selection.rangeCount) return;
+
+        const range = selection.getRangeAt(0);
+        const selectedTokens = allTokens.filter((token) => range.intersectsNode(token));
+        if (!selectedTokens.length) return;
+
+        suppressNextClick = true;
+        selectionAnchor = selectedTokens[0];
+        openTranslation(selectedTokens.slice(0, 10));
+
+        if (selectedTokens.length > 10) {
+            statusNode.textContent = 'Only the first 10 words were selected.';
+        }
+
+        selection.removeAllRanges();
+    });
+
+    readingText.addEventListener('keydown', (event) => {
+        if ((event.key === 'Enter' || event.key === ' ') && event.target.matches('.reader-token')) {
+            event.preventDefault();
+            selectionAnchor = event.target;
+            openTranslation([event.target]);
+        }
     });
 
     wordCard.querySelector('[data-close-word-card]')?.addEventListener('click', closeWordCard);
     speakButton?.addEventListener('click', () => {
-        if (!activeToken || !('speechSynthesis' in window)) return;
+        if (!activeTokens.length || !('speechSynthesis' in window)) return;
 
         window.speechSynthesis.cancel();
-        const utterance = new SpeechSynthesisUtterance(activeToken.dataset.readerWord);
+        const utterance = new SpeechSynthesisUtterance(activeTokens.map((token) => token.dataset.readerWord).join(' '));
         utterance.lang = document.documentElement.lang || 'en';
         window.speechSynthesis.speak(utterance);
     });
@@ -344,7 +414,7 @@ if (readerPage && readingText && wordCard) {
     saveButton?.addEventListener('click', async () => {
         const translation = translationInput.textContent.trim();
 
-        if (!translation || !activeToken) {
+        if (!translation || !activeTokens.length) {
             statusNode.textContent = 'Add a translation first.';
             return;
         }
@@ -361,7 +431,7 @@ if (readerPage && readingText && wordCard) {
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content ?? '',
                 },
                 body: JSON.stringify({
-                    original_text: activeToken.dataset.readerWord,
+                    original_text: activeTokens.map((token) => token.dataset.readerWord).join(' '),
                     translated_text: translation,
                     context: contextNode.textContent,
                 }),
@@ -372,7 +442,7 @@ if (readerPage && readingText && wordCard) {
             }
 
             statusNode.textContent = 'Saved to vocabulary ✓';
-            activeToken.classList.add('is-saved');
+            activeTokens.forEach((token) => token.classList.add('is-saved'));
         } catch {
             statusNode.textContent = 'Could not save the word.';
         } finally {

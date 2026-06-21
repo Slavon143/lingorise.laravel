@@ -16,7 +16,7 @@ class WordTranslationService
             throw new RuntimeException('Translation service is not configured.');
         }
 
-        $cacheKey = 'word-translation:'.hash('sha256', implode('|', [
+        $cacheKey = 'word-translation:v2:'.hash('sha256', implode('|', [
             mb_strtolower($word),
             $context,
             $sourceLocale,
@@ -34,7 +34,7 @@ class WordTranslationService
                     'input' => [
                         [
                             'role' => 'system',
-                            'content' => 'You are a concise dictionary for language learners. Use the sentence to choose the correct meaning. The translation and explanation must be in the learner native language. Return only the requested structure.',
+                            'content' => 'You are a concise dictionary for language learners. Translate exactly the selected word or phrase, which contains at most 10 words. Use sentence_context only to disambiguate meaning; never translate or add surrounding context that is not part of the selection. If the selection contains multiple words, explain the meaning of the complete phrase, not only one word inside it. The translation and explanation must be in the learner native language. Keep the translation natural but faithful and concise. Return only the requested structure.',
                         ],
                         [
                             'role' => 'user',

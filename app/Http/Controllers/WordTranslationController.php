@@ -15,9 +15,18 @@ class WordTranslationController extends Controller
         abort_unless($book->owner_id === $request->user()->id || $book->isPublic(), 403);
 
         $validated = $request->validate([
-            'word' => ['required', 'string', 'max:100'],
+            'word' => ['required', 'string', 'max:255'],
             'context' => ['required', 'string', 'max:1000'],
         ]);
+
+        if (count(preg_split('/\s+/u', trim($validated['word']), -1, PREG_SPLIT_NO_EMPTY) ?: []) > 10) {
+            return response()->json([
+                'message' => 'You can translate up to 10 words at once.',
+                'errors' => [
+                    'word' => ['You can translate up to 10 words at once.'],
+                ],
+            ], 422);
+        }
 
         try {
             return response()->json($translator->translate(

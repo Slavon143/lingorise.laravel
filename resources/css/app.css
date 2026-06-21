@@ -2406,8 +2406,11 @@ h1 em::after {
 }
 .reading-section-title:first-child { margin-top: .35em; }
 .reader-page.is-dark .reading-section-title { border-color: rgba(255,255,255,.14); }
-.reader-token { display: inline; padding: 1px 0; color: inherit; background: transparent; border: 0; border-radius: 3px; font: inherit; line-height: inherit; letter-spacing: inherit; cursor: pointer; }
+.reader-token { display: inline; padding: 1px 0; color: inherit; background: transparent; border: 0; border-radius: 3px; font: inherit; line-height: inherit; letter-spacing: inherit; cursor: pointer; user-select: text; }
+.reading-text ::selection { color: var(--ink); background: var(--lime); }
+.reading-text ::-moz-selection { color: var(--ink); background: var(--lime); }
 .reader-token:hover, .reader-token.is-selected { background: var(--lime); color: var(--ink); box-shadow: 0 0 0 2px var(--lime); }
+.reader-token.is-selected + .reader-token.is-selected { box-shadow: 2px 0 0 2px var(--lime), 0 0 0 2px var(--lime); }
 .reader-side-panel { padding: 17px; background: rgba(255,255,255,.55); border: 1px solid rgba(17,27,61,.09); border-radius: 14px; }
 .reader-page.is-dark .reader-side-panel { background: rgba(255,255,255,.05); border-color: rgba(255,255,255,.08); }
 .reader-side-heading span, .reader-side-heading strong { display: block; }
@@ -2484,8 +2487,7 @@ h1 em::after {
     line-height: 1.4;
 }
 .word-card-explanation { margin: 14px 0 16px; padding: 13px 14px; color: #424b63; background: #eef1ff; border-left: 3px solid var(--blue); border-radius: 4px 11px 11px 4px; }
-.word-card-explanation > span { color: var(--blue); font-size: 10px; }
-.word-card-explanation p { margin: 6px 0 0; font-size: 13px; line-height: 1.55; }
+.word-card-explanation p { margin: 0; font-size: 13px; line-height: 1.55; }
 .word-card-save { width: 100%; min-height: 46px; color: var(--ink); background: var(--lime); border: 0; border-radius: 11px; font-size: 13px; font-weight: 850; cursor: pointer; }
 .word-card-save:hover { background: #d4f98a; }
 .word-card-save:disabled { cursor: wait; opacity: .65; }

@@ -78,12 +78,13 @@
                     @else
                         <p>
                         @foreach(preg_split('/\s+/u', $block['text'], -1, PREG_SPLIT_NO_EMPTY) as $word)
-                            <button
-                                type="button"
+                            <span
                                 class="reader-token"
+                                role="button"
+                                tabindex="0"
                                 data-reader-word="{{ trim($word, ".,!?;:()[]{}\"'“”‘’—–") }}"
                                 data-word-index="{{ $wordIndex }}"
-                            >{{ $word }}</button>
+                            >{{ $word }}</span>
                             @php($wordIndex++)
                         @endforeach
                         </p>
@@ -128,7 +129,7 @@
         <span class="word-card-arrow" aria-hidden="true"></span>
         <div class="word-card-head">
             <div class="word-card-title">
-                <span>Selected word</span>
+                <span data-selection-label>Selected word</span>
                 <strong data-selected-word></strong>
             </div>
             <div class="word-card-head-actions">
@@ -151,7 +152,6 @@
             <strong data-word-translation></strong>
         </div>
         <div class="word-card-explanation" data-word-explanation hidden>
-            <span>Meaning</span>
             <p></p>
         </div>
         <p data-word-context hidden></p>

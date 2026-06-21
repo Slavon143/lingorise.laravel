@@ -121,4 +121,18 @@ class ReaderTest extends TestCase
             ->assertStatus(503)
             ->assertJsonFragment(['message' => 'Automatic translation is not configured.']);
     }
+
+    public function test_translation_is_limited_to_ten_words(): void
+    {
+        $user = User::factory()->create();
+        $book = Book::factory()->for($user, 'owner')->create();
+
+        $this->actingAs($user)
+            ->postJson(route('reader.translate', $book), [
+                'word' => 'one two three four five six seven eight nine ten eleven',
+                'context' => 'A deliberately long selected phrase.',
+            ])
+            ->assertUnprocessable()
+            ->assertJsonPath('errors.word.0', 'You can translate up to 10 words at once.');
+    }
 }
