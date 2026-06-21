@@ -5,6 +5,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\LibraryController;
 use App\Http\Controllers\ReaderController;
 use App\Http\Controllers\VocabularyController;
+use App\Http\Controllers\WordTranslationController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -27,6 +28,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/library', [LibraryController::class, 'store'])->name('library.store');
     Route::delete('/library/{book}', [LibraryController::class, 'destroy'])->name('library.destroy');
     Route::get('/read/{book}', [ReaderController::class, 'show'])->name('reader.show');
+    Route::post('/read/{book}/translate', WordTranslationController::class)->name('reader.translate');
     Route::post('/read/{book}/vocabulary', [VocabularyController::class, 'store'])->name('vocabulary.store');
     Route::put('/settings/languages', [DashboardController::class, 'updateLanguages'])->name('settings.languages');
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');

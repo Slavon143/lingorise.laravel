@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Book;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 class ReaderTest extends TestCase
@@ -63,5 +64,61 @@ class ReaderTest extends TestCase
             'original_text' => 'wonderful',
             'translated_text' => 'wunderbar',
         ]);
+    }
+
+    public function test_reader_can_automatically_translate_a_word(): void
+    {
+        config(['services.openai.key' => 'test-key']);
+        Http::fake([
+            'api.openai.com/*' => Http::response([
+                'output' => [[
+                    'content' => [[
+                        'text' => json_encode([
+                            'translation' => 'wunderbar',
+                            'pronunciation' => '/ˈwʌndəfəl/',
+                            'explanation' => 'Etwas, das große Freude oder Bewunderung hervorruft.',
+                        ]),
+                    ]],
+                ]],
+            ]),
+        ]);
+
+        $user = User::factory()->create();
+        $user->languagePreference()->create([
+            'native_locale' => 'de',
+            'learning_locale' => 'en',
+        ]);
+        $book = Book::factory()->for($user, 'owner')->create(['language_locale' => 'en']);
+
+        $this->actingAs($user)
+            ->postJson(route('reader.translate', $book), [
+                'word' => 'wonderful',
+                'context' => 'The garden was full of wonderful secrets.',
+            ])
+            ->assertOk()
+            ->assertJson([
+                'translation' => 'wunderbar',
+                'pronunciation' => '/ˈwʌndəfəl/',
+            ]);
+
+        Http::assertSent(fn ($request) => $request->url() === 'https://api.openai.com/v1/responses'
+            && $request['model'] === 'gpt-5.4-mini'
+            && $request['store'] === false);
+    }
+
+    public function test_translation_falls_back_cleanly_when_openai_is_not_configured(): void
+    {
+        config(['services.openai.key' => null]);
+
+        $user = User::factory()->create();
+        $book = Book::factory()->for($user, 'owner')->create();
+
+        $this->actingAs($user)
+            ->postJson(route('reader.translate', $book), [
+                'word' => 'wonderful',
+                'context' => 'The garden was full of wonderful secrets.',
+            ])
+            ->assertStatus(503)
+            ->assertJsonFragment(['message' => 'Automatic translation is not configured.']);
     }
 }

@@ -7,7 +7,7 @@
     <title>{{ $pageTitle }} · LingoRise Reader</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="reader-page" data-vocabulary-url="{{ route('vocabulary.store', $book) }}" data-native-language="{{ $nativeLanguage }}">
+<body class="reader-page" data-vocabulary-url="{{ route('vocabulary.store', $book) }}" data-translation-url="{{ route('reader.translate', $book) }}" data-native-language="{{ $nativeLanguage }}">
     <header class="reader-app-header">
         <a href="{{ route('library.index') }}" class="reader-back">← Library</a>
         <div class="reader-book-name">
@@ -138,17 +138,23 @@
                         <path d="M13 7.2c1.5 1.5 1.5 4.1 0 5.6M15.2 5c2.8 2.8 2.8 7.2 0 10"></path>
                     </svg>
                 </button>
-                <button class="word-card-close" type="button" data-close-word-card aria-label="Close translation">×</button>
+                <button class="word-card-close" type="button" data-close-word-card aria-label="Close translation">
+                    <svg viewBox="0 0 20 20" aria-hidden="true">
+                        <path d="M5.5 5.5 14.5 14.5M14.5 5.5 5.5 14.5"></path>
+                    </svg>
+                </button>
             </div>
         </div>
-        <label class="word-card-translation">
+        <div class="word-card-pronunciation" data-word-pronunciation hidden></div>
+        <div class="word-card-translation">
             <span data-native-label>Translation</span>
-            <input type="text" data-word-translation placeholder="Type the translation">
-        </label>
-        <div class="word-card-context">
-            <span>In this sentence</span>
-            <p data-word-context></p>
+            <strong data-word-translation></strong>
         </div>
+        <div class="word-card-explanation" data-word-explanation hidden>
+            <span>Meaning</span>
+            <p></p>
+        </div>
+        <p data-word-context hidden></p>
         <button class="word-card-save" type="button" data-save-word>
             <span>＋</span> Add to vocabulary
         </button>

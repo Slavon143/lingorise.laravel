@@ -182,6 +182,9 @@ if (readerPage && readingText && wordCard) {
     const saveButton = wordCard.querySelector('[data-save-word]');
     const speakButton = wordCard.querySelector('[data-speak-word]');
     const nativeLabel = wordCard.querySelector('[data-native-label]');
+    const pronunciationNode = wordCard.querySelector('[data-word-pronunciation]');
+    const explanationNode = wordCard.querySelector('[data-word-explanation]');
+    let translationRequest = null;
     let activeToken = null;
     const fontSelect = document.querySelector('[data-reader-font]');
     const fontAliases = {
@@ -194,7 +197,19 @@ if (readerPage && readingText && wordCard) {
     const savedFont = fontAliases[storedFont] ?? storedFont;
 
     readingText.dataset.font = savedFont;
-    if (nativeLabel) nativeLabel.textContent = `${readerPage.dataset.nativeLanguage || 'Native language'} translation`;
+    const languageNamesForTranslation = {
+        de: 'German',
+        ru: 'Russian',
+        sv: 'Swedish',
+        es: 'Spanish',
+        fr: 'French',
+        uk: 'Ukrainian',
+        en: 'English',
+    };
+    if (nativeLabel) {
+        const nativeLanguage = readerPage.dataset.nativeLanguage || '';
+        nativeLabel.textContent = `${languageNamesForTranslation[nativeLanguage] || 'Your'} translation`;
+    }
 
     if (fontSelect) {
         fontSelect.value = savedFont;
@@ -256,11 +271,54 @@ if (readerPage && readingText && wordCard) {
             .join(' ');
         selectedWord.textContent = token.dataset.readerWord;
         contextNode.textContent = context;
-        translationInput.value = '';
-        statusNode.textContent = '';
+        translationInput.textContent = '';
+        pronunciationNode.hidden = true;
+        explanationNode.hidden = true;
+        statusNode.textContent = 'Translating…';
         wordCard.hidden = false;
         positionWordCard();
-        translationInput.focus();
+
+        translationRequest?.abort();
+        translationRequest = new AbortController();
+        wordCard.classList.add('is-loading');
+
+        fetch(readerPage.dataset.translationUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content ?? '',
+            },
+            body: JSON.stringify({
+                word: token.dataset.readerWord,
+                context,
+            }),
+            signal: translationRequest.signal,
+        })
+            .then(async (response) => {
+                const result = await response.json();
+                if (!response.ok) throw new Error(result.message || 'Translation unavailable.');
+                return result;
+            })
+            .then((result) => {
+                if (activeToken !== token) return;
+                translationInput.textContent = result.translation;
+                pronunciationNode.textContent = result.pronunciation;
+                pronunciationNode.hidden = !result.pronunciation;
+                explanationNode.querySelector('p').textContent = result.explanation;
+                explanationNode.hidden = !result.explanation;
+                statusNode.textContent = '';
+                positionWordCard();
+            })
+            .catch((error) => {
+                if (error.name !== 'AbortError' && activeToken === token) {
+                    statusNode.textContent = error.message;
+                    positionWordCard();
+                }
+            })
+            .finally(() => {
+                if (activeToken === token) wordCard.classList.remove('is-loading');
+            });
     });
 
     wordCard.querySelector('[data-close-word-card]')?.addEventListener('click', closeWordCard);
@@ -284,7 +342,7 @@ if (readerPage && readingText && wordCard) {
     });
 
     saveButton?.addEventListener('click', async () => {
-        const translation = translationInput.value.trim();
+        const translation = translationInput.textContent.trim();
 
         if (!translation || !activeToken) {
             statusNode.textContent = 'Add a translation first.';

@@ -2428,13 +2428,13 @@ h1 em::after {
     --word-card-arrow-left: 42px;
     position: fixed;
     z-index: 40;
-    width: min(340px, calc(100vw - 24px));
-    padding: 20px;
+    width: min(360px, calc(100vw - 24px));
+    padding: 22px;
     color: var(--ink);
-    background: #fffefa;
-    border: 1px solid #d9d7cf;
-    border-radius: 16px;
-    box-shadow: 0 24px 65px rgba(17,27,61,.24);
+    background: #fffef9;
+    border: 1px solid #d7d5cc;
+    border-radius: 18px;
+    box-shadow: 0 26px 70px rgba(17,27,61,.2), 0 4px 14px rgba(17,27,61,.08);
 }
 .word-card[hidden] { display: none; }
 .word-card-arrow {
@@ -2455,38 +2455,57 @@ h1 em::after {
     border-right: 1px solid #d9d7cf;
     border-bottom: 1px solid #d9d7cf;
 }
-.word-card-head { display: flex; align-items: flex-start; justify-content: space-between; }
+.word-card-head { min-height: 48px; display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; }
 .word-card-title > span,
 .word-card-translation > span,
-.word-card-context > span {
+.word-card-explanation > span {
     display: block;
-    color: #818796;
-    font-size: 10px;
-    font-weight: 800;
-    letter-spacing: .08em;
+    color: #747c8e;
+    font-size: 11px;
+    font-weight: 750;
+    letter-spacing: .075em;
     text-transform: uppercase;
 }
-.word-card-title strong { display: block; margin-top: 4px; font-family: "Literata", Georgia, serif; font-size: 25px; font-weight: 600; line-height: 1.15; }
+.word-card-title strong { display: block; margin-top: 5px; font-family: "Literata", Georgia, serif; font-size: 28px; font-weight: 600; line-height: 1.12; letter-spacing: -.025em; }
+.word-card-pronunciation { margin-top: 4px; color: #687187; font-family: "Literata", Georgia, serif; font-size: 14px; }
 .word-card-head-actions { display: flex; align-items: center; gap: 5px; }
-.word-card-head-actions button { width: 34px; height: 34px; display: grid; place-items: center; color: #717889; background: #f2f1ec; border: 0; border-radius: 9px; cursor: pointer; }
+.word-card-head-actions button { width: 36px; height: 36px; padding: 0; display: flex; align-items: center; justify-content: center; color: #687083; background: #f0efe9; border: 0; border-radius: 10px; cursor: pointer; }
 .word-card-head-actions button:hover { color: var(--blue); background: #e9edff; }
 .word-card-head-actions svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.65; stroke-linecap: round; stroke-linejoin: round; }
-.word-card-head-actions .word-card-close { font-size: 22px; line-height: 1; }
-.word-card-translation { margin-top: 18px; display: grid; gap: 7px; }
-.word-card input { width: 100%; height: 46px; padding: 0 13px; color: var(--ink); background: white; border: 1px solid #d7d7d2; border-radius: 10px; outline: none; font-size: 14px; }
-.word-card input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(70,102,255,.12); }
-.word-card-context { margin: 14px 0; padding: 12px 13px; background: #f3f2ed; border-radius: 10px; }
-.word-card-context p { margin: 6px 0 0; color: #5f6677; font-family: "Literata", Georgia, serif; font-size: 12px; line-height: 1.55; }
-.word-card-save { width: 100%; min-height: 44px; color: var(--ink); background: var(--lime); border: 0; border-radius: 10px; font-size: 12px; font-weight: 850; cursor: pointer; }
+.word-card-head-actions .word-card-close { padding: 0; }
+.word-card-head-actions .word-card-close svg { width: 20px; height: 20px; }
+.word-card-translation { margin-top: 20px; display: grid; gap: 8px; }
+.word-card-translation > strong {
+    display: block;
+    color: #202943;
+    font-family: "Instrument Sans", Arial, sans-serif;
+    font-size: 20px;
+    font-weight: 650;
+    line-height: 1.4;
+}
+.word-card-explanation { margin: 14px 0 16px; padding: 13px 14px; color: #424b63; background: #eef1ff; border-left: 3px solid var(--blue); border-radius: 4px 11px 11px 4px; }
+.word-card-explanation > span { color: var(--blue); font-size: 10px; }
+.word-card-explanation p { margin: 6px 0 0; font-size: 13px; line-height: 1.55; }
+.word-card-save { width: 100%; min-height: 46px; color: var(--ink); background: var(--lime); border: 0; border-radius: 11px; font-size: 13px; font-weight: 850; cursor: pointer; }
 .word-card-save:hover { background: #d4f98a; }
 .word-card-save:disabled { cursor: wait; opacity: .65; }
 .word-card-status { display: block; min-height: 16px; margin-top: 8px; color: #5f7d2c; text-align: center; font-size: 10px; }
 .reader-page.is-dark .word-card { color: #eef0f6; background: #202a49; border-color: #394360; }
 .reader-page.is-dark .word-card-arrow { background: #202a49; border-color: #394360; }
 .reader-page.is-dark .word-card-head-actions button,
-.reader-page.is-dark .word-card-context { background: #17203b; }
-.reader-page.is-dark .word-card input { color: white; background: #17203b; border-color: #46506b; }
-.reader-page.is-dark .word-card-context p { color: #c7cbd5; }
+.reader-page.is-dark .word-card-explanation { background: #17203b; }
+.reader-page.is-dark .word-card-translation > strong { color: white; }
+.reader-page.is-dark .word-card-explanation p { color: #d5d8e1; }
+.word-card.is-loading .word-card-translation > strong {
+    width: 72%;
+    min-height: 28px;
+    color: transparent;
+    background: linear-gradient(100deg, #ecebe5 20%, #faf9f5 40%, #ecebe5 60%);
+    background-size: 220% 100%;
+    border-radius: 6px;
+    animation: word-card-loading 1.1s linear infinite;
+}
+@keyframes word-card-loading { to { background-position: -220% 0; } }
 
 @media (max-width: 1100px) {
     .desktop-nav { display: none; }
@@ -2720,7 +2739,7 @@ h1 em::after {
     .reading-text { font-size: 18px; line-height: 1.9; }
     .reader-pagination { padding-inline: 14px; grid-template-columns: auto 1fr auto; gap: 12px; }
     .reader-pagination > div span, .reader-pagination > div small { display: none; }
-    .word-card { width: min(340px, calc(100vw - 24px)); }
+    .word-card { width: min(360px, calc(100vw - 24px)); padding: 18px; }
     .reader-mini-cover-image { object-position: center top; }
     .continue-body { grid-template-columns: 105px 1fr; gap: 14px; }
     .continue-cover { min-height: 155px; }
