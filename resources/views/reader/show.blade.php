@@ -57,9 +57,8 @@
             <h1>{{ $book->title }}</h1>
             <div class="reading-text" data-reading-text>
                 @php($wordIndex = 0)
-                @foreach($pageParagraphs as $paragraph)
-                    <p>
-                    @foreach($paragraph as $word)
+                <p>
+                    @foreach($pageWords as $word)
                         <button
                             type="button"
                             class="reader-token"
@@ -68,8 +67,7 @@
                         >{{ $word }}</button>
                         @php($wordIndex++)
                     @endforeach
-                    </p>
-                @endforeach
+                </p>
             </div>
         </article>
 

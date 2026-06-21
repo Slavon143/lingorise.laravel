@@ -19,7 +19,6 @@ class ReaderController extends Controller
         $totalPages = max(1, (int) ceil(count($words) / self::WORDS_PER_PAGE));
         $page = min(max((int) $request->integer('page', 1), 1), $totalPages);
         $pageWords = array_slice($words, ($page - 1) * self::WORDS_PER_PAGE, self::WORDS_PER_PAGE);
-        $pageParagraphs = array_chunk($pageWords, 85);
         $wordsRead = min($page * self::WORDS_PER_PAGE, count($words));
 
         $request->user()->readingProgress()->updateOrCreate(
@@ -35,7 +34,7 @@ class ReaderController extends Controller
         return view('reader.show', [
             'book' => $book,
             'page' => $page,
-            'pageParagraphs' => $pageParagraphs,
+            'pageWords' => $pageWords,
             'totalPages' => $totalPages,
             'percentage' => (int) round(($page / $totalPages) * 100),
             'nativeLanguage' => $request->user()->languagePreference?->native_locale ?? 'de',
