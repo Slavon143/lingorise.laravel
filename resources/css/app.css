@@ -2411,14 +2411,37 @@ h1 em::after {
 .reading-text ::-moz-selection { color: var(--ink); background: var(--lime); }
 .reader-token:hover, .reader-token.is-selected { background: var(--lime); color: var(--ink); box-shadow: 0 0 0 2px var(--lime); }
 .reader-token.is-selected + .reader-token.is-selected { box-shadow: 2px 0 0 2px var(--lime), 0 0 0 2px var(--lime); }
-.reader-side-panel { padding: 17px; background: rgba(255,255,255,.55); border: 1px solid rgba(17,27,61,.09); border-radius: 14px; }
+.reader-side-panel { min-width: 0; max-height: calc(100vh - 190px); padding: 17px; overflow: hidden; background: rgba(255,255,255,.68); border: 1px solid rgba(17,27,61,.09); border-radius: 14px; box-shadow: 0 12px 32px rgba(30,40,73,.07); }
 .reader-page.is-dark .reader-side-panel { background: rgba(255,255,255,.05); border-color: rgba(255,255,255,.08); }
 .reader-side-heading span, .reader-side-heading strong { display: block; }
 .reader-side-heading span { color: var(--blue); font-size: 9px; font-weight: 850; text-transform: uppercase; letter-spacing: .1em; }
+.reader-side-heading span i { min-width: 18px; margin-left: 4px; padding: 2px 5px; display: inline-block; color: white; background: var(--blue); border-radius: 999px; font-size: 8px; font-style: normal; text-align: center; }
 .reader-side-heading strong { margin-top: 5px; font-family: Georgia, serif; font-size: 17px; font-weight: 500; }
 .reader-side-empty { min-height: 190px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+.reader-side-empty[hidden] { display: none; }
 .reader-side-empty > span { width: 44px; height: 44px; display: grid; place-items: center; color: var(--blue); background: #e9edff; border-radius: 13px; font-weight: 800; }
 .reader-side-empty p { margin: 12px 0 0; color: var(--muted); font-size: 10px; line-height: 1.5; }
+.reader-vocabulary-list { min-width: 0; max-height: calc(100vh - 300px); margin: 14px -5px 0 0; padding-right: 5px; display: grid; gap: 8px; overflow-x: hidden; overflow-y: auto; scrollbar-width: thin; scrollbar-color: #c5cad7 transparent; }
+.reader-vocabulary-item {
+    min-width: 0;
+    max-width: 100%;
+    width: 100%;
+    padding: 11px 12px;
+    display: block;
+    color: var(--ink);
+    background: rgba(255,255,255,.74);
+    border: 1px solid rgba(17,27,61,.08);
+    border-radius: 10px;
+    text-align: left;
+    cursor: pointer;
+}
+.reader-vocabulary-item:hover { border-color: rgba(70,102,255,.35); box-shadow: 0 5px 14px rgba(30,40,73,.08); }
+.reader-vocabulary-item strong,
+.reader-vocabulary-item span { display: block; min-width: 0; max-width: 100%; overflow-wrap: anywhere; word-break: break-word; }
+.reader-vocabulary-item strong { font-family: "Literata", Georgia, serif; font-size: 12px; line-height: 1.35; }
+.reader-vocabulary-item span { margin-top: 5px; color: #697184; font-size: 10px; line-height: 1.4; }
+.reader-page.is-dark .reader-vocabulary-item { color: white; background: rgba(255,255,255,.06); border-color: rgba(255,255,255,.08); }
+.reader-page.is-dark .reader-vocabulary-item span { color: #b8bfce; }
 .reader-pagination { position: fixed; z-index: 12; left: 0; right: 0; bottom: 0; min-height: 72px; padding: 10px 30px; display: grid; grid-template-columns: 1fr minmax(280px, 500px) 1fr; align-items: center; gap: 25px; background: rgba(255,254,249,.96); border-top: 1px solid var(--line); backdrop-filter: blur(16px); }
 .reader-page.is-dark .reader-pagination { background: rgba(13,22,52,.96); border-color: rgba(255,255,255,.1); }
 .reader-pagination > a { justify-self: start; color: var(--blue); font-size: 12px; font-weight: 800; }
@@ -2432,7 +2455,10 @@ h1 em::after {
     position: fixed;
     z-index: 40;
     width: min(360px, calc(100vw - 24px));
+    max-height: calc(100vh - 110px);
     padding: 22px;
+    overflow-x: hidden;
+    overflow-y: auto;
     color: var(--ink);
     background: #fffef9;
     border: 1px solid #d7d5cc;
@@ -2451,6 +2477,8 @@ h1 em::after {
     border-top: 1px solid #d9d7cf;
     transform: rotate(45deg);
 }
+.word-card::-webkit-scrollbar { width: 6px; }
+.word-card::-webkit-scrollbar-thumb { background: #c8ccd6; border-radius: 999px; }
 .word-card.is-above .word-card-arrow {
     top: auto;
     bottom: -7px;

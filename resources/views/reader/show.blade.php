@@ -95,12 +95,20 @@
 
         <aside class="reader-side-panel">
             <div class="reader-side-heading">
-                <span>Vocabulary</span>
+                <span>Vocabulary <i data-vocabulary-count>{{ $savedEntries->count() }}</i></span>
                 <strong>Save words as you read</strong>
             </div>
-            <div class="reader-side-empty">
+            <div class="reader-side-empty" data-vocabulary-empty @if($savedEntries->isNotEmpty()) hidden @endif>
                 <span>Aa</span>
                 <p>Select a word in the text to open its vocabulary card.</p>
+            </div>
+            <div class="reader-vocabulary-list" data-vocabulary-list>
+                @foreach($savedEntries as $entry)
+                    <button type="button" class="reader-vocabulary-item" data-vocabulary-original="{{ $entry->original_text }}">
+                        <strong>{{ $entry->original_text }}</strong>
+                        <span>{{ $entry->translated_text }}</span>
+                    </button>
+                @endforeach
             </div>
         </aside>
     </main>

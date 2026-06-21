@@ -56,7 +56,13 @@ class ReaderTest extends TestCase
                 'context' => 'The garden was full of wonderful secrets.',
             ])
             ->assertOk()
-            ->assertJson(['saved' => true]);
+            ->assertJson([
+                'saved' => true,
+                'entry' => [
+                    'original_text' => 'wonderful',
+                    'translated_text' => 'wunderbar',
+                ],
+            ]);
 
         $this->assertDatabaseHas('dictionary_entries', [
             'user_id' => $user->id,
@@ -64,6 +70,27 @@ class ReaderTest extends TestCase
             'original_text' => 'wonderful',
             'translated_text' => 'wunderbar',
         ]);
+    }
+
+    public function test_reader_shows_saved_vocabulary_for_the_book(): void
+    {
+        $user = User::factory()->create();
+        $book = Book::factory()->for($user, 'owner')->create([
+            'content' => 'The garden was full of wonderful secrets.',
+        ]);
+        $user->dictionaryEntries()->create([
+            'book_id' => $book->id,
+            'original_text' => 'wonderful',
+            'translated_text' => 'wunderbar',
+            'context' => 'The garden was full of wonderful secrets.',
+            'status' => 'new',
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('reader.show', $book))
+            ->assertOk()
+            ->assertSee('wonderful')
+            ->assertSee('wunderbar');
     }
 
     public function test_reader_can_automatically_translate_a_word(): void

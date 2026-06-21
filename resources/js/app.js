@@ -185,6 +185,9 @@ if (readerPage && readingText && wordCard) {
     const nativeLabel = wordCard.querySelector('[data-native-label]');
     const pronunciationNode = wordCard.querySelector('[data-word-pronunciation]');
     const explanationNode = wordCard.querySelector('[data-word-explanation]');
+    const vocabularyList = document.querySelector('[data-vocabulary-list]');
+    const vocabularyEmpty = document.querySelector('[data-vocabulary-empty]');
+    const vocabularyCount = document.querySelector('[data-vocabulary-count]');
     let translationRequest = null;
     let activeToken = null;
     let activeTokens = [];
@@ -235,33 +238,60 @@ if (readerPage && readingText && wordCard) {
     const positionWordCard = () => {
         if (!activeToken || wordCard.hidden) return;
 
-        const firstRect = activeTokens[0]?.getBoundingClientRect();
-        const lastRect = activeTokens.at(-1)?.getBoundingClientRect();
-        if (!firstRect || !lastRect) return;
+        const tokenRects = activeTokens.map((token) => token.getBoundingClientRect());
+        if (!tokenRects.length) return;
+
+        const selectionRect = {
+            top: Math.min(...tokenRects.map((rect) => rect.top)),
+            right: Math.max(...tokenRects.map((rect) => rect.right)),
+            bottom: Math.max(...tokenRects.map((rect) => rect.bottom)),
+            left: Math.min(...tokenRects.map((rect) => rect.left)),
+        };
         const viewportPadding = 12;
         const gap = 13;
+        const headerEdge = 80;
+        const footerEdge = window.innerHeight - 84;
+        const availableAbove = Math.max(0, selectionRect.top - headerEdge - gap);
+        const availableBelow = Math.max(0, footerEdge - selectionRect.bottom - gap);
+        const preferredMaxHeight = Math.max(180, Math.max(availableAbove, availableBelow));
+
+        wordCard.style.maxHeight = `${Math.min(window.innerHeight - 110, preferredMaxHeight)}px`;
+
         const cardWidth = wordCard.offsetWidth;
         const cardHeight = wordCard.offsetHeight;
-        const roomBelow = window.innerHeight - lastRect.bottom;
-        const placeAbove = roomBelow < cardHeight + gap && firstRect.top > cardHeight + gap;
-        const anchorRect = placeAbove ? firstRect : lastRect;
+        const placeAbove = availableBelow < cardHeight && availableAbove > availableBelow;
+        const anchorRect = placeAbove ? tokenRects[0] : tokenRects.at(-1);
         const tokenCenter = anchorRect.left + (anchorRect.width / 2);
         const left = Math.min(
             window.innerWidth - cardWidth - viewportPadding,
             Math.max(viewportPadding, tokenCenter - (cardWidth / 2)),
         );
         const top = placeAbove
-            ? Math.max(viewportPadding, firstRect.top - cardHeight - gap)
-            : Math.min(window.innerHeight - cardHeight - viewportPadding, lastRect.bottom + gap);
+            ? selectionRect.top - cardHeight - gap
+            : selectionRect.bottom + gap;
         const arrowLeft = Math.min(cardWidth - 25, Math.max(18, tokenCenter - left - 7));
 
         wordCard.classList.toggle('is-above', placeAbove);
         wordCard.style.left = `${left}px`;
-        wordCard.style.top = `${Math.max(viewportPadding, top)}px`;
+        wordCard.style.top = `${top}px`;
         wordCard.style.setProperty('--word-card-arrow-left', `${arrowLeft}px`);
     };
 
     const allTokens = [...readingText.querySelectorAll('.reader-token')];
+
+    const findPhraseTokens = (phrase) => {
+        const words = phrase.trim().toLocaleLowerCase().split(/\s+/u);
+        if (!words.length) return [];
+
+        for (let index = 0; index <= allTokens.length - words.length; index += 1) {
+            const matches = words.every((word, offset) => (
+                allTokens[index + offset].dataset.readerWord.toLocaleLowerCase() === word
+            ));
+            if (matches) return allTokens.slice(index, index + words.length);
+        }
+
+        return [];
+    };
 
     const openTranslation = (tokens) => {
         const selectedTokens = tokens.slice(0, 10);
@@ -391,6 +421,18 @@ if (readerPage && readingText && wordCard) {
         }
     });
 
+    vocabularyList?.addEventListener('click', (event) => {
+        const item = event.target.closest('[data-vocabulary-original]');
+        if (!item) return;
+
+        const tokens = findPhraseTokens(item.dataset.vocabularyOriginal);
+        if (tokens.length) {
+            selectionAnchor = tokens[0];
+            tokens[0].scrollIntoView({ block: 'center' });
+            window.setTimeout(() => openTranslation(tokens), 0);
+        }
+    });
+
     wordCard.querySelector('[data-close-word-card]')?.addEventListener('click', closeWordCard);
     speakButton?.addEventListener('click', () => {
         if (!activeTokens.length || !('speechSynthesis' in window)) return;
@@ -401,7 +443,9 @@ if (readerPage && readingText && wordCard) {
         window.speechSynthesis.speak(utterance);
     });
     window.addEventListener('resize', positionWordCard);
-    window.addEventListener('scroll', positionWordCard, { passive: true });
+    window.addEventListener('scroll', () => {
+        if (!wordCard.hidden) closeWordCard();
+    }, { passive: true });
     document.addEventListener('keydown', (event) => {
         if (event.key === 'Escape' && !wordCard.hidden) closeWordCard();
     });
@@ -441,8 +485,29 @@ if (readerPage && readingText && wordCard) {
                 throw new Error('Save failed');
             }
 
+            const result = await response.json();
             statusNode.textContent = 'Saved to vocabulary ✓';
             activeTokens.forEach((token) => token.classList.add('is-saved'));
+
+            if (vocabularyList && result.entry) {
+                const normalized = result.entry.original_text.toLocaleLowerCase();
+                let item = [...vocabularyList.querySelectorAll('[data-vocabulary-original]')]
+                    .find((node) => node.dataset.vocabularyOriginal.toLocaleLowerCase() === normalized);
+
+                if (!item) {
+                    item = document.createElement('button');
+                    item.type = 'button';
+                    item.className = 'reader-vocabulary-item';
+                    item.dataset.vocabularyOriginal = result.entry.original_text;
+                    item.innerHTML = '<strong></strong><span></span>';
+                    vocabularyList.prepend(item);
+                }
+
+                item.querySelector('strong').textContent = result.entry.original_text;
+                item.querySelector('span').textContent = result.entry.translated_text;
+                vocabularyEmpty?.setAttribute('hidden', '');
+                if (vocabularyCount) vocabularyCount.textContent = vocabularyList.children.length;
+            }
         } catch {
             statusNode.textContent = 'Could not save the word.';
         } finally {
