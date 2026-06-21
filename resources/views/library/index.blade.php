@@ -9,8 +9,16 @@
             <h1>My library</h1>
             <p>Read your own books and keep every new word in context.</p>
         </div>
-        <a href="{{ route('library.create') }}">＋ Add a book</a>
+        <a href="{{ route('library.public') }}">Browse public library</a>
     </section>
+
+    <form class="public-library-filters" method="GET" action="{{ route('library.index') }}" style="margin-bottom:24px;">
+        <div class="public-search">
+            <span>⌕</span>
+            <input type="search" name="search" placeholder="Search your books by title, author, or category…" value="{{ $search ?? '' }}">
+        </div>
+        <button type="submit">Search</button>
+    </form>
 
     @if($books->isEmpty())
         <section class="empty-library">
@@ -45,20 +53,30 @@
                                 <em>First page preview</em>
                             </div>
                         @endif
+                        @if($book->isPublic())
+                            <span class="public-badge">Public</span>
+                        @endif
                     </div>
-                    <div class="user-book-meta">
-                        <div><span class="level-pill level-easy">{{ $book->level }}</span><span>{{ number_format($book->total_words) }} words</span></div>
-                        <h2>{{ $book->title }}</h2>
-                        <p>{{ $book->author ?: 'Added by you' }}</p>
-                        <div class="user-book-actions">
-                            <a href="{{ route('reader.show', $book) }}">Start reading</a>
-                            <form method="POST" action="{{ route('library.destroy', $book) }}" onsubmit="return confirm('Remove this book?')">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit">Remove</button>
-                            </form>
+                        <div class="user-book-meta">
+                            <div><span class="level-pill level-easy">{{ $book->level }}</span><span>{{ number_format($book->total_words) }} words</span></div>
+                            <h2>{{ $book->title }}</h2>
+                            <p>{{ $book->author ?: 'Added by you' }}</p>
+                            <div class="user-book-actions">
+                                <a href="{{ route('reader.show', $book) }}">Start reading</a>
+                                <div class="user-book-actions-right">
+                                    <form method="POST" action="{{ route('library.visibility', $book) }}">
+                                        @csrf
+                                        @method('PATCH')
+                                        <button type="submit" class="vis-toggle">{{ $book->isPublic() ? 'Make private' : 'Make public' }}</button>
+                                    </form>
+                                    <form method="POST" action="{{ route('library.destroy', $book) }}" onsubmit="return confirm('Remove this book?')">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit">Remove</button>
+                                    </form>
+                                </div>
+                            </div>
                         </div>
-                    </div>
                 </article>
             @endforeach
             <a class="add-book-tile" href="{{ route('library.create') }}"><span>＋</span><strong>Add another book</strong><small>TXT, EPUB, or pasted text</small></a>

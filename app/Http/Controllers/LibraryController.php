@@ -16,12 +16,15 @@ class LibraryController extends Controller
 {
     public function index(Request $request): View
     {
-        $books = $request->user()
-            ->books()
-            ->latest()
-            ->get();
+        $query = $request->user()->books();
 
-        return view('library.index', compact('books'));
+        if ($search = $request->query('search')) {
+            $query->search($search);
+        }
+
+        $books = $query->latest()->get();
+
+        return view('library.index', compact('books', 'search'));
     }
 
     public function create(): View
@@ -90,5 +93,18 @@ class LibraryController extends Controller
         $book->delete();
 
         return back()->with('status', 'The book has been removed.');
+    }
+
+    public function toggleVisibility(Request $request, Book $book): RedirectResponse
+    {
+        abort_unless($book->owner_id === $request->user()->id, 403);
+
+        $book->update([
+            'visibility' => $book->visibility === 'public' ? 'private' : 'public',
+        ]);
+
+        $status = $book->visibility === 'public' ? 'public' : 'private';
+
+        return back()->with('status', "\"{$book->title}\" is now {$status}.");
     }
 }

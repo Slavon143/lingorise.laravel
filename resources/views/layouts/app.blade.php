@@ -32,6 +32,10 @@
                     <svg viewBox="0 0 22 22" fill="none"><path d="M5 4h10a2 2 0 0 1 2 2v12H7a2 2 0 0 1-2-2V4Zm0 10h12M8 7h6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
                     <span>My library</span>
                 </a>
+                <a class="@if(request()->routeIs('library.public')) is-active @endif" href="{{ route('library.public') }}">
+                    <svg viewBox="0 0 22 22" fill="none"><path d="M3 11h16M7 4v7M11 4v7M15 4v7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><rect x="3" y="11" width="16" height="7" rx="1.5" stroke="currentColor" stroke-width="1.6"/></svg>
+                    <span>Public library</span>
+                </a>
                 <a class="@if(request()->routeIs('vocabulary.*')) is-active @endif" href="{{ route('vocabulary.index') }}">
                     <svg viewBox="0 0 22 22" fill="none"><path d="M5 5.5A2.5 2.5 0 0 1 7.5 3H18v14H7.5A2.5 2.5 0 0 0 5 19.5v-14Z" stroke="currentColor" stroke-width="1.6"/><path d="M8 7h6M8 10h4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
                     <span>Vocabulary</span>

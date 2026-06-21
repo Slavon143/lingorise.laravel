@@ -54,10 +54,10 @@
 
             <div class="sidebar-bottom">
                 <button class="language-summary" type="button" data-open-languages>
-                    <span class="language-flag">{{ $preference?->learning_locale === 'de' ? 'DE' : 'EN' }}</span>
+                    <span class="language-flag">{{ strtoupper($preference?->learning_locale ?? 'en') }}</span>
                     <span>
                         <small>Learning</small>
-                        <strong>{{ $preference?->learning_locale === 'de' ? 'German' : 'English' }}</strong>
+                        <strong>{{ $languageNames[$preference?->learning_locale] ?? 'English' }}</strong>
                     </span>
                     <span>⌄</span>
                 </button>
@@ -102,8 +102,8 @@
                 <section class="dashboard-welcome">
                     <div>
                         <span class="dashboard-date">{{ now()->format('l, F j') }}</span>
-                        <h1>Good to see you, {{ explode(' ', $user->name)[0] }}.</h1>
-                        <p>{{ $preference ? 'Ready for another small step in your English?' : 'Let’s personalise your learning journey first.' }}</p>
+                        <h1>{{ $greeting }}, {{ explode(' ', $user->name)[0] }}.</h1>
+                        <p>{{ $preference ? 'Ready for another small step in your ' . $learningLanguageName . '?' : 'Let’s personalise your learning journey first.' }}</p>
                     </div>
                     <div class="streak-summary">
                         <span>◆</span>
@@ -263,18 +263,27 @@
                     <article class="recommended-card">
                         <div class="card-heading">
                             <div><span>Recommended for you</span><h2>Your next short read</h2></div>
-                            <a href="#">View library</a>
+                            <a href="{{ route('library.public', ['language' => $preference?->learning_locale]) }}">View library</a>
                         </div>
-                        <div class="recommendation">
-                            <div class="recommendation-cover"><span>English</span><strong>A Day in<br>London</strong></div>
-                            <div>
-                                <span class="level-pill level-easy">A1</span>
-                                <h3>A Day in London</h3>
-                                <p>A simple story about transport, food, and finding your way around a new city.</p>
-                                <small>8 min read · 640 words</small>
+                        @if($recommended)
+                            <div class="recommendation">
+                                <div class="recommendation-cover"><span>{{ strtoupper($recommended->language_locale) }}</span><strong>{{ $recommended->title }}</strong></div>
+                                <div>
+                                    <span class="level-pill level-{{ strtolower($recommended->level) === 'a1' ? 'easy' : (in_array($recommended->level, ['A2','B1']) ? 'medium' : 'hard') }}">{{ $recommended->level }}</span>
+                                    <h3>{{ $recommended->title }}</h3>
+                                    <p>{{ \Illuminate\Support\Str::limit(strip_tags($recommended->content), 120) }}</p>
+                                    <small>{{ max(1, (int) ceil($recommended->total_words / 200)) }} min read · {{ number_format($recommended->total_words) }} words</small>
+                                </div>
+                                <form method="POST" action="{{ route('library.public.add', $recommended) }}" style="display:contents;">
+                                    @csrf
+                                    <button type="submit" aria-label="Add to library">→</button>
+                                </form>
                             </div>
-                            <button type="button" aria-label="Open recommendation">→</button>
-                        </div>
+                        @else
+                            <div class="recommendation" style="justify-content:center;min-height:100px;color:var(--muted);font-size:13px;">
+                                <p>No recommendations yet. Add a book to get started.</p>
+                            </div>
+                        @endif
                     </article>
 
                     <article class="quick-actions-card">

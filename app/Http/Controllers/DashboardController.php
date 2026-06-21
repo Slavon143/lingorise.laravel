@@ -53,6 +53,41 @@ class DashboardController extends Controller
         $dailyGoal = 10;
         $dailyMinutes = min($dailyMinutes, $dailyGoal);
 
+        $learningLocale = $user->languagePreference?->learning_locale;
+
+        $languageNames = [
+            'en' => 'English', 'de' => 'German', 'es' => 'Spanish',
+            'fr' => 'French', 'sv' => 'Swedish',
+        ];
+        $learningLanguageName = $languageNames[$learningLocale] ?? 'English';
+
+        $hour = (int) now()->format('G');
+        $greeting = $hour < 12 ? 'Good morning' : ($hour < 18 ? 'Good afternoon' : 'Good evening');
+
+        $userLevel = $user->books()->whereNotNull('level')->value('level') ?? 'A2';
+        $userBookIds = $user->books()->pluck('id');
+
+        $levels = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
+        $levelIndex = array_search($userLevel, $levels) ?: 0;
+        $priorityLevels = [
+            $levels[$levelIndex] ?? null,
+            $levels[$levelIndex + 1] ?? null,
+            $levels[$levelIndex - 1] ?? null,
+        ];
+
+        $recommended = null;
+        if ($learningLocale) {
+            $query = Book::public()
+                ->where('language_locale', $learningLocale)
+                ->whereNotIn('id', $userBookIds)
+                ->where('total_words', '>', 0)
+                ->where('total_words', '<', 5000);
+            $recommended = $query->get()->sortBy(function ($book) use ($priorityLevels) {
+                $priority = array_search($book->level, $priorityLevels);
+                return [$priority === false ? 99 : $priority, $book->total_words];
+            })->first();
+        }
+
         return view('dashboard', [
             'user' => $user,
             'preference' => $user->languagePreference,
@@ -65,6 +100,10 @@ class DashboardController extends Controller
             'totalWordsRead' => $totalWordsRead,
             'dailyMinutes' => $dailyMinutes,
             'dailyGoal' => $dailyGoal,
+            'recommended' => $recommended,
+            'greeting' => $greeting,
+            'learningLanguageName' => $learningLanguageName,
+            'languageNames' => $languageNames,
         ]);
     }
 

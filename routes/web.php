@@ -3,6 +3,7 @@
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\LibraryController;
+use App\Http\Controllers\PublicLibraryController;
 use App\Http\Controllers\ReaderController;
 use App\Http\Controllers\SpeakingController;
 use App\Http\Controllers\SpeechController;
@@ -29,6 +30,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/library/create', [LibraryController::class, 'create'])->name('library.create');
     Route::post('/library', [LibraryController::class, 'store'])->name('library.store');
     Route::delete('/library/{book}', [LibraryController::class, 'destroy'])->name('library.destroy');
+    Route::patch('/library/{book}/visibility', [LibraryController::class, 'toggleVisibility'])->name('library.visibility');
+    Route::get('/library/public', [PublicLibraryController::class, 'index'])->name('library.public');
+    Route::post('/library/public/{book}/add', [PublicLibraryController::class, 'addToMyLibrary'])->name('library.public.add');
     Route::get('/read/{book}', [ReaderController::class, 'show'])->name('reader.show');
     Route::post('/read/{book}/translate', WordTranslationController::class)->name('reader.translate');
     Route::post('/read/{book}/vocabulary', [VocabularyController::class, 'store'])->name('vocabulary.store');
