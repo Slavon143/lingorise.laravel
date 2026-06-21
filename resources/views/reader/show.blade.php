@@ -15,6 +15,22 @@
             <span>{{ $book->author ?: 'Personal text' }}</span>
         </div>
         <div class="reader-header-actions">
+            <button class="reader-panels-button" type="button" data-reader-panels aria-label="Hide reading panels" title="Show or hide reading panels">
+                <svg viewBox="0 0 20 20" aria-hidden="true">
+                    <rect x="2.5" y="3" width="15" height="14" rx="2"></rect>
+                    <path d="M7 3v14M13 3v14"></path>
+                </svg>
+                <span data-reader-panels-label>Panels</span>
+            </button>
+            <label class="reader-font-select">
+                <span class="sr-only">Reading font</span>
+                <select data-reader-font aria-label="Reading font">
+                    <option value="kindle">Kindle style</option>
+                    <option value="apple">Apple Books style</option>
+                    <option value="google">Google Play Books</option>
+                    <option value="readera" selected>ReadEra style</option>
+                </select>
+            </label>
             <button type="button" data-reader-decrease aria-label="Decrease text size">A−</button>
             <button type="button" data-reader-increase aria-label="Increase text size">A＋</button>
             <button type="button" data-reader-theme aria-label="Toggle reading theme">◐</button>
@@ -87,6 +103,8 @@
             </div>
         </aside>
     </main>
+
+    <button class="reader-panel-backdrop" type="button" data-reader-panel-backdrop aria-label="Close reading sidebar" hidden></button>
 
     <footer class="reader-pagination">
         @if($page > 1)

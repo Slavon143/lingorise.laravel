@@ -10,6 +10,13 @@
 <body class="app-page">
     <div class="app-shell">
         <aside class="app-sidebar">
+            <button class="sidebar-collapse-button" type="button" data-sidebar-collapse aria-label="Collapse sidebar" title="Collapse sidebar">
+                <svg viewBox="0 0 20 20" aria-hidden="true">
+                    <rect x="2.5" y="3" width="15" height="14" rx="2"></rect>
+                    <path d="M7 3v14M12.5 7.25 10 10l2.5 2.75"></path>
+                </svg>
+                <span>Collapse</span>
+            </button>
             <a class="brand app-brand" href="{{ route('dashboard') }}">
                 <span class="brand-mark" aria-hidden="true">
                     <svg viewBox="0 0 32 32" fill="none"><path d="M8 24V9.5C8 7.57 9.57 6 11.5 6H24v15.5c0 1.38-1.12 2.5-2.5 2.5H8Z" stroke="currentColor" stroke-width="2.2"/><path d="M12 11h7M12 15h5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><path d="M8 24c0-1.66 1.34-3 3-3h13" stroke="currentColor" stroke-width="2.2"/></svg>
@@ -30,6 +37,7 @@
                 </form>
             </div>
         </aside>
+        <button class="sidebar-mobile-backdrop" type="button" data-sidebar-backdrop aria-label="Close navigation" hidden></button>
         <main class="app-main">
             <header class="app-topbar">
                 <button class="mobile-menu-button" type="button" aria-label="Open navigation"><span></span><span></span><span></span></button>

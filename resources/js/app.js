@@ -80,9 +80,52 @@ document.querySelectorAll('[data-close-languages]').forEach((button) => {
 
 const mobileMenuButton = document.querySelector('.mobile-menu-button');
 const appSidebar = document.querySelector('.app-sidebar');
+const appShell = document.querySelector('.app-shell');
+const sidebarBackdrop = document.querySelector('[data-sidebar-backdrop]');
+const sidebarCollapseButton = document.querySelector('[data-sidebar-collapse]');
 
 mobileMenuButton?.addEventListener('click', () => {
-    appSidebar?.classList.toggle('is-open');
+    appSidebar?.classList.add('is-open');
+
+    if (sidebarBackdrop) {
+        sidebarBackdrop.hidden = false;
+    }
+});
+
+const closeMobileSidebar = () => {
+    appSidebar?.classList.remove('is-open');
+
+    if (sidebarBackdrop) {
+        sidebarBackdrop.hidden = true;
+    }
+};
+
+sidebarBackdrop?.addEventListener('click', closeMobileSidebar);
+
+document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') {
+        closeMobileSidebar();
+    }
+});
+
+if (appShell && sidebarCollapseButton) {
+    const sidebarCollapsed = localStorage.getItem('lingorise-sidebar-collapsed') === 'true';
+    appShell.classList.toggle('is-sidebar-collapsed', sidebarCollapsed);
+    sidebarCollapseButton.setAttribute('aria-label', sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar');
+    sidebarCollapseButton.setAttribute('title', sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar');
+
+    sidebarCollapseButton.addEventListener('click', () => {
+        const collapsed = appShell.classList.toggle('is-sidebar-collapsed');
+        localStorage.setItem('lingorise-sidebar-collapsed', String(collapsed));
+        sidebarCollapseButton.setAttribute('aria-label', collapsed ? 'Expand sidebar' : 'Collapse sidebar');
+        sidebarCollapseButton.setAttribute('title', collapsed ? 'Expand sidebar' : 'Collapse sidebar');
+        const label = sidebarCollapseButton.querySelector('span');
+        if (label) label.textContent = collapsed ? 'Expand' : 'Collapse';
+    });
+}
+
+document.querySelectorAll('.app-nav a').forEach((link) => {
+    link.addEventListener('click', closeMobileSidebar);
 });
 
 const languageNames = {
@@ -138,6 +181,26 @@ if (readerPage && readingText && wordCard) {
     const statusNode = wordCard.querySelector('[data-word-status]');
     const saveButton = wordCard.querySelector('[data-save-word]');
     let activeToken = null;
+    const fontSelect = document.querySelector('[data-reader-font]');
+    const fontAliases = {
+        literata: 'kindle',
+        merriweather: 'readera',
+        georgia: 'apple',
+        classic: 'apple',
+    };
+    const storedFont = localStorage.getItem('lingorise-reader-font-v2') ?? 'readera';
+    const savedFont = fontAliases[storedFont] ?? storedFont;
+
+    readingText.dataset.font = savedFont;
+
+    if (fontSelect) {
+        fontSelect.value = savedFont;
+        fontSelect.addEventListener('change', () => {
+            readingText.dataset.font = fontSelect.value;
+            readingText.style.fontFamily = '';
+            localStorage.setItem('lingorise-reader-font-v2', fontSelect.value);
+        });
+    }
 
     const closeWordCard = () => {
         wordCard.hidden = true;
@@ -230,4 +293,41 @@ if (readerPage && readingText && wordCard) {
     document.querySelector('[data-reader-theme]')?.addEventListener('click', () => {
         readerPage.classList.toggle('is-dark');
     });
+
+    const readerPanelsButton = document.querySelector('[data-reader-panels]');
+    const readerPanelsLabel = document.querySelector('[data-reader-panels-label]');
+    const readerPanelBackdrop = document.querySelector('[data-reader-panel-backdrop]');
+
+    readerPanelsButton?.addEventListener('click', () => {
+        if (window.matchMedia('(max-width: 820px)').matches) {
+            readerPage.classList.add('is-reader-panel-open');
+
+            if (readerPanelBackdrop) {
+                readerPanelBackdrop.hidden = false;
+            }
+
+            return;
+        }
+
+        const hidden = readerPage.classList.toggle('is-panels-hidden');
+        localStorage.setItem('lingorise-reader-panels-hidden', String(hidden));
+        readerPanelsButton.setAttribute('aria-label', hidden ? 'Show reading panels' : 'Hide reading panels');
+        if (readerPanelsLabel) readerPanelsLabel.textContent = hidden ? 'Show panels' : 'Panels';
+    });
+
+    const closeReaderPanel = () => {
+        readerPage.classList.remove('is-reader-panel-open');
+
+        if (readerPanelBackdrop) {
+            readerPanelBackdrop.hidden = true;
+        }
+    };
+
+    readerPanelBackdrop?.addEventListener('click', closeReaderPanel);
+
+    if (localStorage.getItem('lingorise-reader-panels-hidden') === 'true') {
+        readerPage.classList.add('is-panels-hidden');
+        readerPanelsButton?.setAttribute('aria-label', 'Show reading panels');
+        if (readerPanelsLabel) readerPanelsLabel.textContent = 'Show panels';
+    }
 }
