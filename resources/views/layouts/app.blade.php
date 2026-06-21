@@ -45,12 +45,24 @@
                     <svg viewBox="0 0 22 22" fill="none"><rect x="7" y="3" width="8" height="12" rx="4" stroke="currentColor" stroke-width="1.6"/><path d="M4.5 11.5c0 3.6 2.9 6.5 6.5 6.5s6.5-2.9 6.5-6.5M11 18v2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
                     <span>Speaking</span>
                 </a>
-                <a href="#">
+                <a class="@if(request()->routeIs('progress.*')) is-active @endif" href="{{ route('progress.index') }}">
                     <svg viewBox="0 0 22 22" fill="none"><path d="M4 18V9m5 9V4m5 14v-6m5 6V7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
                     <span>Progress</span>
                 </a>
             </nav>
             <div class="sidebar-bottom">
+                @php
+                    $sidebarPref = auth()->user()->languagePreference;
+                    $sidebarLanguages = ['en' => 'English', 'de' => 'German', 'es' => 'Spanish', 'fr' => 'French', 'sv' => 'Swedish'];
+                    $sidebarLearning = $sidebarLanguages[$sidebarPref?->learning_locale] ?? 'English';
+                @endphp
+                @if($sidebarPref)
+                    <button class="language-summary" type="button" data-open-languages>
+                        <span class="language-flag">{{ strtoupper($sidebarPref->learning_locale) }}</span>
+                        <span><small>Learning</small><strong>{{ $sidebarLearning }}</strong></span>
+                        <span>⌄</span>
+                    </button>
+                @endif
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf
                     <button class="sidebar-logout" type="submit">
@@ -79,5 +91,7 @@
             </div>
         </main>
     </div>
+    @stack('modals')
+    @stack('scripts')
 </body>
 </html>
