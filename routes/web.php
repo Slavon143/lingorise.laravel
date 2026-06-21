@@ -30,6 +30,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/read/{book}', [ReaderController::class, 'show'])->name('reader.show');
     Route::post('/read/{book}/translate', WordTranslationController::class)->name('reader.translate');
     Route::post('/read/{book}/vocabulary', [VocabularyController::class, 'store'])->name('vocabulary.store');
+    Route::get('/vocabulary', [VocabularyController::class, 'index'])->name('vocabulary.index');
+    Route::delete('/vocabulary/{entry}', [VocabularyController::class, 'destroy'])->name('vocabulary.destroy');
     Route::put('/settings/languages', [DashboardController::class, 'updateLanguages'])->name('settings.languages');
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 });

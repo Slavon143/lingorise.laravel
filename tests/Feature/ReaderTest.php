@@ -93,6 +93,71 @@ class ReaderTest extends TestCase
             ->assertSee('wunderbar');
     }
 
+    public function test_user_can_open_search_and_delete_vocabulary(): void
+    {
+        $user = User::factory()->create();
+        $book = Book::factory()->for($user, 'owner')->create(['title' => 'Secret Garden']);
+        $entry = $user->dictionaryEntries()->create([
+            'book_id' => $book->id,
+            'original_text' => 'wonderful secrets',
+            'translated_text' => 'wunderbare Geheimnisse',
+            'context' => 'The garden was full of wonderful secrets.',
+            'status' => 'new',
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('vocabulary.index', ['q' => 'Geheimnisse']))
+            ->assertOk()
+            ->assertSee('wonderful secrets')
+            ->assertSee('Secret Garden')
+            ->assertSee('Phrase')
+            ->assertSee('Translation')
+            ->assertSee('From the book')
+            ->assertSee('Open on page 1');
+
+        $this->actingAs($user)
+            ->delete(route('vocabulary.destroy', $entry))
+            ->assertRedirect();
+
+        $this->assertDatabaseMissing('dictionary_entries', ['id' => $entry->id]);
+    }
+
+    public function test_vocabulary_link_opens_the_page_containing_the_phrase(): void
+    {
+        $user = User::factory()->create();
+        $book = Book::factory()->for($user, 'owner')->create([
+            'content' => implode(' ', array_fill(0, 350, 'before'))."\n\nThe hidden garden was full of wonderful secrets.",
+        ]);
+        $user->dictionaryEntries()->create([
+            'book_id' => $book->id,
+            'original_text' => 'wonderful secrets',
+            'translated_text' => 'wunderbare Geheimnisse',
+            'context' => 'The hidden garden was full of wonderful secrets.',
+            'status' => 'new',
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('vocabulary.index'))
+            ->assertOk()
+            ->assertSee('Open on page 2')
+            ->assertSee('focus=wonderful%20secrets', false);
+    }
+
+    public function test_user_cannot_delete_another_users_vocabulary(): void
+    {
+        $owner = User::factory()->create();
+        $otherUser = User::factory()->create();
+        $entry = $owner->dictionaryEntries()->create([
+            'original_text' => 'private',
+            'translated_text' => 'privat',
+            'status' => 'new',
+        ]);
+
+        $this->actingAs($otherUser)
+            ->delete(route('vocabulary.destroy', $entry))
+            ->assertForbidden();
+    }
+
     public function test_reader_can_automatically_translate_a_word(): void
     {
         config(['services.openai.key' => 'test-key']);

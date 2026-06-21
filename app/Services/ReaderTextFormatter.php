@@ -31,6 +31,25 @@ class ReaderTextFormatter
         return $pages !== [] ? $pages : [[['type' => 'paragraph', 'text' => '']]];
     }
 
+    public function pageContaining(string $content, string $phrase): int
+    {
+        $needle = $this->normalizeForSearch($phrase);
+
+        if ($needle === '') {
+            return 1;
+        }
+
+        foreach ($this->pages($content) as $index => $blocks) {
+            $pageText = implode(' ', array_column($blocks, 'text'));
+
+            if (str_contains($this->normalizeForSearch($pageText), $needle)) {
+                return $index + 1;
+            }
+        }
+
+        return 1;
+    }
+
     private function blocks(string $content): array
     {
         $rawBlocks = preg_split('/\R{2,}/u', trim($content), -1, PREG_SPLIT_NO_EMPTY) ?: [];
@@ -110,5 +129,13 @@ class ReaderTextFormatter
     private function wordCount(string $text): int
     {
         return count(preg_split('/\s+/u', trim($text), -1, PREG_SPLIT_NO_EMPTY) ?: []);
+    }
+
+    private function normalizeForSearch(string $text): string
+    {
+        $text = mb_strtolower($text);
+        $text = preg_replace('/[^\p{L}\p{N}\s]+/u', ' ', $text) ?? '';
+
+        return trim(preg_replace('/\s+/u', ' ', $text) ?? '');
     }
 }

@@ -3,11 +3,49 @@
 namespace App\Http\Controllers;
 
 use App\Models\Book;
+use App\Models\DictionaryEntry;
+use App\Services\ReaderTextFormatter;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\View\View;
 
 class VocabularyController extends Controller
 {
+    public function index(Request $request, ReaderTextFormatter $formatter): View
+    {
+        $search = trim((string) $request->query('q'));
+        $bookId = $request->integer('book');
+
+        $entries = $request->user()->dictionaryEntries()
+            ->with('book:id,title,content')
+            ->when($search !== '', fn ($query) => $query->where(function ($query) use ($search): void {
+                $query->where('original_text', 'like', "%{$search}%")
+                    ->orWhere('translated_text', 'like', "%{$search}%");
+            }))
+            ->when($bookId > 0, fn ($query) => $query->where('book_id', $bookId))
+            ->latest('updated_at')
+            ->paginate(24)
+            ->withQueryString();
+
+        $entries->getCollection()->each(function (DictionaryEntry $entry) use ($formatter): void {
+            $entry->setAttribute(
+                'reader_page',
+                $entry->book ? $formatter->pageContaining($entry->book->content, $entry->original_text) : 1,
+            );
+        });
+
+        return view('vocabulary.index', [
+            'entries' => $entries,
+            'books' => $request->user()->books()
+                ->whereHas('dictionaryEntries', fn ($query) => $query->where('user_id', $request->user()->id))
+                ->orderBy('title')
+                ->get(['id', 'title']),
+            'search' => $search,
+            'selectedBook' => $bookId,
+        ]);
+    }
+
     public function store(Request $request, Book $book): JsonResponse
     {
         abort_unless($book->owner_id === $request->user()->id || $book->isPublic(), 403);
@@ -38,5 +76,14 @@ class VocabularyController extends Controller
                 'translated_text' => $entry->translated_text,
             ],
         ]);
+    }
+
+    public function destroy(Request $request, DictionaryEntry $entry): RedirectResponse
+    {
+        abort_unless($entry->user_id === $request->user()->id, 403);
+
+        $entry->delete();
+
+        return back()->with('status', 'Vocabulary item removed.');
     }
 }

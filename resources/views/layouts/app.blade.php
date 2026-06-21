@@ -26,7 +26,7 @@
             <nav class="app-nav">
                 <a class="@if(request()->routeIs('dashboard')) is-active @endif" href="{{ route('dashboard') }}"><span>⌂</span><span>Home</span></a>
                 <a class="@if(request()->routeIs('library.*')) is-active @endif" href="{{ route('library.index') }}"><span>▤</span><span>My library</span></a>
-                <a href="#"><span>Aa</span><span>Vocabulary</span><small>0</small></a>
+                <a class="@if(request()->routeIs('vocabulary.*')) is-active @endif" href="{{ route('vocabulary.index') }}"><span>Aa</span><span>Vocabulary</span><small>{{ auth()->user()->dictionaryEntries()->count() }}</small></a>
                 <a href="#"><span>◉</span><span>Speaking</span></a>
                 <a href="#"><span>↗</span><span>Progress</span></a>
             </nav>

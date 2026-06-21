@@ -193,6 +193,8 @@ if (readerPage && readingText && wordCard) {
     let activeTokens = [];
     let selectionAnchor = null;
     let suppressNextClick = false;
+    let isProgrammaticScroll = false;
+    let programmaticScrollTimer = null;
     const fontSelect = document.querySelector('[data-reader-font]');
     const fontAliases = {
         literata: 'kindle',
@@ -275,17 +277,44 @@ if (readerPage && readingText && wordCard) {
         wordCard.style.left = `${left}px`;
         wordCard.style.top = `${top}px`;
         wordCard.style.setProperty('--word-card-arrow-left', `${arrowLeft}px`);
+
+        const positionedCard = wordCard.getBoundingClientRect();
+        const overlapsSelection = !(
+            positionedCard.bottom <= selectionRect.top - gap
+            || positionedCard.top >= selectionRect.bottom + gap
+            || positionedCard.right <= selectionRect.left
+            || positionedCard.left >= selectionRect.right
+        );
+
+        if (overlapsSelection) {
+            const useAbove = availableAbove >= availableBelow;
+            const safeTop = useAbove
+                ? Math.max(headerEdge, selectionRect.top - positionedCard.height - gap)
+                : Math.min(footerEdge - positionedCard.height, selectionRect.bottom + gap);
+
+            wordCard.classList.toggle('is-above', useAbove);
+            wordCard.style.top = `${safeTop}px`;
+        }
     };
 
     const allTokens = [...readingText.querySelectorAll('.reader-token')];
 
+    const normalizeReaderWord = (word) => word
+        .toLocaleLowerCase()
+        .replace(/[^\p{L}\p{N}'’-]+/gu, '')
+        .trim();
+
     const findPhraseTokens = (phrase) => {
-        const words = phrase.trim().toLocaleLowerCase().split(/\s+/u);
+        const words = phrase
+            .trim()
+            .split(/\s+/u)
+            .map(normalizeReaderWord)
+            .filter(Boolean);
         if (!words.length) return [];
 
         for (let index = 0; index <= allTokens.length - words.length; index += 1) {
             const matches = words.every((word, offset) => (
-                allTokens[index + offset].dataset.readerWord.toLocaleLowerCase() === word
+                normalizeReaderWord(allTokens[index + offset].dataset.readerWord) === word
             ));
             if (matches) return allTokens.slice(index, index + words.length);
         }
@@ -364,6 +393,90 @@ if (readerPage && readingText && wordCard) {
                 if (activeTokens[0] === selectedTokens[0]) wordCard.classList.remove('is-loading');
             });
     };
+
+    const finishProgrammaticScroll = () => {
+        window.clearTimeout(programmaticScrollTimer);
+        programmaticScrollTimer = window.setTimeout(() => {
+            isProgrammaticScroll = false;
+        }, 700);
+    };
+
+    const waitForWindowLoad = () => new Promise((resolve) => {
+        if (document.readyState === 'complete') {
+            resolve();
+            return;
+        }
+
+        window.addEventListener('load', resolve, { once: true });
+    });
+
+    const waitForImages = async () => {
+        const pendingImages = [...document.images]
+            .filter((image) => !image.complete)
+            .map((image) => new Promise((resolve) => {
+                image.addEventListener('load', resolve, { once: true });
+                image.addEventListener('error', resolve, { once: true });
+            }));
+
+        await Promise.all(pendingImages);
+    };
+
+    const waitForStableRect = (element, stableFrames = 5) => new Promise((resolve) => {
+        let previous = null;
+        let stable = 0;
+
+        const check = () => {
+            const rect = element.getBoundingClientRect();
+            const current = [rect.top, rect.left, rect.width, rect.height].map((value) => Math.round(value * 10) / 10);
+
+            if (previous && current.every((value, index) => value === previous[index])) {
+                stable += 1;
+            } else {
+                stable = 0;
+            }
+
+            previous = current;
+
+            if (stable >= stableFrames) {
+                resolve();
+                return;
+            }
+
+            requestAnimationFrame(check);
+        };
+
+        requestAnimationFrame(check);
+    });
+
+    const focusPhrase = readerPage.dataset.focusPhrase?.trim();
+    if (focusPhrase) {
+        const focusedTokens = findPhraseTokens(focusPhrase);
+        if (focusedTokens.length) {
+            selectionAnchor = focusedTokens[0];
+            isProgrammaticScroll = true;
+            focusedTokens.forEach((token) => token.classList.add('is-selected'));
+
+            const revealFocusedPhrase = async () => {
+                await waitForWindowLoad();
+                if (document.fonts?.ready) {
+                    await document.fonts.ready;
+                }
+                await waitForImages();
+                await waitForStableRect(readingText);
+
+                focusedTokens[0].scrollIntoView({ block: 'center', behavior: 'auto' });
+                finishProgrammaticScroll();
+                await waitForStableRect(focusedTokens[0]);
+                await new Promise((resolve) => window.setTimeout(resolve, 250));
+
+                openTranslation(focusedTokens);
+                positionWordCard();
+                finishProgrammaticScroll();
+            };
+
+            revealFocusedPhrase();
+        }
+    }
 
     readingText.addEventListener('click', (event) => {
         const token = event.target.closest('.reader-token');
@@ -444,6 +557,11 @@ if (readerPage && readingText && wordCard) {
     });
     window.addEventListener('resize', positionWordCard);
     window.addEventListener('scroll', () => {
+        if (isProgrammaticScroll) {
+            finishProgrammaticScroll();
+            return;
+        }
+
         if (!wordCard.hidden) closeWordCard();
     }, { passive: true });
     document.addEventListener('keydown', (event) => {

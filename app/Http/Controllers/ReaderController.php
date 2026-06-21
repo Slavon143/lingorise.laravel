@@ -49,6 +49,7 @@ class ReaderController extends Controller
             'nativeLanguage' => $request->user()->languagePreference?->native_locale ?? 'de',
             'readingTime' => max(1, (int) ceil($pageWordCount / 200)),
             'pageTitle' => Str::limit($book->title, 55),
+            'focusPhrase' => trim((string) $request->query('focus')),
             'savedEntries' => $request->user()->dictionaryEntries()
                 ->where('book_id', $book->id)
                 ->latest('updated_at')
