@@ -39,33 +39,41 @@
     @else
         <section class="vocabulary-grid">
             @foreach($entries as $entry)
-                <article class="vocabulary-card">
+                @php($isPhrase = str_contains(trim($entry->original_text), ' '))
+                <article class="vocabulary-card {{ $isPhrase ? 'is-phrase' : 'is-word' }}">
                     <div class="vocabulary-card-top">
-                        <span>{{ $entry->book?->title ?: 'Personal vocabulary' }}</span>
+                        <span class="vocabulary-book-name">{{ $entry->book?->title ?: 'Personal vocabulary' }}</span>
                         <form method="POST" action="{{ route('vocabulary.destroy', $entry) }}" onsubmit="return confirm('Remove this vocabulary item?')">
                             @csrf
                             @method('DELETE')
-                            <button type="submit" aria-label="Remove {{ $entry->original_text }}">×</button>
+                            <button type="submit" aria-label="Remove {{ $entry->original_text }}">
+                                <svg viewBox="0 0 20 20" aria-hidden="true">
+                                    <path d="M6 6l8 8M14 6l-8 8"></path>
+                                </svg>
+                            </button>
                         </form>
                     </div>
                     <div class="vocabulary-card-section">
-                        <span>{{ str_contains(trim($entry->original_text), ' ') ? 'Phrase' : 'Word' }}</span>
+                        <span class="vocabulary-type"><i>{{ $isPhrase ? 'P' : 'W' }}</i>{{ $isPhrase ? 'Phrase' : 'Word' }}</span>
                         <h2>{{ $entry->original_text }}</h2>
                     </div>
                     <div class="vocabulary-card-section vocabulary-card-translation">
-                        <span>Translation</span>
+                        <span><i>→</i> Translation</span>
                         <strong>{{ $entry->translated_text }}</strong>
                     </div>
                     @if($entry->context)
                         <div class="vocabulary-card-context">
-                            <span>From the book</span>
+                            <span><i>“</i> From the book</span>
                             <p>“{{ \Illuminate\Support\Str::limit($entry->context, 170) }}”</p>
                         </div>
                     @endif
                     <footer>
                         <small>{{ $entry->updated_at->diffForHumans() }}</small>
                         @if($entry->book)
-                            <a href="{{ route('reader.show', ['book' => $entry->book, 'page' => $entry->reader_page, 'focus' => $entry->original_text]) }}">Open on page {{ $entry->reader_page }} →</a>
+                            <a href="{{ route('reader.show', ['book' => $entry->book, 'page' => $entry->reader_page, 'focus' => $entry->original_text]) }}">
+                                <span>Open on page {{ $entry->reader_page }}</span>
+                                <i>→</i>
+                            </a>
                         @endif
                     </footer>
                 </article>

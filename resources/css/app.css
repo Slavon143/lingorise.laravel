@@ -2150,23 +2150,53 @@ h1 em::after {
 .vocabulary-toolbar select { max-width: 260px; height: 44px; padding: 0 34px 0 12px; color: var(--ink); background: white; border: 1px solid #d9d9d4; border-radius: 11px; font-size: 12px; }
 .vocabulary-toolbar button { height: 44px; padding: 0 20px; color: var(--ink); background: var(--lime); border: 0; border-radius: 11px; font-size: 12px; font-weight: 850; cursor: pointer; }
 .vocabulary-toolbar > a { padding: 10px; color: var(--blue); font-size: 11px; font-weight: 750; }
-.vocabulary-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
-.vocabulary-card { min-width: 0; min-height: 235px; padding: 20px; display: flex; flex-direction: column; background: var(--paper); border: 1px solid var(--line); border-radius: 17px; box-shadow: 0 10px 28px rgba(30,40,73,.06); }
+.vocabulary-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+.vocabulary-card {
+    position: relative;
+    min-width: 0;
+    min-height: 285px;
+    padding: 21px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background:
+        radial-gradient(circle at 100% 0, rgba(70,102,255,.11), transparent 34%),
+        var(--paper);
+    border: 1px solid rgba(17,27,61,.09);
+    border-radius: 21px;
+    box-shadow: 0 16px 38px rgba(30,40,73,.08);
+    transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease;
+}
+.vocabulary-card::before { content: ""; position: absolute; top: 0; left: 22px; right: 22px; height: 3px; background: var(--blue); border-radius: 0 0 4px 4px; }
+.vocabulary-card.is-phrase { background: radial-gradient(circle at 100% 0, rgba(201,243,107,.22), transparent 36%), var(--paper); }
+.vocabulary-card.is-phrase::before { background: #91bd35; }
+.vocabulary-card:hover { transform: translateY(-4px); border-color: rgba(70,102,255,.25); box-shadow: 0 22px 52px rgba(30,40,73,.13); }
 .vocabulary-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
-.vocabulary-card-top > span { overflow: hidden; color: var(--blue); font-size: 9px; font-weight: 800; letter-spacing: .07em; text-overflow: ellipsis; text-transform: uppercase; white-space: nowrap; }
-.vocabulary-card-top button { width: 28px; height: 28px; padding: 0; display: grid; place-items: center; color: #8b91a0; background: #f1f0eb; border: 0; border-radius: 8px; font-size: 18px; line-height: 1; cursor: pointer; }
-.vocabulary-card-section { margin-top: 17px; }
+.vocabulary-book-name { max-width: calc(100% - 42px); overflow: hidden; color: #737b8d; font-size: 9px; font-weight: 800; letter-spacing: .08em; text-overflow: ellipsis; text-transform: uppercase; white-space: nowrap; }
+.vocabulary-card-top button { width: 30px; height: 30px; padding: 0; display: grid; place-items: center; color: #9298a5; background: rgba(255,255,255,.72); border: 1px solid rgba(17,27,61,.07); border-radius: 9px; cursor: pointer; transition: color .2s ease, background .2s ease; }
+.vocabulary-card-top button:hover { color: #d45d5d; background: #fff0ee; }
+.vocabulary-card-top button svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; }
+.vocabulary-card-section { margin-top: 18px; }
 .vocabulary-card-section > span,
 .vocabulary-card-context > span { display: block; color: #858b99; font-size: 9px; font-weight: 850; letter-spacing: .09em; text-transform: uppercase; }
-.vocabulary-card h2 { margin: 6px 0 0; overflow-wrap: anywhere; font-family: "Literata", Georgia, serif; font-size: 22px; font-weight: 600; line-height: 1.2; }
-.vocabulary-card-translation { padding-top: 13px; border-top: 1px solid #ebeae5; }
+.vocabulary-type { display: flex !important; align-items: center; gap: 7px; color: var(--blue) !important; }
+.vocabulary-type i { width: 21px; height: 21px; display: grid; place-items: center; color: white; background: var(--blue); border-radius: 6px; font-size: 9px; font-style: normal; }
+.is-phrase .vocabulary-type { color: #6c8e27 !important; }
+.is-phrase .vocabulary-type i { color: var(--ink); background: var(--lime); }
+.vocabulary-card h2 { margin: 9px 0 0; overflow-wrap: anywhere; font-family: "Literata", Georgia, serif; font-size: 24px; font-weight: 600; line-height: 1.18; letter-spacing: -.025em; }
+.vocabulary-card-translation { padding: 14px 15px; background: rgba(70,102,255,.07); border: 1px solid rgba(70,102,255,.09); border-radius: 12px; }
+.is-phrase .vocabulary-card-translation { background: rgba(201,243,107,.13); border-color: rgba(113,148,41,.12); }
 .vocabulary-card-translation > span { color: var(--blue); }
-.vocabulary-card-translation > strong { margin-top: 6px; display: block; overflow-wrap: anywhere; color: #3e4862; font-size: 14px; line-height: 1.45; }
-.vocabulary-card-context { margin: 16px 0; padding: 11px 12px; color: #747b8b; background: #f4f3ee; border-radius: 10px; }
-.vocabulary-card-context p { margin: 6px 0 0; font-family: "Literata", Georgia, serif; font-size: 11px; line-height: 1.55; }
-.vocabulary-card footer { margin-top: auto; padding-top: 14px; display: flex; align-items: center; justify-content: space-between; gap: 10px; border-top: 1px solid #ebeae5; }
+.vocabulary-card-translation > span i { margin-right: 4px; font-style: normal; }
+.vocabulary-card-translation > strong { margin-top: 7px; display: block; overflow-wrap: anywhere; color: #303a55; font-size: 15px; line-height: 1.45; }
+.vocabulary-card-context { margin: 14px 0; padding: 12px 13px; color: #747b8b; background: rgba(241,240,235,.72); border-left: 2px solid #c7cad2; border-radius: 3px 11px 11px 3px; }
+.vocabulary-card-context > span i { margin-right: 4px; color: var(--blue); font-family: Georgia, serif; font-size: 16px; font-style: normal; }
+.vocabulary-card-context p { margin: 6px 0 0; font-family: "Literata", Georgia, serif; font-size: 11px; line-height: 1.6; }
+.vocabulary-card footer { margin-top: auto; padding-top: 15px; display: flex; align-items: center; justify-content: space-between; gap: 10px; border-top: 1px solid rgba(17,27,61,.08); }
 .vocabulary-card footer small { color: #999eaa; font-size: 9px; }
-.vocabulary-card footer a { color: var(--blue); font-size: 10px; font-weight: 800; }
+.vocabulary-card footer a { min-height: 34px; padding: 0 5px 0 12px; display: inline-flex; align-items: center; gap: 8px; color: var(--blue); background: white; border: 1px solid rgba(70,102,255,.14); border-radius: 999px; font-size: 10px; font-weight: 800; }
+.vocabulary-card footer a i { width: 24px; height: 24px; display: grid; place-items: center; color: white; background: var(--blue); border-radius: 50%; font-size: 12px; font-style: normal; }
+.vocabulary-card footer a:hover { border-color: var(--blue); }
 .vocabulary-empty { min-height: 460px; padding: 50px 25px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; background: var(--paper); border: 1px dashed #c8c7c1; border-radius: 22px; }
 .vocabulary-empty > span { width: 68px; height: 68px; display: grid; place-items: center; color: var(--blue); background: #e8ecff; border-radius: 19px; font-size: 21px; font-weight: 850; }
 .vocabulary-empty h2 { margin: 22px 0 8px; font-family: Georgia, serif; font-size: 32px; font-weight: 500; }
