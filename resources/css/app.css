@@ -2424,20 +2424,69 @@ h1 em::after {
 .reader-pagination > div span, .reader-pagination > div small { color: var(--muted); font-size: 10px; }
 .reader-pagination > div > div { height: 5px; overflow: hidden; background: #dfded8; border-radius: 4px; }
 .reader-pagination > div > div i { display: block; height: 100%; background: var(--blue); }
-.word-card { position: fixed; z-index: 40; width: 285px; padding: 17px; background: white; border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 22px 55px rgba(17,27,61,.22); }
+.word-card {
+    --word-card-arrow-left: 42px;
+    position: fixed;
+    z-index: 40;
+    width: min(340px, calc(100vw - 24px));
+    padding: 20px;
+    color: var(--ink);
+    background: #fffefa;
+    border: 1px solid #d9d7cf;
+    border-radius: 16px;
+    box-shadow: 0 24px 65px rgba(17,27,61,.24);
+}
 .word-card[hidden] { display: none; }
-.word-card-arrow { position: absolute; top: -7px; left: 45px; width: 13px; height: 13px; background: white; border-left: 1px solid var(--line); border-top: 1px solid var(--line); transform: rotate(45deg); }
+.word-card-arrow {
+    position: absolute;
+    top: -7px;
+    left: var(--word-card-arrow-left);
+    width: 13px;
+    height: 13px;
+    background: #fffefa;
+    border-left: 1px solid #d9d7cf;
+    border-top: 1px solid #d9d7cf;
+    transform: rotate(45deg);
+}
+.word-card.is-above .word-card-arrow {
+    top: auto;
+    bottom: -7px;
+    border: 0;
+    border-right: 1px solid #d9d7cf;
+    border-bottom: 1px solid #d9d7cf;
+}
 .word-card-head { display: flex; align-items: flex-start; justify-content: space-between; }
-.word-card-head strong, .word-card-head small { display: block; }
-.word-card-head strong { font-family: Georgia, serif; font-size: 19px; }
-.word-card-head small { margin-top: 3px; color: var(--blue); font-size: 9px; text-transform: uppercase; }
-.word-card-head button { color: #9399a7; background: none; border: 0; font-size: 20px; }
-.word-card label { margin-top: 14px; display: grid; gap: 6px; }
-.word-card label span { font-size: 10px; font-weight: 750; }
-.word-card input { width: 100%; height: 40px; padding: 0 11px; border: 1px solid #d9dad6; border-radius: 9px; outline: none; font-size: 12px; }
-.word-card > p { margin: 12px 0; padding: 10px; color: #697184; background: #f5f4ef; border-radius: 9px; font-family: Georgia, serif; font-size: 11px; line-height: 1.45; }
-.word-card > button:not(.word-card-head button) { width: 100%; min-height: 40px; color: var(--ink); background: var(--lime); border: 0; border-radius: 9px; font-size: 11px; font-weight: 800; }
-.word-card-status { display: block; min-height: 15px; margin-top: 7px; color: #5f7d2c; text-align: center; font-size: 9px; }
+.word-card-title > span,
+.word-card-translation > span,
+.word-card-context > span {
+    display: block;
+    color: #818796;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+}
+.word-card-title strong { display: block; margin-top: 4px; font-family: "Literata", Georgia, serif; font-size: 25px; font-weight: 600; line-height: 1.15; }
+.word-card-head-actions { display: flex; align-items: center; gap: 5px; }
+.word-card-head-actions button { width: 34px; height: 34px; display: grid; place-items: center; color: #717889; background: #f2f1ec; border: 0; border-radius: 9px; cursor: pointer; }
+.word-card-head-actions button:hover { color: var(--blue); background: #e9edff; }
+.word-card-head-actions svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.65; stroke-linecap: round; stroke-linejoin: round; }
+.word-card-head-actions .word-card-close { font-size: 22px; line-height: 1; }
+.word-card-translation { margin-top: 18px; display: grid; gap: 7px; }
+.word-card input { width: 100%; height: 46px; padding: 0 13px; color: var(--ink); background: white; border: 1px solid #d7d7d2; border-radius: 10px; outline: none; font-size: 14px; }
+.word-card input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(70,102,255,.12); }
+.word-card-context { margin: 14px 0; padding: 12px 13px; background: #f3f2ed; border-radius: 10px; }
+.word-card-context p { margin: 6px 0 0; color: #5f6677; font-family: "Literata", Georgia, serif; font-size: 12px; line-height: 1.55; }
+.word-card-save { width: 100%; min-height: 44px; color: var(--ink); background: var(--lime); border: 0; border-radius: 10px; font-size: 12px; font-weight: 850; cursor: pointer; }
+.word-card-save:hover { background: #d4f98a; }
+.word-card-save:disabled { cursor: wait; opacity: .65; }
+.word-card-status { display: block; min-height: 16px; margin-top: 8px; color: #5f7d2c; text-align: center; font-size: 10px; }
+.reader-page.is-dark .word-card { color: #eef0f6; background: #202a49; border-color: #394360; }
+.reader-page.is-dark .word-card-arrow { background: #202a49; border-color: #394360; }
+.reader-page.is-dark .word-card-head-actions button,
+.reader-page.is-dark .word-card-context { background: #17203b; }
+.reader-page.is-dark .word-card input { color: white; background: #17203b; border-color: #46506b; }
+.reader-page.is-dark .word-card-context p { color: #c7cbd5; }
 
 @media (max-width: 1100px) {
     .desktop-nav { display: none; }
@@ -2671,7 +2720,7 @@ h1 em::after {
     .reading-text { font-size: 18px; line-height: 1.9; }
     .reader-pagination { padding-inline: 14px; grid-template-columns: auto 1fr auto; gap: 12px; }
     .reader-pagination > div span, .reader-pagination > div small { display: none; }
-    .word-card { width: min(285px, calc(100vw - 24px)); }
+    .word-card { width: min(340px, calc(100vw - 24px)); }
     .reader-mini-cover-image { object-position: center top; }
     .continue-body { grid-template-columns: 105px 1fr; gap: 14px; }
     .continue-cover { min-height: 155px; }

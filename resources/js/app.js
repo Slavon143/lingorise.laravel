@@ -180,6 +180,8 @@ if (readerPage && readingText && wordCard) {
     const contextNode = wordCard.querySelector('[data-word-context]');
     const statusNode = wordCard.querySelector('[data-word-status]');
     const saveButton = wordCard.querySelector('[data-save-word]');
+    const speakButton = wordCard.querySelector('[data-speak-word]');
+    const nativeLabel = wordCard.querySelector('[data-native-label]');
     let activeToken = null;
     const fontSelect = document.querySelector('[data-reader-font]');
     const fontAliases = {
@@ -192,6 +194,7 @@ if (readerPage && readingText && wordCard) {
     const savedFont = fontAliases[storedFont] ?? storedFont;
 
     readingText.dataset.font = savedFont;
+    if (nativeLabel) nativeLabel.textContent = `${readerPage.dataset.nativeLanguage || 'Native language'} translation`;
 
     if (fontSelect) {
         fontSelect.value = savedFont;
@@ -206,6 +209,32 @@ if (readerPage && readingText && wordCard) {
         wordCard.hidden = true;
         activeToken?.classList.remove('is-selected');
         activeToken = null;
+    };
+
+    const positionWordCard = () => {
+        if (!activeToken || wordCard.hidden) return;
+
+        const rect = activeToken.getBoundingClientRect();
+        const viewportPadding = 12;
+        const gap = 13;
+        const cardWidth = wordCard.offsetWidth;
+        const cardHeight = wordCard.offsetHeight;
+        const tokenCenter = rect.left + (rect.width / 2);
+        const left = Math.min(
+            window.innerWidth - cardWidth - viewportPadding,
+            Math.max(viewportPadding, tokenCenter - (cardWidth / 2)),
+        );
+        const roomBelow = window.innerHeight - rect.bottom;
+        const placeAbove = roomBelow < cardHeight + gap && rect.top > cardHeight + gap;
+        const top = placeAbove
+            ? Math.max(viewportPadding, rect.top - cardHeight - gap)
+            : Math.min(window.innerHeight - cardHeight - viewportPadding, rect.bottom + gap);
+        const arrowLeft = Math.min(cardWidth - 25, Math.max(18, tokenCenter - left - 7));
+
+        wordCard.classList.toggle('is-above', placeAbove);
+        wordCard.style.left = `${left}px`;
+        wordCard.style.top = `${Math.max(viewportPadding, top)}px`;
+        wordCard.style.setProperty('--word-card-arrow-left', `${arrowLeft}px`);
     };
 
     readingText.addEventListener('click', (event) => {
@@ -225,21 +254,34 @@ if (readerPage && readingText && wordCard) {
             .slice(Math.max(0, index - 6), Math.min(tokens.length, index + 7))
             .map((item) => item.textContent)
             .join(' ');
-        const rect = token.getBoundingClientRect();
-        const cardWidth = 285;
-        const left = Math.min(window.innerWidth - cardWidth - 12, Math.max(12, rect.left - 42));
-
         selectedWord.textContent = token.dataset.readerWord;
         contextNode.textContent = context;
         translationInput.value = '';
         statusNode.textContent = '';
-        wordCard.style.left = `${left}px`;
-        wordCard.style.top = `${Math.min(window.innerHeight - 300, rect.bottom + 13)}px`;
         wordCard.hidden = false;
+        positionWordCard();
         translationInput.focus();
     });
 
     wordCard.querySelector('[data-close-word-card]')?.addEventListener('click', closeWordCard);
+    speakButton?.addEventListener('click', () => {
+        if (!activeToken || !('speechSynthesis' in window)) return;
+
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(activeToken.dataset.readerWord);
+        utterance.lang = document.documentElement.lang || 'en';
+        window.speechSynthesis.speak(utterance);
+    });
+    window.addEventListener('resize', positionWordCard);
+    window.addEventListener('scroll', positionWordCard, { passive: true });
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && !wordCard.hidden) closeWordCard();
+    });
+    document.addEventListener('pointerdown', (event) => {
+        if (!wordCard.hidden && !wordCard.contains(event.target) && !event.target.closest('.reader-token')) {
+            closeWordCard();
+        }
+    });
 
     saveButton?.addEventListener('click', async () => {
         const translation = translationInput.value.trim();

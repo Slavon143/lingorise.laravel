@@ -125,17 +125,33 @@
     </footer>
 
     <div class="word-card" data-word-card hidden>
-        <span class="word-card-arrow"></span>
+        <span class="word-card-arrow" aria-hidden="true"></span>
         <div class="word-card-head">
-            <div><strong data-selected-word></strong><small data-native-label>Translation</small></div>
-            <button type="button" data-close-word-card>×</button>
+            <div class="word-card-title">
+                <span>Selected word</span>
+                <strong data-selected-word></strong>
+            </div>
+            <div class="word-card-head-actions">
+                <button class="word-card-speak" type="button" data-speak-word aria-label="Hear pronunciation" title="Hear pronunciation">
+                    <svg viewBox="0 0 20 20" aria-hidden="true">
+                        <path d="M3 8h3l4-3.5v11L6 12H3V8Z"></path>
+                        <path d="M13 7.2c1.5 1.5 1.5 4.1 0 5.6M15.2 5c2.8 2.8 2.8 7.2 0 10"></path>
+                    </svg>
+                </button>
+                <button class="word-card-close" type="button" data-close-word-card aria-label="Close translation">×</button>
+            </div>
         </div>
-        <label>
-            <span>Translation</span>
+        <label class="word-card-translation">
+            <span data-native-label>Translation</span>
             <input type="text" data-word-translation placeholder="Type the translation">
         </label>
-        <p data-word-context></p>
-        <button type="button" data-save-word>＋ Add to vocabulary</button>
+        <div class="word-card-context">
+            <span>In this sentence</span>
+            <p data-word-context></p>
+        </div>
+        <button class="word-card-save" type="button" data-save-word>
+            <span>＋</span> Add to vocabulary
+        </button>
         <small class="word-card-status" data-word-status></small>
     </div>
 </body>
