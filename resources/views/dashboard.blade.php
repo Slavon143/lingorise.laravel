@@ -10,13 +10,6 @@
 <body class="app-page">
     <div class="app-shell">
         <aside class="app-sidebar">
-            <button class="sidebar-collapse-button" type="button" data-sidebar-collapse aria-label="Collapse sidebar" title="Collapse sidebar">
-                <svg viewBox="0 0 20 20" aria-hidden="true">
-                    <rect x="2.5" y="3" width="15" height="14" rx="2"></rect>
-                    <path d="M7 3v14M12.5 7.25 10 10l2.5 2.75"></path>
-                </svg>
-                <span>Collapse</span>
-            </button>
             <a class="brand app-brand" href="{{ route('dashboard') }}">
                 <span class="brand-mark" aria-hidden="true">
                     <svg viewBox="0 0 32 32" fill="none">
@@ -27,6 +20,13 @@
                 </span>
                 <span>Lingo<span>Rise</span></span>
             </a>
+            <button class="sidebar-collapse-button" type="button" data-sidebar-collapse aria-label="Collapse sidebar" title="Collapse sidebar">
+                <svg viewBox="0 0 20 20" aria-hidden="true">
+                    <rect x="2.5" y="3" width="15" height="14" rx="2"></rect>
+                    <path d="M7 3v14M12.5 7.25 10 10l2.5 2.75"></path>
+                </svg>
+                <span>Collapse</span>
+            </button>
 
             <nav class="app-nav" aria-label="Dashboard navigation">
                 <a class="is-active" href="{{ route('dashboard') }}">
@@ -182,54 +182,80 @@
                 @endunless
 
                 <section class="dashboard-grid">
-                    <article class="continue-card">
-                        <div class="card-heading">
-                            <div><span>Continue reading</span><h2>The Secret Garden</h2></div>
-                            <span class="level-pill level-easy">A2</span>
-                        </div>
-                        <div class="continue-body">
-                            <div class="continue-cover">
-                                <div class="cover-art flower-art"><i></i><i></i><i></i><i></i><i></i></div>
-                                <small>Frances Hodgson Burnett</small>
-                                <strong>The Secret<br>Garden</strong>
+                    @if($continueBook)
+                        <article class="continue-card">
+                            <div class="card-heading">
+                                <div><span>Continue reading</span><h2>{{ $continueBook->title }}</h2></div>
+                                <span class="level-pill level-easy">{{ $continueBook->level }}</span>
                             </div>
-                            <div class="continue-details">
-                                <p>“When Mary Lennox was sent to Misselthwaite Manor…”</p>
-                                <div class="reading-progress">
-                                    <div><span>Reading progress</span><strong>12%</strong></div>
-                                    <div class="dashboard-progress"><i></i></div>
-                                    <small>Page 8 of 64 · 18 min left</small>
+                            <div class="continue-body">
+                                <div class="continue-cover @if(!$continueBook->cover_path) cover-tone-{{ ($continueBook->id % 3) + 1 }} @endif">
+                                    @if($continueBook->cover_path)
+                                        <img class="user-book-cover-image" src="{{ asset('storage/'.$continueBook->cover_path) }}" alt="Cover of {{ $continueBook->title }}">
+                                        <span style="position:relative;z-index:2;align-self:flex-start;">{{ strtoupper($continueBook->language_locale) }}</span>
+                                        <div style="position:relative;z-index:2;"><small>{{ $continueBook->author ?: 'Personal text' }}</small><strong style="display:block;font-family:Georgia,serif;font-size:21px;font-weight:500;line-height:1;">{{ $continueBook->title }}</strong></div>
+                                    @else
+                                        <div class="generated-book-cover" style="inset:8px;">
+                                            <div class="generated-cover-head">
+                                                <span>{{ strtoupper($continueBook->language_locale) }}</span>
+                                                <small>{{ $continueBook->level }}</small>
+                                            </div>
+                                            <div class="generated-cover-title">
+                                                <small>{{ $continueBook->author ?: 'Personal text' }}</small>
+                                                <strong>{{ $continueBook->title }}</strong>
+                                            </div>
+                                            <p>{{ \Illuminate\Support\Str::limit(strip_tags($continueBook->content), 180) }}</p>
+                                            <em>First page preview</em>
+                                        </div>
+                                    @endif
                                 </div>
-                                <a href="#">Continue reading <span>→</span></a>
+                                <div class="continue-details">
+                                    <p>“{{ \Illuminate\Support\Str::limit(strip_tags($continueBook->content), 120) }}”</p>
+                                    <div class="reading-progress">
+                                        <div><span>Reading progress</span><strong>{{ $continuePercentage }}%</strong></div>
+                                        <div class="dashboard-progress"><i style="width: {{ $continuePercentage }}%"></i></div>
+                                        <small>Page {{ $continuePage }} of {{ $continueTotalPages }} @if($continueReadingTime)· {{ $continueReadingTime }} min left @endif</small>
+                                    </div>
+                                    <a href="{{ route('reader.show', ['book' => $continueBook, 'page' => $continuePage]) }}">Continue reading <span>→</span></a>
+                                </div>
                             </div>
-                        </div>
-                    </article>
+                        </article>
+                    @else
+                        <article class="continue-card" style="grid-column: 1 / 3;">
+                            <div class="card-heading">
+                                <div><span>Continue reading</span><h2>Start your first book</h2></div>
+                            </div>
+                            <div class="continue-body" style="display:flex; align-items:center; justify-content:center; min-height:160px;">
+                                <p style="color:var(--muted); font-size:14px;">Add a book to your library to begin reading.</p>
+                            </div>
+                        </article>
+                    @endif
 
                     <article class="daily-goal-card">
-                        <div class="card-heading"><div><span>Daily goal</span><h2>Keep it light.</h2></div><button type="button">•••</button></div>
+                        <div class="card-heading"><div><span>Daily goal</span><h2>Keep it light.</h2></div></div>
                         <div class="goal-ring">
-                            <div><strong>4</strong><span>/ 10 min</span><small>today</small></div>
+                            <div><strong>{{ $dailyMinutes }}</strong><span>/ {{ $dailyGoal }} min</span><small>today</small></div>
                         </div>
-                        <p>Six more minutes will keep your streak alive.</p>
+                        <p>{{ $dailyMinutes >= $dailyGoal ? 'Great job! You hit your daily goal.' : ($dailyGoal - $dailyMinutes . ' more ' . Str::plural('minute', $dailyGoal - $dailyMinutes) . ' will keep your streak alive.') }}</p>
                     </article>
 
                     <article class="stat-card">
                         <span class="stat-icon stat-icon-blue">
                             <svg viewBox="0 0 22 22" fill="none"><path d="M5 5.5A2.5 2.5 0 0 1 7.5 3H18v14H7.5A2.5 2.5 0 0 0 5 19.5v-14Z" stroke="currentColor" stroke-width="1.6"/><path d="M8 7h6M8 10h4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
                         </span>
-                        <div><small>Words saved</small><strong>0</strong><span>Your vocabulary starts here</span></div>
+                        <div><small>Words saved</small><strong>{{ $recentEntries }}</strong><span>{{ $recentEntries > 0 ? 'Kept in your vocabulary' : 'Your vocabulary starts here' }}</span></div>
                     </article>
                     <article class="stat-card">
                         <span class="stat-icon stat-icon-green">
                             <svg viewBox="0 0 22 22" fill="none"><path d="M4 18V9m5 9V4m5 14v-6m5 6V7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
                         </span>
-                        <div><small>Words read</small><strong>326</strong><span>Across your current book</span></div>
+                        <div><small>Words read</small><strong>{{ number_format($totalWordsRead) }}</strong><span>{{ $continueBook ? 'Across your current book' : 'Start reading to track' }}</span></div>
                     </article>
                     <article class="stat-card">
                         <span class="stat-icon stat-icon-coral">
                             <svg viewBox="0 0 22 22" fill="none"><rect x="7" y="3" width="8" height="12" rx="4" stroke="currentColor" stroke-width="1.6"/><path d="M4.5 11.5c0 3.6 2.9 6.5 6.5 6.5s6.5-2.9 6.5-6.5M11 18v2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
                         </span>
-                        <div><small>Speaking</small><strong>0</strong><span>Practice your first phrase</span></div>
+                        <div><small>Speaking</small><strong>{{ $recentEntries > 0 ? $recentEntries : 0 }}</strong><span>{{ $recentEntries > 0 ? 'Words ready to practise' : 'Save words to practise speaking' }}</span></div>
                     </article>
                 </section>
 
@@ -255,7 +281,7 @@
                         <div class="card-heading"><div><span>Quick actions</span><h2>What next?</h2></div></div>
                         <div class="quick-actions">
                             <a href="{{ route('library.create') }}"><span>＋</span><div><strong>Upload a text</strong><small>TXT or EPUB</small></div></a>
-                            <a href="#"><span>Aa</span><div><strong>Review vocabulary</strong><small>0 words waiting</small></div></a>
+                            <a href="{{ route('vocabulary.index') }}"><span>Aa</span><div><strong>Review vocabulary</strong><small>{{ $recentEntries }} {{ Str::plural('word', $recentEntries) }} saved</small></div></a>
                             <a href="{{ route('speaking.index') }}"><span>◉</span><div><strong>Speaking practice</strong><small>Start with a phrase</small></div></a>
                         </div>
                     </article>

@@ -9,7 +9,7 @@
 </head>
 <body class="reader-page" data-vocabulary-url="{{ route('vocabulary.store', $book) }}" data-translation-url="{{ route('reader.translate', $book) }}" data-speech-url="{{ route('speech.create') }}" data-native-language="{{ $nativeLanguage }}" data-focus-phrase="{{ $focusPhrase }}">
     <header class="reader-app-header">
-        <a href="{{ route('library.index') }}" class="reader-back">← Library</a>
+        <a href="{{ route('library.index') }}" class="reader-back">Library</a>
         <div class="reader-book-name">
             <strong>{{ $book->title }}</strong>
             <span>{{ $book->author ?: 'Personal text' }}</span>
@@ -57,7 +57,7 @@
             <div class="reader-book-stats">
                 <div><span>Level</span><strong>{{ $book->level }}</strong></div>
                 <div><span>Page</span><strong>{{ $page }} / {{ $totalPages }}</strong></div>
-                <div><span>Reading time</span><strong>~{{ $readingTime }} min</strong></div>
+                <div><span>Time remaining</span><strong>~{{ $readingTime }} min</strong></div>
             </div>
             <div class="reader-tip">
                 <span>Tip</span>
@@ -124,7 +124,11 @@
         <div>
             <span>{{ $percentage }}%</span>
             <div><i style="width: {{ $percentage }}%"></i></div>
-            <small>Page {{ $page }} of {{ $totalPages }}</small>
+            <form class="page-jump" action="{{ route('reader.show', $book) }}" method="GET" onsubmit="return jumpToPage(this)">
+                <label for="jump-input" class="sr-only">Jump to page</label>
+                <input id="jump-input" type="number" min="1" max="{{ $totalPages }}" placeholder="{{ $page }}/{{ $totalPages }}" required>
+                <button type="submit">Go</button>
+            </form>
         </div>
         @if($page < $totalPages)
             <a href="{{ route('reader.show', ['book' => $book, 'page' => $page + 1]) }}">Next →</a>
@@ -168,5 +172,14 @@
         </button>
         <small class="word-card-status" data-word-status></small>
     </div>
+    <script>
+    function jumpToPage(form) {
+        const input = form.querySelector('#jump-input');
+        const page = parseInt(input.value, 10);
+        if (page < 1 || page > {{ $totalPages }}) return false;
+        window.location.href = form.action + '?page=' + page;
+        return false;
+    }
+    </script>
 </body>
 </html>
