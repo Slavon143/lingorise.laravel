@@ -54,20 +54,25 @@
                 <span>Page {{ $page }}</span>
                 <span>{{ $percentage }}% complete</span>
             </div>
-            <h1>{{ $book->title }}</h1>
             <div class="reading-text" data-reading-text>
                 @php($wordIndex = 0)
-                <p>
-                    @foreach($pageWords as $word)
-                        <button
-                            type="button"
-                            class="reader-token"
-                            data-reader-word="{{ trim($word, ".,!?;:()[]{}\"'“”‘’—–") }}"
-                            data-word-index="{{ $wordIndex }}"
-                        >{{ $word }}</button>
-                        @php($wordIndex++)
-                    @endforeach
-                </p>
+                @foreach($pageBlocks as $block)
+                    @if($block['type'] === 'heading')
+                        <h2 class="reading-section-title">{{ $block['text'] }}</h2>
+                    @else
+                        <p>
+                        @foreach(preg_split('/\s+/u', $block['text'], -1, PREG_SPLIT_NO_EMPTY) as $word)
+                            <button
+                                type="button"
+                                class="reader-token"
+                                data-reader-word="{{ trim($word, ".,!?;:()[]{}\"'“”‘’—–") }}"
+                                data-word-index="{{ $wordIndex }}"
+                            >{{ $word }}</button>
+                            @php($wordIndex++)
+                        @endforeach
+                        </p>
+                    @endif
+                @endforeach
             </div>
         </article>
 

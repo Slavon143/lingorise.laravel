@@ -28,7 +28,7 @@ class ReaderTest extends TestCase
             'user_id' => $user->id,
             'book_id' => $book->id,
             'current_page' => 2,
-            'words_read' => 700,
+            'words_read' => 540,
         ]);
     }
 
