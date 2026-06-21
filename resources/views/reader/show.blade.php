@@ -7,7 +7,7 @@
     <title>{{ $pageTitle }} · LingoRise Reader</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="reader-page" data-vocabulary-url="{{ route('vocabulary.store', $book) }}" data-translation-url="{{ route('reader.translate', $book) }}" data-native-language="{{ $nativeLanguage }}" data-focus-phrase="{{ $focusPhrase }}">
+<body class="reader-page" data-vocabulary-url="{{ route('vocabulary.store', $book) }}" data-translation-url="{{ route('reader.translate', $book) }}" data-speech-url="{{ route('speech.create') }}" data-native-language="{{ $nativeLanguage }}" data-focus-phrase="{{ $focusPhrase }}">
     <header class="reader-app-header">
         <a href="{{ route('library.index') }}" class="reader-back">← Library</a>
         <div class="reader-book-name">

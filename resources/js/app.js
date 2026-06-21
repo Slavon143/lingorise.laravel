@@ -1,3 +1,52 @@
+let activeNaturalAudio = null;
+
+const playBrowserVoice = (text, locale = 'en') => {
+    if (!('speechSynthesis' in window)) return;
+
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = locale;
+    utterance.rate = .88;
+    window.speechSynthesis.speak(utterance);
+};
+
+const playNaturalVoice = async (text, locale = 'en', button = null) => {
+    const speechUrl = document.body.dataset.speechUrl;
+
+    if (!speechUrl) {
+        playBrowserVoice(text, locale);
+        return;
+    }
+
+    button?.classList.add('is-loading');
+
+    try {
+        const response = await fetch(speechUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'audio/mpeg',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content ?? '',
+            },
+            body: JSON.stringify({ text, locale }),
+        });
+
+        if (!response.ok) throw new Error('Natural voice unavailable');
+
+        activeNaturalAudio?.pause();
+        if (activeNaturalAudio?.src?.startsWith('blob:')) URL.revokeObjectURL(activeNaturalAudio.src);
+
+        const audioUrl = URL.createObjectURL(await response.blob());
+        activeNaturalAudio = new Audio(audioUrl);
+        activeNaturalAudio.addEventListener('ended', () => URL.revokeObjectURL(audioUrl), { once: true });
+        await activeNaturalAudio.play();
+    } catch {
+        playBrowserVoice(text, locale);
+    } finally {
+        button?.classList.remove('is-loading');
+    }
+};
+
 const saveButton = document.querySelector('.save-word');
 
 saveButton?.addEventListener('click', () => {
@@ -548,12 +597,12 @@ if (readerPage && readingText && wordCard) {
 
     wordCard.querySelector('[data-close-word-card]')?.addEventListener('click', closeWordCard);
     speakButton?.addEventListener('click', () => {
-        if (!activeTokens.length || !('speechSynthesis' in window)) return;
-
-        window.speechSynthesis.cancel();
-        const utterance = new SpeechSynthesisUtterance(activeTokens.map((token) => token.dataset.readerWord).join(' '));
-        utterance.lang = document.documentElement.lang || 'en';
-        window.speechSynthesis.speak(utterance);
+        if (!activeTokens.length) return;
+        playNaturalVoice(
+            activeTokens.map((token) => token.dataset.readerWord).join(' '),
+            document.documentElement.lang || 'en',
+            speakButton,
+        );
     });
     window.addEventListener('resize', positionWordCard);
     window.addEventListener('scroll', () => {
@@ -682,5 +731,100 @@ if (readerPage && readingText && wordCard) {
         readerPage.classList.add('is-panels-hidden');
         readerPanelsButton?.setAttribute('aria-label', 'Show reading panels');
         if (readerPanelsLabel) readerPanelsLabel.textContent = 'Show panels';
+    }
+}
+
+const speakingPractice = document.querySelector('[data-speaking-practice]');
+
+if (speakingPractice) {
+    const phrase = speakingPractice.dataset.speakingText;
+    const locale = speakingPractice.dataset.speakingLocale || 'en';
+    const listenButton = speakingPractice.querySelector('[data-speaking-listen]');
+    const recordButton = speakingPractice.querySelector('[data-speaking-record]');
+    const recorder = speakingPractice.querySelector('.speaking-recorder');
+    const supportNode = speakingPractice.querySelector('[data-speaking-support]');
+    const resultNode = speakingPractice.querySelector('[data-speaking-result]');
+    const transcriptNode = speakingPractice.querySelector('[data-speaking-transcript]');
+    const scoreNode = speakingPractice.querySelector('[data-speaking-score]');
+    const feedbackNode = speakingPractice.querySelector('[data-speaking-feedback]');
+    const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    let recognition = null;
+    let recording = false;
+
+    const normalizeSpeech = (text) => text.toLocaleLowerCase()
+        .replace(/[^\p{L}\p{N}\s]/gu, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+
+    const similarity = (expected, heard) => {
+        const left = normalizeSpeech(expected);
+        const right = normalizeSpeech(heard);
+        const rows = Array.from({ length: left.length + 1 }, (_, index) => [index]);
+        for (let column = 0; column <= right.length; column += 1) rows[0][column] = column;
+
+        for (let row = 1; row <= left.length; row += 1) {
+            for (let column = 1; column <= right.length; column += 1) {
+                rows[row][column] = Math.min(
+                    rows[row - 1][column] + 1,
+                    rows[row][column - 1] + 1,
+                    rows[row - 1][column - 1] + (left[row - 1] === right[column - 1] ? 0 : 1),
+                );
+            }
+        }
+
+        return Math.max(0, Math.round((1 - rows[left.length][right.length] / Math.max(left.length, right.length, 1)) * 100));
+    };
+
+    listenButton?.addEventListener('click', () => {
+        playNaturalVoice(phrase, locale, listenButton);
+    });
+
+    if (!Recognition) {
+        recordButton.disabled = true;
+        supportNode.textContent = 'Speech recognition is not supported in this browser.';
+    } else {
+        recognition = new Recognition();
+        recognition.lang = locale;
+        recognition.interimResults = false;
+        recognition.maxAlternatives = 1;
+
+        recognition.addEventListener('result', (event) => {
+            const transcript = event.results[0][0].transcript;
+            const score = similarity(phrase, transcript);
+            transcriptNode.textContent = transcript;
+            scoreNode.textContent = score;
+            feedbackNode.textContent = score >= 85
+                ? 'Excellent — the phrase was recognised clearly.'
+                : score >= 60
+                    ? 'Good start. Listen once more and repeat slowly.'
+                    : 'Try again one part at a time.';
+            resultNode.hidden = false;
+        });
+
+        recognition.addEventListener('end', () => {
+            recording = false;
+            recorder.classList.remove('is-recording');
+            recordButton.querySelector('strong').textContent = 'Start recording';
+        });
+
+        recognition.addEventListener('error', (event) => {
+            supportNode.textContent = event.error === 'not-allowed'
+                ? 'Microphone access was not allowed.'
+                : 'I could not hear that. Please try again.';
+        });
+
+        recordButton?.addEventListener('click', () => {
+            if (recording) {
+                recognition.stop();
+                return;
+            }
+
+            resultNode.hidden = true;
+            recording = true;
+            recorder.classList.add('is-recording');
+            recordButton.querySelector('strong').textContent = 'Stop recording';
+            supportNode.textContent = 'Listening…';
+            recognition.start();
+        });
     }
 }

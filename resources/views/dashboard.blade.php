@@ -42,7 +42,7 @@
                     <span>Vocabulary</span>
                     <small>{{ auth()->user()->dictionaryEntries()->count() }}</small>
                 </a>
-                <a href="#">
+                <a href="{{ route('speaking.index') }}">
                     <svg viewBox="0 0 22 22" fill="none"><rect x="7" y="3" width="8" height="12" rx="4" stroke="currentColor" stroke-width="1.6"/><path d="M4.5 11.5c0 3.6 2.9 6.5 6.5 6.5s6.5-2.9 6.5-6.5M11 18v2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
                     <span>Speaking</span>
                 </a>
@@ -256,7 +256,7 @@
                         <div class="quick-actions">
                             <a href="{{ route('library.create') }}"><span>＋</span><div><strong>Upload a text</strong><small>TXT or EPUB</small></div></a>
                             <a href="#"><span>Aa</span><div><strong>Review vocabulary</strong><small>0 words waiting</small></div></a>
-                            <a href="#"><span>◉</span><div><strong>Speaking practice</strong><small>Start with a phrase</small></div></a>
+                            <a href="{{ route('speaking.index') }}"><span>◉</span><div><strong>Speaking practice</strong><small>Start with a phrase</small></div></a>
                         </div>
                     </article>
                 </section>

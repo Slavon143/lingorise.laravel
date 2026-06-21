@@ -7,7 +7,7 @@
     <title>@yield('title') · LingoRise</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="app-page">
+<body class="app-page" data-speech-url="{{ route('speech.create') }}">
     <div class="app-shell">
         <aside class="app-sidebar">
             <button class="sidebar-collapse-button" type="button" data-sidebar-collapse aria-label="Collapse sidebar" title="Collapse sidebar">
@@ -27,7 +27,7 @@
                 <a class="@if(request()->routeIs('dashboard')) is-active @endif" href="{{ route('dashboard') }}"><span>⌂</span><span>Home</span></a>
                 <a class="@if(request()->routeIs('library.*')) is-active @endif" href="{{ route('library.index') }}"><span>▤</span><span>My library</span></a>
                 <a class="@if(request()->routeIs('vocabulary.*')) is-active @endif" href="{{ route('vocabulary.index') }}"><span>Aa</span><span>Vocabulary</span><small>{{ auth()->user()->dictionaryEntries()->count() }}</small></a>
-                <a href="#"><span>◉</span><span>Speaking</span></a>
+                <a class="@if(request()->routeIs('speaking.*')) is-active @endif" href="{{ route('speaking.index') }}"><span>◉</span><span>Speaking</span></a>
                 <a href="#"><span>↗</span><span>Progress</span></a>
             </nav>
             <div class="sidebar-bottom">

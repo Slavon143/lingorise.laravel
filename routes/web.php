@@ -4,6 +4,8 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\LibraryController;
 use App\Http\Controllers\ReaderController;
+use App\Http\Controllers\SpeakingController;
+use App\Http\Controllers\SpeechController;
 use App\Http\Controllers\VocabularyController;
 use App\Http\Controllers\WordTranslationController;
 use Illuminate\Support\Facades\Route;
@@ -32,6 +34,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/read/{book}/vocabulary', [VocabularyController::class, 'store'])->name('vocabulary.store');
     Route::get('/vocabulary', [VocabularyController::class, 'index'])->name('vocabulary.index');
     Route::delete('/vocabulary/{entry}', [VocabularyController::class, 'destroy'])->name('vocabulary.destroy');
+    Route::get('/speaking', [SpeakingController::class, 'index'])->name('speaking.index');
+    Route::post('/speech', SpeechController::class)->name('speech.create');
     Route::put('/settings/languages', [DashboardController::class, 'updateLanguages'])->name('settings.languages');
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 });
