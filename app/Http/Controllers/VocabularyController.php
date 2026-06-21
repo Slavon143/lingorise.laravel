@@ -50,6 +50,17 @@ class VocabularyController extends Controller
     {
         abort_unless($book->owner_id === $request->user()->id || $book->isPublic(), 403);
 
+        if (! $request->user()->isPro()) {
+            $entryCount = $request->user()->dictionaryEntries()->count();
+            if ($entryCount >= 15) {
+                return response()->json([
+                    'saved' => false,
+                    'error' => 'You\'ve reached the free limit of 15 saved words. Upgrade to Pro for unlimited vocabulary.',
+                    'upgrade_url' => route('pricing.index'),
+                ], 403);
+            }
+        }
+
         $validated = $request->validate([
             'original_text' => ['required', 'string', 'max:255'],
             'translated_text' => ['required', 'string', 'max:255'],

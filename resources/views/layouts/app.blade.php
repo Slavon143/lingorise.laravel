@@ -49,6 +49,10 @@
                     <svg viewBox="0 0 22 22" fill="none"><path d="M4 18V9m5 9V4m5 14v-6m5 6V7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
                     <span>Progress</span>
                 </a>
+                <a class="@if(request()->routeIs('pricing.*')) is-active @endif" href="{{ route('pricing.index') }}">
+                    <svg viewBox="0 0 22 22" fill="none"><path d="M4 6h14a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1Zm0 4h14" stroke="currentColor" stroke-width="1.6"/></svg>
+                    <span>Pricing</span>
+                </a>
             </nav>
             <div class="sidebar-bottom">
                 @php
@@ -81,7 +85,7 @@
                     <a class="topbar-add-book" href="{{ route('library.create') }}">＋ Add a book</a>
                     <button class="user-button" type="button">
                         <span>{{ strtoupper(substr(auth()->user()->name, 0, 1)) }}</span>
-                        <div><strong>{{ auth()->user()->name }}</strong><small>Free plan</small></div>
+                        <div><strong>{{ auth()->user()->name }}</strong><small>{{ auth()->user()->isPro() ? 'Pro plan' : 'Free plan' }}</small></div>
                     </button>
                 </div>
             </header>

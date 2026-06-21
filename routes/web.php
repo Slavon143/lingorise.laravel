@@ -4,6 +4,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\LibraryController;
 use App\Http\Controllers\ProgressController;
+use App\Http\Controllers\PricingController;
 use App\Http\Controllers\PublicLibraryController;
 use App\Http\Controllers\ReaderController;
 use App\Http\Controllers\SpeakingController;
@@ -40,6 +41,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/vocabulary', [VocabularyController::class, 'index'])->name('vocabulary.index');
     Route::delete('/vocabulary/{entry}', [VocabularyController::class, 'destroy'])->name('vocabulary.destroy');
     Route::get('/progress', [ProgressController::class, 'index'])->name('progress.index');
+    Route::get('/pricing', [PricingController::class, 'index'])->name('pricing.index');
+    Route::post('/pricing/subscribe', [PricingController::class, 'subscribe'])->name('pricing.subscribe');
+    Route::post('/pricing/cancel', [PricingController::class, 'cancel'])->name('pricing.cancel');
     Route::get('/speaking', [SpeakingController::class, 'index'])->name('speaking.index');
     Route::post('/speech', SpeechController::class)->name('speech.create');
     Route::put('/settings/languages', [DashboardController::class, 'updateLanguages'])->name('settings.languages');

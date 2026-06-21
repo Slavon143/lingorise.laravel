@@ -12,12 +12,17 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-#[Fillable(['name', 'email', 'password', 'google_id', 'avatar_url', 'email_verified_at'])]
+#[Fillable(['name', 'email', 'password', 'google_id', 'avatar_url', 'email_verified_at', 'plan'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
+
+    public function isPro(): bool
+    {
+        return $this->plan === 'pro';
+    }
 
     public function languagePreference(): HasOne
     {

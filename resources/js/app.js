@@ -237,6 +237,7 @@ if (readerPage && readingText && wordCard) {
     const vocabularyList = document.querySelector('[data-vocabulary-list]');
     const vocabularyEmpty = document.querySelector('[data-vocabulary-empty]');
     const vocabularyCount = document.querySelector('[data-vocabulary-count]');
+    const upgradeBtn = document.querySelector('[data-upgrade-btn]');
     let translationRequest = null;
     let activeToken = null;
     let activeTokens = [];
@@ -397,6 +398,7 @@ if (readerPage && readingText && wordCard) {
         pronunciationNode.hidden = true;
         explanationNode.hidden = true;
         statusNode.textContent = 'Translating…';
+        if (upgradeBtn) upgradeBtn.hidden = true;
         wordCard.hidden = false;
         positionWordCard();
 
@@ -419,11 +421,19 @@ if (readerPage && readingText && wordCard) {
         })
             .then(async (response) => {
                 const result = await response.json();
-                if (!response.ok) throw new Error(result.message || 'Translation unavailable.');
+                if (!response.ok) {
+                    if (result.upgrade_url) {
+                        statusNode.textContent = result.message || 'Limit reached.';
+                        if (upgradeBtn) upgradeBtn.hidden = false;
+                        positionWordCard();
+                        return;
+                    }
+                    throw new Error(result.message || 'Translation unavailable.');
+                }
                 return result;
             })
             .then((result) => {
-                if (activeTokens[0] !== selectedTokens[0]) return;
+                if (!result || activeTokens[0] !== selectedTokens[0]) return;
                 translationInput.textContent = result.translation;
                 pronunciationNode.textContent = result.pronunciation;
                 pronunciationNode.hidden = !result.pronunciation;
@@ -649,6 +659,11 @@ if (readerPage && readingText && wordCard) {
             });
 
             if (!response.ok) {
+                const result = await response.json().catch(() => ({}));
+                if (result.saved === false && result.upgrade_url) {
+                    statusNode.innerHTML = 'Free limit reached. <a href="' + result.upgrade_url + '" style="color:var(--blue);text-decoration:underline;">Upgrade to Pro</a> for unlimited vocabulary.';
+                    return;
+                }
                 throw new Error('Save failed');
             }
 

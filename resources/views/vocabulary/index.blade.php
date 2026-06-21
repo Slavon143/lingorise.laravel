@@ -12,6 +12,14 @@
         <strong>{{ $entries->total() }} saved</strong>
     </section>
 
+    @if(!auth()->user()->isPro() && $entries->total() >= 10)
+        <div class="plan-nudge">
+            <span>✦</span>
+            <span>{{ 15 - $entries->total() > 0 ? (15 - $entries->total()) . ' more words before the limit — upgrade to Pro for unlimited.' : 'Free limit reached. <a href="' . route('pricing.index') . '">Upgrade to Pro</a> for unlimited vocabulary.' }}</span>
+            <a href="{{ route('pricing.index') }}">View plans →</a>
+        </div>
+    @endif
+
     <form class="vocabulary-toolbar" method="GET" action="{{ route('vocabulary.index') }}">
         <label>
             <span>⌕</span>

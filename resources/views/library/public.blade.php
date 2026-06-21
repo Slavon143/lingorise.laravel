@@ -12,6 +12,25 @@
         <a href="{{ route('library.public') }}">Browse all</a>
     </section>
 
+    @if(!auth()->user()->isPro())
+        @php
+            $publicBookCount = auth()->user()->books()->whereNotNull('original_book_id')->count();
+        @endphp
+        @if($publicBookCount >= 2)
+            <div class="plan-nudge">
+                <span>✦</span>
+                <span>Free limit reached. Upgrade to Pro to add more books from the public library.</span>
+                <a href="{{ route('pricing.index') }}">View plans →</a>
+            </div>
+        @else
+            <div class="plan-nudge plan-nudge-soft">
+                <span>✦</span>
+                <span>{{ 2 - $publicBookCount }} of 2 free public books added. Upgrade to Pro for unlimited access.</span>
+                <a href="{{ route('pricing.index') }}">View plans →</a>
+            </div>
+        @endif
+    @endif
+
     <form class="public-library-filters" method="GET" action="{{ route('library.public') }}">
         <div class="public-search">
             <span>⌕</span>

@@ -171,6 +171,11 @@
             <span>＋</span> Add to vocabulary
         </button>
         <small class="word-card-status" data-word-status></small>
+        @if(!auth()->user()->isPro())
+            <a href="{{ route('pricing.index') }}" class="word-card-upgrade" data-upgrade-btn hidden>
+                <span>✦</span> Upgrade to Pro
+            </a>
+        @endif
     </div>
     <script>
     function jumpToPage(form) {

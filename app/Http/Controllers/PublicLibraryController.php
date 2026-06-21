@@ -50,6 +50,14 @@ class PublicLibraryController extends Controller
                 ->with('status', 'This book is already in your library.');
         }
 
+        if (! $request->user()->isPro()) {
+            $publicBookCount = $request->user()->books()->whereNotNull('original_book_id')->count();
+            if ($publicBookCount >= 2) {
+                return redirect()->route('pricing.index')
+                    ->with('status', 'Free plan allows up to 2 books from the public library. Upgrade to Pro for unlimited access.');
+            }
+        }
+
         $request->user()->books()->create([
             'title' => $book->title,
             'author' => $book->author,
