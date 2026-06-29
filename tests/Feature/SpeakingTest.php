@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Book;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
@@ -97,5 +98,28 @@ class SpeakingTest extends TestCase
                 'locale' => 'en',
             ])
             ->assertStatus(503);
+    }
+
+    public function test_free_user_cannot_generate_speech_after_daily_ai_limit_is_reached(): void
+    {
+        config(['services.openai.key' => 'test-key']);
+        Http::fake([
+            'api.openai.com/*' => Http::response('fake-mp3-bytes', 200, ['Content-Type' => 'audio/mpeg']),
+        ]);
+
+        $user = User::factory()->create();
+        Cache::put('daily-translations:'.$user->id.':'.now()->toDateString(), 10, now()->endOfDay());
+
+        $this->actingAs($user)
+            ->postJson(route('speech.create'), [
+                'text' => 'wonderful secrets',
+                'locale' => 'en',
+            ])
+            ->assertForbidden()
+            ->assertJsonFragment([
+                'message' => 'Daily free limit of 10 AI actions reached. Upgrade to Pro for unlimited practice.',
+            ]);
+
+        Http::assertNothingSent();
     }
 }

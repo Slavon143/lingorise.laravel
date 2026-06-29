@@ -53,6 +53,12 @@
                     <svg viewBox="0 0 22 22" fill="none"><path d="M4 6h14a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1Zm0 4h14" stroke="currentColor" stroke-width="1.6"/></svg>
                     <span>Pricing</span>
                 </a>
+                @if(auth()->user()->isAdmin())
+                    <a href="{{ route('admin.dashboard') }}">
+                        <svg viewBox="0 0 22 22" fill="none"><path d="M5 5h12v12H5V5Zm3 3h6M8 11h6M8 14h3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        <span>Admin</span>
+                    </a>
+                @endif
             </nav>
             <div class="sidebar-bottom">
                 @php

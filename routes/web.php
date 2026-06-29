@@ -1,10 +1,16 @@
 <?php
 
+use App\Http\Controllers\Admin\AiController as AdminAiController;
+use App\Http\Controllers\Admin\AuditLogController as AdminAuditLogController;
+use App\Http\Controllers\Admin\BookController as AdminBookController;
+use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
+use App\Http\Controllers\Admin\SettingsController as AdminSettingsController;
+use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\LibraryController;
-use App\Http\Controllers\ProgressController;
 use App\Http\Controllers\PricingController;
+use App\Http\Controllers\ProgressController;
 use App\Http\Controllers\PublicLibraryController;
 use App\Http\Controllers\ReaderController;
 use App\Http\Controllers\SpeakingController;
@@ -36,7 +42,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/library/public', [PublicLibraryController::class, 'index'])->name('library.public');
     Route::post('/library/public/{book}/add', [PublicLibraryController::class, 'addToMyLibrary'])->name('library.public.add');
     Route::get('/read/{book}', [ReaderController::class, 'show'])->name('reader.show');
-    Route::post('/read/{book}/translate', WordTranslationController::class)->name('reader.translate');
+    Route::post('/read/{book}/translate', WordTranslationController::class)->middleware('throttle:ai-translation')->name('reader.translate');
     Route::post('/read/{book}/vocabulary', [VocabularyController::class, 'store'])->name('vocabulary.store');
     Route::get('/vocabulary', [VocabularyController::class, 'index'])->name('vocabulary.index');
     Route::delete('/vocabulary/{entry}', [VocabularyController::class, 'destroy'])->name('vocabulary.destroy');
@@ -45,7 +51,27 @@ Route::middleware('auth')->group(function () {
     Route::post('/pricing/subscribe', [PricingController::class, 'subscribe'])->name('pricing.subscribe');
     Route::post('/pricing/cancel', [PricingController::class, 'cancel'])->name('pricing.cancel');
     Route::get('/speaking', [SpeakingController::class, 'index'])->name('speaking.index');
-    Route::post('/speech', SpeechController::class)->name('speech.create');
+    Route::post('/speech', SpeechController::class)->middleware('throttle:ai-speech')->name('speech.create');
     Route::put('/settings/languages', [DashboardController::class, 'updateLanguages'])->name('settings.languages');
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 });
+
+Route::middleware(['auth', 'admin'])
+    ->prefix('admin')
+    ->name('admin.')
+    ->group(function () {
+        Route::get('/', AdminDashboardController::class)->name('dashboard');
+        Route::get('/dashboard', AdminDashboardController::class)->name('dashboard.alias');
+
+        Route::get('/users', [AdminUserController::class, 'index'])->name('users.index');
+        Route::get('/users/{user}', [AdminUserController::class, 'show'])->name('users.show');
+        Route::get('/users/{user}/edit', [AdminUserController::class, 'edit'])->name('users.edit');
+        Route::patch('/users/{user}', [AdminUserController::class, 'update'])->name('users.update');
+        Route::post('/users/{user}/promote', [AdminUserController::class, 'promote'])->name('users.promote');
+        Route::post('/users/{user}/demote', [AdminUserController::class, 'demote'])->name('users.demote');
+
+        Route::get('/audit-logs', [AdminAuditLogController::class, 'index'])->name('audit-logs.index');
+        Route::get('/books', AdminBookController::class)->name('books.index');
+        Route::get('/ai', AdminAiController::class)->name('ai.index');
+        Route::get('/settings', AdminSettingsController::class)->name('settings.index');
+    });

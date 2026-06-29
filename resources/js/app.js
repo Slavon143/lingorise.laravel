@@ -14,8 +14,7 @@ const playNaturalVoice = async (text, locale = 'en', button = null) => {
     const speechUrl = document.body.dataset.speechUrl;
 
     if (!speechUrl) {
-        playBrowserVoice(text, locale);
-        return;
+        return { ok: false, message: 'Voice playback is unavailable.' };
     }
 
     button?.classList.add('is-loading');
@@ -31,7 +30,19 @@ const playNaturalVoice = async (text, locale = 'en', button = null) => {
             body: JSON.stringify({ text, locale }),
         });
 
-        if (!response.ok) throw new Error('Natural voice unavailable');
+        if (!response.ok) {
+            const contentType = response.headers.get('content-type') || '';
+            const payload = contentType.includes('application/json')
+                ? await response.json().catch(() => ({}))
+                : {};
+
+            return {
+                ok: false,
+                blocked: response.status === 403,
+                message: payload.message || 'Natural voice unavailable.',
+                upgradeUrl: payload.upgrade_url,
+            };
+        }
 
         activeNaturalAudio?.pause();
         if (activeNaturalAudio?.src?.startsWith('blob:')) URL.revokeObjectURL(activeNaturalAudio.src);
@@ -40,8 +51,9 @@ const playNaturalVoice = async (text, locale = 'en', button = null) => {
         activeNaturalAudio = new Audio(audioUrl);
         activeNaturalAudio.addEventListener('ended', () => URL.revokeObjectURL(audioUrl), { once: true });
         await activeNaturalAudio.play();
+        return { ok: true };
     } catch {
-        playBrowserVoice(text, locale);
+        return { ok: false, message: 'Natural voice unavailable.' };
     } finally {
         button?.classList.remove('is-loading');
     }
@@ -177,6 +189,32 @@ document.querySelectorAll('.app-nav a').forEach((link) => {
     link.addEventListener('click', closeMobileSidebar);
 });
 
+const adminSidebar = document.querySelector('[data-admin-sidebar]');
+const adminMenuButton = document.querySelector('[data-admin-menu]');
+const adminBackdrop = document.querySelector('[data-admin-backdrop]');
+
+const closeAdminSidebar = () => {
+    adminSidebar?.classList.remove('is-open');
+
+    if (adminBackdrop) {
+        adminBackdrop.hidden = true;
+    }
+};
+
+adminMenuButton?.addEventListener('click', () => {
+    adminSidebar?.classList.add('is-open');
+
+    if (adminBackdrop) {
+        adminBackdrop.hidden = false;
+    }
+});
+
+adminBackdrop?.addEventListener('click', closeAdminSidebar);
+
+document.querySelectorAll('.admin-nav a').forEach((link) => {
+    link.addEventListener('click', closeAdminSidebar);
+});
+
 const languageNames = {
     de: 'German',
     ru: 'Russian',
@@ -256,6 +294,14 @@ if (readerPage && readingText && wordCard) {
     const savedFont = fontAliases[storedFont] ?? storedFont;
 
     readingText.dataset.font = savedFont;
+
+    const setSaveButtonState = (enabled, label = 'Add to vocabulary') => {
+        if (!saveButton) return;
+
+        saveButton.disabled = !enabled;
+        saveButton.innerHTML = `<span>${enabled ? '＋' : '•'}</span> ${label}`;
+    };
+
     const languageNamesForTranslation = {
         de: 'German',
         ru: 'Russian',
@@ -398,6 +444,7 @@ if (readerPage && readingText && wordCard) {
         pronunciationNode.hidden = true;
         explanationNode.hidden = true;
         statusNode.textContent = 'Translating…';
+        setSaveButtonState(false, 'Waiting for translation');
         if (upgradeBtn) upgradeBtn.hidden = true;
         wordCard.hidden = false;
         positionWordCard();
@@ -424,6 +471,7 @@ if (readerPage && readingText && wordCard) {
                 if (!response.ok) {
                     if (result.upgrade_url) {
                         statusNode.textContent = result.message || 'Limit reached.';
+                        setSaveButtonState(false, 'Limit reached');
                         if (upgradeBtn) upgradeBtn.hidden = false;
                         positionWordCard();
                         return;
@@ -440,11 +488,13 @@ if (readerPage && readingText && wordCard) {
                 explanationNode.querySelector('p').textContent = result.explanation;
                 explanationNode.hidden = !result.explanation;
                 statusNode.textContent = '';
+                setSaveButtonState(Boolean(result.translation), 'Add to vocabulary');
                 positionWordCard();
             })
             .catch((error) => {
                 if (error.name !== 'AbortError' && activeTokens[0] === selectedTokens[0]) {
                     statusNode.textContent = error.message;
+                    setSaveButtonState(false, 'Translation unavailable');
                     positionWordCard();
                 }
             })
@@ -606,13 +656,23 @@ if (readerPage && readingText && wordCard) {
     });
 
     wordCard.querySelector('[data-close-word-card]')?.addEventListener('click', closeWordCard);
-    speakButton?.addEventListener('click', () => {
+    speakButton?.addEventListener('click', async () => {
         if (!activeTokens.length) return;
-        playNaturalVoice(
+        statusNode.textContent = '';
+        const result = await playNaturalVoice(
             activeTokens.map((token) => token.dataset.readerWord).join(' '),
             document.documentElement.lang || 'en',
             speakButton,
         );
+
+        if (!result.ok) {
+            if (result.upgradeUrl && upgradeBtn) {
+                upgradeBtn.hidden = false;
+            }
+
+            statusNode.textContent = result.message || 'Voice playback is unavailable.';
+            positionWordCard();
+        }
     });
     window.addEventListener('resize', positionWordCard);
     window.addEventListener('scroll', () => {
@@ -636,12 +696,14 @@ if (readerPage && readingText && wordCard) {
         const translation = translationInput.textContent.trim();
 
         if (!translation || !activeTokens.length) {
-            statusNode.textContent = 'Add a translation first.';
+            statusNode.textContent = statusNode.textContent || 'Translation is not available yet.';
             return;
         }
 
         saveButton.disabled = true;
+        saveButton.innerHTML = '<span>•</span> Saving…';
         statusNode.textContent = 'Saving…';
+        let canEnableAfterSave = true;
 
         try {
             const response = await fetch(readerPage.dataset.vocabularyUrl, {
@@ -662,6 +724,8 @@ if (readerPage && readingText && wordCard) {
                 const result = await response.json().catch(() => ({}));
                 if (result.saved === false && result.upgrade_url) {
                     statusNode.innerHTML = 'Free limit reached. <a href="' + result.upgrade_url + '" style="color:var(--blue);text-decoration:underline;">Upgrade to Pro</a> for unlimited vocabulary.';
+                    canEnableAfterSave = false;
+                    setSaveButtonState(false, 'Limit reached');
                     return;
                 }
                 throw new Error('Save failed');
@@ -693,7 +757,9 @@ if (readerPage && readingText && wordCard) {
         } catch {
             statusNode.textContent = 'Could not save the word.';
         } finally {
-            saveButton.disabled = false;
+            if (canEnableAfterSave && translationInput.textContent.trim()) {
+                setSaveButtonState(true, 'Add to vocabulary');
+            }
         }
     });
 
@@ -790,8 +856,12 @@ if (speakingPractice) {
         return Math.max(0, Math.round((1 - rows[left.length][right.length] / Math.max(left.length, right.length, 1)) * 100));
     };
 
-    listenButton?.addEventListener('click', () => {
-        playNaturalVoice(phrase, locale, listenButton);
+    listenButton?.addEventListener('click', async () => {
+        const result = await playNaturalVoice(phrase, locale, listenButton);
+
+        if (!result.ok && supportNode) {
+            supportNode.textContent = result.message || 'Voice playback is unavailable.';
+        }
     });
 
     if (!Recognition) {

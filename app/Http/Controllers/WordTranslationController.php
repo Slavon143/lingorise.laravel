@@ -30,7 +30,7 @@ class WordTranslationController extends Controller
 
             if ($count >= $this->dailyFreeLimit) {
                 return response()->json([
-                    'message' => 'Daily free limit of '.$this->dailyFreeLimit.' translations reached. Upgrade to Pro for unlimited translations.',
+                    'message' => 'Daily free limit of '.$this->dailyFreeLimit.' AI actions reached. Upgrade to Pro for unlimited practice.',
                     'saved' => false,
                     'upgrade_url' => route('pricing.index'),
                 ], 403);
@@ -52,6 +52,9 @@ class WordTranslationController extends Controller
                 $validated['context'],
                 $book->language_locale ?: 'en',
                 $user->languagePreference?->native_locale ?? 'de',
+                $user->id,
+                $book->isPublic() ? 'public' : 'book',
+                $book->isPublic() ? null : $book->id,
             );
 
             if (! $user->isPro()) {
