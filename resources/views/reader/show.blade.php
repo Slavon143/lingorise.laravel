@@ -9,36 +9,43 @@
 </head>
 <body class="reader-page" data-vocabulary-url="{{ route('vocabulary.store', $book) }}" data-translation-url="{{ route('reader.translate', $book) }}" data-speech-url="{{ route('speech.create') }}" data-native-language="{{ $nativeLanguage }}" data-focus-phrase="{{ $focusPhrase }}">
     <header class="reader-app-header">
-        <a href="{{ route('library.index') }}" class="reader-back">Library</a>
+        <a href="{{ route('library.index') }}" class="reader-back">
+            <span aria-hidden="true">←</span>
+            <strong>Library</strong>
+        </a>
         <div class="reader-book-name">
             <strong>{{ $book->title }}</strong>
             <span>{{ $book->author ?: 'Personal text' }}</span>
         </div>
-        <div class="reader-header-actions">
-            <button class="reader-panels-button" type="button" data-reader-panels aria-label="Hide reading panels" title="Show or hide reading panels">
-                <svg viewBox="0 0 20 20" aria-hidden="true">
-                    <rect x="2.5" y="3" width="15" height="14" rx="2"></rect>
-                    <path d="M7 3v14M13 3v14"></path>
-                </svg>
-                <span data-reader-panels-label>Panels</span>
-            </button>
-            <label class="reader-font-select">
-                <span class="sr-only">Reading font</span>
-                <select data-reader-font aria-label="Reading font">
-                    <option value="kindle">Kindle style</option>
-                    <option value="apple">Apple Books style</option>
-                    <option value="google">Google Play Books</option>
-                    <option value="readera" selected>ReadEra style</option>
-                </select>
-            </label>
-            <button type="button" data-reader-decrease aria-label="Decrease text size">A−</button>
-            <button type="button" data-reader-increase aria-label="Increase text size">A＋</button>
-            <button type="button" data-reader-theme aria-label="Toggle reading theme">◐</button>
-        </div>
+        <button class="reader-panels-button" type="button" data-reader-panels aria-label="Open reading panel" title="Open reading panel">
+            <svg viewBox="0 0 20 20" aria-hidden="true">
+                <rect x="2.5" y="3" width="15" height="14" rx="2"></rect>
+                <path d="M7 3v14M13 3v14"></path>
+            </svg>
+            <span data-reader-panels-label>Panel</span>
+        </button>
     </header>
 
     <main class="reader-workspace">
         <aside class="reader-info-panel">
+            <div class="reader-panel-controls">
+                <span class="reader-panel-control-label">Reading settings</span>
+                <label class="reader-font-select">
+                    <span class="sr-only">Reading font</span>
+                    <select data-reader-font aria-label="Reading font">
+                        <option value="kindle">Kindle style</option>
+                        <option value="apple">Apple Books style</option>
+                        <option value="google">Google Play Books</option>
+                        <option value="readera" selected>ReadEra style</option>
+                    </select>
+                </label>
+                <div class="reader-panel-control-grid">
+                    <button type="button" data-reader-decrease aria-label="Decrease text size">A−</button>
+                    <button type="button" data-reader-increase aria-label="Increase text size">A＋</button>
+                    <button type="button" data-reader-theme aria-label="Toggle reading theme">◐</button>
+                </div>
+            </div>
+
             <span class="section-kicker">Reading now</span>
             <div class="reader-mini-cover">
                 @if($book->cover_path)
@@ -117,13 +124,16 @@
 
     <footer class="reader-pagination">
         @if($page > 1)
-            <a href="{{ route('reader.show', ['book' => $book, 'page' => $page - 1]) }}">← Previous</a>
+            <a class="reader-page-nav reader-page-nav-prev" href="{{ route('reader.show', ['book' => $book, 'page' => $page - 1]) }}"><span>←</span> Previous</a>
         @else
-            <span></span>
+            <span class="reader-page-nav reader-page-nav-prev is-disabled"><span>←</span> Previous</span>
         @endif
-        <div>
-            <span>{{ $percentage }}%</span>
-            <div><i style="width: {{ $percentage }}%"></i></div>
+        <div class="reader-progress-panel">
+            <div class="reader-progress-meta">
+                <span>Page {{ $page }} of {{ $totalPages }}</span>
+                <strong>{{ $percentage }}%</strong>
+            </div>
+            <div class="reader-progress-track" aria-label="{{ $percentage }}% complete"><i style="width: {{ $percentage }}%"></i></div>
             <form class="page-jump" action="{{ route('reader.show', $book) }}" method="GET" onsubmit="return jumpToPage(this)">
                 <label for="jump-input" class="sr-only">Jump to page</label>
                 <input id="jump-input" type="number" min="1" max="{{ $totalPages }}" placeholder="{{ $page }}/{{ $totalPages }}" required>
@@ -131,9 +141,9 @@
             </form>
         </div>
         @if($page < $totalPages)
-            <a href="{{ route('reader.show', ['book' => $book, 'page' => $page + 1]) }}">Next →</a>
+            <a class="reader-page-nav reader-page-nav-next" href="{{ route('reader.show', ['book' => $book, 'page' => $page + 1]) }}">Next <span>→</span></a>
         @else
-            <a href="{{ route('library.index') }}">Finish ✓</a>
+            <a class="reader-page-nav reader-page-nav-next" href="{{ route('library.index') }}">Finish <span>✓</span></a>
         @endif
     </footer>
 

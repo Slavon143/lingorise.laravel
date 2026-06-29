@@ -14,9 +14,9 @@
 
     @if(!auth()->user()->isPro() && $entries->total() >= 10)
         <div class="plan-nudge">
-            <span>✦</span>
+            <svg width="18" height="18" viewBox="0 0 22 22" fill="none"><path d="M11 2l2.5 5.5L19 8.5l-4 4 1 6L11 15l-5 3 1-6-4-4 5.5-1L11 2Z" fill="currentColor" stroke="currentColor" stroke-width="1.2"/></svg>
             <span>{{ 15 - $entries->total() > 0 ? (15 - $entries->total()) . ' more words before the limit — upgrade to Pro for unlimited.' : 'Free limit reached. <a href="' . route('pricing.index') . '">Upgrade to Pro</a> for unlimited vocabulary.' }}</span>
-            <a href="{{ route('pricing.index') }}">View plans →</a>
+            <a href="{{ route('pricing.index') }}">View plans <svg width="14" height="14" viewBox="0 0 22 22" fill="none" style="vertical-align:-2px;margin-left:2px;"><path d="M5 11h12M11 5l6 6-6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
         </div>
     @endif
 
