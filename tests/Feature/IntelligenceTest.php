@@ -45,6 +45,21 @@ class IntelligenceTest extends TestCase
         ]);
     }
 
+    protected function fakeChoices(array $responses): void
+    {
+        $sequence = Http::sequence();
+        foreach ($responses as $data) {
+            $sequence->push([
+                'choices' => [[
+                    'message' => ['content' => json_encode($data)],
+                ]],
+                'usage' => ['prompt_tokens' => 50, 'completion_tokens' => 100],
+            ]);
+        }
+
+        Http::fake(['api.openai.com/*' => $sequence]);
+    }
+
     public function test_translation_returns_null_explanation(): void
     {
         Http::fake([
@@ -203,9 +218,11 @@ class IntelligenceTest extends TestCase
         $this->fakeChoice([
             'original' => 'The feline positioned itself upon the mat.',
             'simplified' => 'The cat sat on the mat.',
-            'target_level' => 'A2',
-            'replacements' => [['original' => 'feline', 'simplified' => 'cat']],
-            'changes_explanation' => 'Replaced complex vocabulary.',
+            'level' => 'A2',
+            'is_fragment' => false,
+            'meaning_preserved' => true,
+            'replacements' => [['original' => 'feline', 'replacement' => 'cat', 'reason' => 'Simpler word.']],
+            'explanation' => 'Replaced complex vocabulary.',
         ]);
 
         $service = $this->app->make(SimplificationService::class);
@@ -219,6 +236,8 @@ class IntelligenceTest extends TestCase
         );
 
         $this->assertEquals('The cat sat on the mat.', $result['data']['simplified']);
+        $this->assertSame('A2', $result['data']['level']);
+        $this->assertTrue($result['data']['meaning_preserved']);
         $this->assertFalse($result['meta']['cache_hit']);
     }
 
@@ -227,9 +246,11 @@ class IntelligenceTest extends TestCase
         $this->fakeChoice([
             'original' => 'The feline positioned itself upon the mat.',
             'simplified' => 'The cat sat on the mat.',
-            'target_level' => 'A2',
-            'replacements' => [['original' => 'feline', 'simplified' => 'cat']],
-            'changes_explanation' => 'Replaced complex vocabulary.',
+            'level' => 'A2',
+            'is_fragment' => false,
+            'meaning_preserved' => true,
+            'replacements' => [['original' => 'feline', 'replacement' => 'cat', 'reason' => 'Simpler word.']],
+            'explanation' => 'Replaced complex vocabulary.',
         ]);
 
         $response = $this->actingAs($this->user)
@@ -242,6 +263,77 @@ class IntelligenceTest extends TestCase
 
         $this->assertTrue($response->json('success'));
         $this->assertEquals('The cat sat on the mat.', $response->json('data.simplified'));
+        $this->assertTrue($response->json('data.meaning_preserved'));
+    }
+
+    public function test_simplification_retries_and_falls_back_for_unsafe_fragment(): void
+    {
+        $this->fakeChoices([
+            [
+                'original' => 'There is little or no magic about them except',
+                'simplified' => 'They have very little or no magic except',
+                'level' => 'A2',
+                'is_fragment' => false,
+                'meaning_preserved' => true,
+                'replacements' => [],
+                'explanation' => 'Bad answer.',
+            ],
+            [
+                'original' => 'There is little or no magic about them except',
+                'simplified' => 'They have very little or no magic except',
+                'level' => 'A2',
+                'is_fragment' => false,
+                'meaning_preserved' => true,
+                'replacements' => [],
+                'explanation' => 'Still bad.',
+            ],
+        ]);
+
+        $service = $this->app->make(SimplificationService::class);
+        $result = $service->simplify(
+            text: 'There is little or no magic about them except',
+            sourceLanguage: 'en',
+            targetLevel: 'A2',
+            targetLanguage: 'ru',
+            userId: $this->user->id,
+            book: $this->book,
+            usageContext: new AiUsageContext(userId: $this->user->id),
+        );
+
+        $this->assertSame('There is almost no magic about them, except...', $result['data']['simplified']);
+        $this->assertTrue($result['data']['is_fragment']);
+        $this->assertTrue($result['data']['meaning_preserved']);
+        $this->assertSame('little or no', $result['data']['replacements'][0]['original']);
+        $this->assertSame('almost no', $result['data']['replacements'][0]['replacement']);
+        Http::assertSentCount(2);
+    }
+
+    public function test_simplification_accepts_safe_fragment(): void
+    {
+        $this->fakeChoice([
+            'original' => 'There is little or no magic about them except',
+            'simplified' => 'There is almost no magic about them, except...',
+            'level' => 'A2',
+            'is_fragment' => true,
+            'meaning_preserved' => true,
+            'replacements' => [['original' => 'little or no', 'replacement' => 'almost no', 'reason' => 'Simpler wording.']],
+            'explanation' => 'The fragment was simplified without adding a continuation.',
+        ]);
+
+        $service = $this->app->make(SimplificationService::class);
+        $result = $service->simplify(
+            text: 'There is little or no magic about them except',
+            sourceLanguage: 'en',
+            targetLevel: 'A2',
+            targetLanguage: 'en',
+            userId: $this->user->id,
+            book: $this->book,
+            usageContext: new AiUsageContext(userId: $this->user->id),
+        );
+
+        $this->assertSame('There is almost no magic about them, except...', $result['data']['simplified']);
+        $this->assertTrue($result['data']['is_fragment']);
+        Http::assertSentCount(1);
     }
 
     public function test_shadowing_endpoint(): void

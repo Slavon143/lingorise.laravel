@@ -11,6 +11,7 @@ class SimplificationRequest extends FormRequest
         return [
             'text' => ['required', 'string', 'min:1', 'max:4000'],
             'source_language' => ['required', 'string', 'max:12'],
+            'target_language' => ['nullable', 'string', 'max:12'],
             'target_level' => ['required', 'string', 'in:A1,A2,B1,B2,C1'],
             'preserve_style' => ['nullable', 'boolean'],
         ];

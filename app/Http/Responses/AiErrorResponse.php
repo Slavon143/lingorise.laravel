@@ -6,6 +6,7 @@ use App\Services\Intelligence\Exceptions\AiBudgetExceededException;
 use App\Services\Intelligence\Exceptions\AiInvalidResponseException;
 use App\Services\Intelligence\Exceptions\AiProviderException;
 use App\Services\Intelligence\Exceptions\AiRateLimitException;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\JsonResponse;
 
 class AiErrorResponse
@@ -17,6 +18,7 @@ class AiErrorResponse
             AiProviderException::class => self::json(503, 'provider_unavailable', $exception->getMessage() ?: 'The AI service is temporarily unavailable.'),
             AiBudgetExceededException::class => self::json(429, 'quota_exceeded', $exception->getMessage() ?: 'Your AI limit has been reached.'),
             AiRateLimitException::class => self::json(429, 'provider_rate_limit', 'Too many requests. Please try again later.'),
+            ConnectionException::class => self::json(503, 'provider_connection_failed', 'Could not connect to the AI provider. Check your internet connection or DNS settings and try again.'),
             default => self::json(503, 'service_unavailable', $defaultMessage ?? 'Service temporarily unavailable.'),
         };
     }

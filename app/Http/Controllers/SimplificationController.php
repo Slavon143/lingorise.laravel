@@ -30,6 +30,9 @@ class SimplificationController extends Controller
         }
 
         $validated = $request->validated();
+        $targetLanguage = $request->input('target_language')
+            ?? $user->languagePreference?->native_locale
+            ?? 'de';
 
         try {
             $this->quotaGuard->assertSimplificationAllowed($user);
@@ -45,6 +48,7 @@ class SimplificationController extends Controller
             $result = $this->simplificationService->simplify(
                 text: $validated['text'],
                 sourceLanguage: $validated['source_language'],
+                targetLanguage: $targetLanguage,
                 targetLevel: $validated['target_level'],
                 preserveStyle: $validated['preserve_style'] ?? false,
                 userId: $user->id,

@@ -35,7 +35,7 @@ const init = () => {
                 text: phrase,
                 context: context || null,
                 source_language: page.dataset.bookLanguage || page.dataset.nativeLanguage || 'en',
-            }, controller.signal);
+            }, { signal: controller.signal });
             const data = result.data;
             let partsHtml = '';
             if (data.parts?.length) {

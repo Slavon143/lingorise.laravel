@@ -1,15 +1,19 @@
+import { stop as stopAudio } from './audio.js';
+import { createPracticeRecorder } from './practice-recorder.js';
+
 const state = {
     selectionId: null,
     activeTab: null,
     isSaved: false,
     requests: { context: null, grammar: null, simplify: null },
     results: { context: null, grammar: null, simplifications: {} },
-    shadowing: { active: false, recorder: null, stream: null, blobUrl: null },
+    shadowing: { active: false, controller: null, triggerEnter: false },
 };
 
 let wordCard = null;
 let tabPanels = {};
 let i18n = {};
+let lifecycleEventsBound = false;
 
 const getTabBtn = (name) => wordCard?.querySelector(`[data-tab="${name}"]`);
 const getTabPanel = (name) => wordCard?.querySelector(`[data-tab-panel="${name}"]`);
@@ -21,6 +25,9 @@ const escHtml = (str) => {
 };
 
 const closeTabPanel = () => {
+    if (state.shadowing.active) {
+        exitShadowing('tab_switch');
+    }
     Object.keys(tabPanels).forEach((name) => {
         const panel = tabPanels[name];
         if (panel) panel.hidden = true;
@@ -33,7 +40,6 @@ const closeTabPanel = () => {
 };
 
 const switchTab = (tabName) => {
-    if (state.shadowing.active) return;
     if (state.activeTab === tabName) return;
     closeTabPanel();
     const panel = tabPanels[tabName];
@@ -65,12 +71,23 @@ const showResult = (tabName, html) => {
     switchTab(tabName);
 };
 
+const showResultNode = (tabName, node) => {
+    const panel = tabPanels[tabName];
+    if (!panel) return;
+    const wrapper = document.createElement('div');
+    wrapper.className = 'ai-tool-section';
+    wrapper.appendChild(node);
+    panel.replaceChildren(wrapper);
+    panel.hidden = false;
+    switchTab(tabName);
+};
+
 const showError = (tabName, error) => {
     const panel = tabPanels[tabName];
     if (!panel) return;
     const err = typeof error === 'object' ? error : { message: error.message || 'Service unavailable.', upgradeUrl: null, resetsAt: null };
     const title = i18n['error.title'] || 'Could not load the explanation';
-    const subtitle = i18n['error.subtitle'] || 'The AI service is temporarily unavailable.';
+    const subtitle = err.message || i18n['error.subtitle'] || 'The AI service is temporarily unavailable.';
     const tryAgain = i18n['error.try_again'] || 'Try again';
     let extra = '';
     if (err.upgradeUrl) {
@@ -100,39 +117,24 @@ const showError = (tabName, error) => {
     }
 };
 
-const clearState = () => {
+const clearState = (reason = 'selection_change') => {
     Object.values(state.requests).forEach((ctrl) => ctrl?.abort());
     state.requests = { context: null, grammar: null, simplify: null };
     state.results = { context: null, grammar: null, simplifications: {} };
     state.activeTab = null;
     state.isSaved = false;
     delete state.selectionId;
-    closeTabPanel();
-    exitShadowing();
-};
-
-const setupShadowing = (shadowingPhrase) => {
-    const recordBtn = wordCard?.querySelector('[data-shadowing-record]');
-    const playBtn = wordCard?.querySelector('[data-shadowing-play]');
-    const listenBtn = wordCard?.querySelector('[data-shadowing-listen]');
-    const ratingBtns = wordCard?.querySelectorAll('[data-shadowing-rate]');
-    const backBtn = wordCard?.querySelector('[data-shadowing-back]');
-    const phraseNode = wordCard?.querySelector('[data-shadowing-phrase]');
-    const ratingNode = wordCard?.querySelector('[data-shadowing-rating]');
-
-    if (phraseNode) phraseNode.textContent = shadowingPhrase;
-    if (recordBtn) {
-        recordBtn.disabled = false;
-        recordBtn.classList.remove('is-recording');
-        recordBtn.querySelector('strong').textContent = 'Record';
+    if (state.shadowing.active) {
+        exitShadowing(reason);
     }
-    if (playBtn) { playBtn.hidden = true; playBtn.disabled = true; }
-    if (ratingNode) ratingNode.hidden = true;
-    if (backBtn) backBtn.onclick = exitShadowing;
+    closeTabPanel();
 };
 
-const enterShadowing = ({ phrase, locale, listenFn }) => {
-    if (state.shadowing.active) return;
+const enterShadowing = ({ phrase, locale, listenFn, rateFn }) => {
+    if (state.shadowing.active) {
+        state.shadowing.controller?.setPhrase(phrase, locale);
+        return;
+    }
     state.shadowing.active = true;
 
     const studyTools = wordCard?.querySelector('[data-study-tools]');
@@ -145,75 +147,67 @@ const enterShadowing = ({ phrase, locale, listenFn }) => {
     if (translationBlock) translationBlock.style.display = 'none';
     if (shadowingMode) shadowingMode.hidden = false;
 
-    setupShadowing(phrase);
+    const label = (key, fallback = '') => i18n[`practice.${key}`] || fallback;
+    const titleNode = wordCard?.querySelector('[data-shadowing-title]');
+    if (titleNode) titleNode.textContent = label('title', 'Practice pronunciation');
 
-    const recordBtn = wordCard?.querySelector('[data-shadowing-record]');
-    const playBtn = wordCard?.querySelector('[data-shadowing-play]');
-    const listenBtn = wordCard?.querySelector('[data-shadowing-listen]');
-    const ratingBtns = wordCard?.querySelectorAll('[data-shadowing-rate]');
-
-    if (listenBtn) {
-        listenBtn.onclick = () => listenFn(phrase, locale, listenBtn);
-    }
-
-    const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (recordBtn && Recognition) {
-        const recognition = new Recognition();
-        recognition.lang = locale;
-        recognition.interimResults = false;
-        recognition.maxAlternatives = 1;
-        let recording = false;
-
-        recordBtn.onclick = () => {
-            if (recording) {
-                recognition.stop();
-                return;
-            }
-            recording = true;
-            recordBtn.classList.add('is-recording');
-            recordBtn.querySelector('strong').textContent = 'Stop';
-            recognition.start();
-        };
-
-        recognition.addEventListener('result', (event) => {
-            const transcript = event.results[0][0].transcript;
-            if (playBtn) {
-                playBtn.hidden = false;
-                playBtn.disabled = false;
-                playBtn.dataset.transcript = transcript;
-            }
-            if (ratingBtns.length) { ratingBtns.forEach((b) => b.classList.remove('is-selected')); }
-            if (ratingNode) ratingNode.hidden = false;
-        });
-
-        recognition.addEventListener('end', () => {
-            recording = false;
-            if (recordBtn) {
-                recordBtn.classList.remove('is-recording');
-                recordBtn.querySelector('strong').textContent = 'Record again';
-            }
-        });
-
-        recognition.addEventListener('error', () => {
-            recording = false;
-            if (recordBtn) {
-                recordBtn.classList.remove('is-recording');
-                recordBtn.querySelector('strong').textContent = 'Record';
-            }
-        });
-    }
-
-    ratingBtns.forEach((btn) => {
-        btn.onclick = () => {
-            ratingBtns.forEach((b) => b.classList.remove('is-selected'));
-            btn.classList.add('is-selected');
-        };
+    state.shadowing.controller = createPracticeRecorder({
+        elements: {
+            root: shadowingMode,
+            phraseNode: wordCard?.querySelector('[data-shadowing-phrase]'),
+            listenBtn: wordCard?.querySelector('[data-shadowing-listen]'),
+            startBtn: wordCard?.querySelector('[data-shadowing-record]'),
+            startBtnLabel: wordCard?.querySelector('[data-shadowing-record-label]'),
+            stopBtn: wordCard?.querySelector('[data-shadowing-stop]'),
+            cancelBtn: wordCard?.querySelector('[data-shadowing-cancel]'),
+            timerNode: wordCard?.querySelector('[data-shadowing-timer]'),
+            statusNode: wordCard?.querySelector('[data-shadowing-status]'),
+            localOnlyNode: wordCard?.querySelector('[data-shadowing-local-only]'),
+            resultNode: wordCard?.querySelector('[data-shadowing-result]'),
+            resultTitleNode: wordCard?.querySelector('[data-shadowing-result-title]'),
+            playBtn: wordCard?.querySelector('[data-shadowing-play]'),
+            pauseBtn: wordCard?.querySelector('[data-shadowing-pause]'),
+            recordAgainBtn: wordCard?.querySelector('[data-shadowing-record-again]'),
+            deleteBtn: wordCard?.querySelector('[data-shadowing-delete]'),
+            ratingNode: wordCard?.querySelector('[data-shadowing-rating]'),
+            ratingButtons: [...wordCard?.querySelectorAll('[data-shadowing-rate]') || []],
+        },
+        labels: {
+            listen: label('listen', 'Listen'),
+            start_recording: label('start_recording', 'Start recording'),
+            stop: label('stop', 'Stop'),
+            cancel: label('cancel', 'Cancel'),
+            recording: label('recording', 'Recording'),
+            your_recording: label('your_recording', 'Your recording'),
+            play: label('play', 'Play'),
+            pause: label('pause', 'Pause'),
+            record_again: label('record_again', 'Record again'),
+            delete: label('delete', 'Delete'),
+            max_time_reached: label('max_time_reached', 'Maximum recording time reached. Recording stopped automatically.'),
+            microphone_denied: label('microphone_denied', 'Microphone access was denied. Allow access in your browser settings.'),
+            microphone_not_found: label('microphone_not_found', 'Microphone not found.'),
+            microphone_busy: label('microphone_busy', 'Microphone is busy in another app or unavailable.'),
+            secure_context_required: label('secure_context_required', 'Recording is only available over a secure HTTPS connection.'),
+            recording_failed: label('recording_failed', 'Recording failed. Please try again.'),
+            select_shorter_text: label('select_shorter_text', 'Select a shorter fragment for pronunciation practice.'),
+            recording_local_only: label('recording_local_only', 'Your recording stays on this device and is not uploaded to the server.'),
+        },
+        phrase,
+        locale,
+        listenFn,
+        rateFn,
+        stopExternalAudio: stopAudio,
     });
+
+    const backBtn = wordCard?.querySelector('[data-shadowing-back]');
+    if (backBtn) backBtn.onclick = () => exitShadowing('close');
 };
 
-const exitShadowing = () => {
+const exitShadowing = (reason = 'close') => {
     if (!state.shadowing.active) return;
     state.shadowing.active = false;
+    state.shadowing.controller?.cleanupPracticeState({ reason });
+    state.shadowing.controller = null;
 
     const studyTools = wordCard?.querySelector('[data-study-tools]');
     const shadowingMode = wordCard?.querySelector('[data-shadowing-mode]');
@@ -225,18 +219,6 @@ const exitShadowing = () => {
     if (translationBlock) translationBlock.style.display = '';
     if (shadowingMode) shadowingMode.hidden = true;
 
-    if (state.shadowing.blobUrl) {
-        URL.revokeObjectURL(state.shadowing.blobUrl);
-        state.shadowing.blobUrl = null;
-    }
-    if (state.shadowing.stream) {
-        state.shadowing.stream.getTracks().forEach((t) => t.stop());
-        state.shadowing.stream = null;
-    }
-    if (state.shadowing.recorder && state.shadowing.recorder.state !== 'inactive') {
-        state.shadowing.recorder.stop();
-    }
-    state.shadowing.recorder = null;
 };
 
 const init = (card) => {
@@ -288,13 +270,24 @@ const init = (card) => {
     const closeBtn = wordCard?.querySelector('[data-close-word-card]');
     if (closeBtn) {
         closeBtn.addEventListener('click', () => {
-            clearState();
+            clearState('close');
+        });
+    }
+
+    if (!lifecycleEventsBound) {
+        lifecycleEventsBound = true;
+        window.addEventListener('pagehide', () => clearState('page_hide'));
+        window.addEventListener('beforeunload', () => clearState('page_hide'));
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden && state.shadowing.active) {
+                clearState('page_hide');
+            }
         });
     }
 };
 
 export {
     init, switchTab, closeTabPanel, clearState,
-    showLoading, showResult, showError,
+    showLoading, showResult, showResultNode, showError,
     enterShadowing, exitShadowing, state, i18n,
 };

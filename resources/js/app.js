@@ -211,6 +211,7 @@ bookFileInput?.addEventListener('change', () => {
 const readerPage = document.querySelector('.reader-page');
 const readingText = document.querySelector('[data-reading-text]');
 const wordCard = document.querySelector('[data-word-card]');
+const wordCardOverlay = document.querySelector('[data-word-card-overlay]');
 
 if (readerPage && readingText && wordCard) {
     const selectedWord = wordCard.querySelector('[data-selected-word]');
@@ -282,26 +283,28 @@ if (readerPage && readingText && wordCard) {
         practiceBtn.addEventListener('click', () => {
             if (practiceBtn.disabled || !activeTokens.length) return;
             const phrase = activeTokens.map((t) => t.dataset.readerWord).join(' ');
-            const locale = document.documentElement.lang || 'en';
+            const locale = readerPage.dataset.bookLanguage || document.documentElement.lang || 'en';
             enterShadowing({
                 phrase,
                 locale,
                 listenFn: (text, l, btn) => playNaturalVoice(text, l, btn),
+                rateFn: async (rating) => {
+                    await apiPost(readerPage.dataset.shadowingUrl, shadowingPayload(activeTokens, rating));
+                    statusNode.textContent = 'Practice saved.';
+                    positionWordCard();
+                },
             });
-            apiPost(readerPage.dataset.shadowingUrl, {
-                original_text: phrase,
-                source_language: readerPage.dataset.bookLanguage || readerPage.dataset.nativeLanguage || 'en',
-            }).catch(() => {});
         });
     }
 
     const closeWordCard = () => {
         wordCard.hidden = true;
+        if (wordCardOverlay) wordCardOverlay.hidden = true;
         activeTokens.forEach((token) => token.classList.remove('is-selected'));
         activeToken = null;
         activeTokens = [];
         selectionAnchor = null;
-        clearPanelState();
+        clearPanelState('close');
         stopAudio();
     };
 
@@ -394,6 +397,29 @@ if (readerPage && readingText && wordCard) {
         return [];
     };
 
+    const simpleHash = (str) => {
+        let hash = 0;
+        for (let index = 0; index < str.length; index += 1) {
+            hash = ((hash << 5) - hash) + str.charCodeAt(index);
+            hash |= 0;
+        }
+        return Math.abs(hash).toString(36);
+    };
+
+    const shadowingPayload = (tokens, selfRating = null) => {
+        const firstIndex = tokens.length ? allTokens.indexOf(tokens[0]) : -1;
+        const lastIndex = tokens.length ? allTokens.indexOf(tokens.at(-1)) : -1;
+        const phrase = tokens.map((token) => token.dataset.readerWord).join(' ');
+
+        return {
+            page_number: parseInt(readerPage.dataset.pageNumber || '1', 10),
+            word_index_start: firstIndex >= 0 ? firstIndex : 0,
+            word_index_end: lastIndex >= 0 ? lastIndex : 0,
+            sentence_hash: simpleHash(phrase),
+            self_rating: selfRating,
+        };
+    };
+
     const openTranslation = (tokens) => {
         const selectedTokens = tokens.slice(0, 10);
         if (!selectedTokens.length) return;
@@ -430,10 +456,11 @@ if (readerPage && readingText && wordCard) {
         setSaveButtonState(false, 'Waiting for translation');
         if (upgradeBtn) upgradeBtn.hidden = true;
         if (studyTools) studyTools.hidden = true;
-        clearPanelState();
+        clearPanelState('selection_change');
         wordCard.querySelectorAll('[data-ai-tool]').forEach((btn) => { btn.disabled = true; });
         positionWordCard(true);
         wordCard.hidden = false;
+        if (wordCardOverlay) wordCardOverlay.hidden = false;
         requestAnimationFrame(() => positionWordCard());
 
         translationRequest?.abort();
@@ -649,12 +676,13 @@ if (readerPage && readingText && wordCard) {
     });
 
     wordCard.querySelector('[data-close-word-card]')?.addEventListener('click', closeWordCard);
+    wordCardOverlay?.addEventListener('click', closeWordCard);
     speakButton?.addEventListener('click', async () => {
         if (!activeTokens.length) return;
         statusNode.textContent = '';
         const result = await playNaturalVoice(
             activeTokens.map((token) => token.dataset.readerWord).join(' '),
-            document.documentElement.lang || 'en',
+            readerPage.dataset.bookLanguage || document.documentElement.lang || 'en',
             speakButton,
         );
 
@@ -684,7 +712,7 @@ if (readerPage && readingText && wordCard) {
                 return;
             }
             if (panelState.activeTab) {
-                clearPanelState();
+                clearPanelState('tab_switch');
                 return;
             }
             closeWordCard();
@@ -763,7 +791,10 @@ if (readerPage && readingText && wordCard) {
         } catch {
             statusNode.textContent = 'Could not save the word.';
         } finally {
-            if (canEnableAfterSave && translationInput.textContent.trim()) {
+            if (panelState.isSaved) {
+                saveButton.textContent = 'Saved ✓';
+                saveButton.disabled = true;
+            } else if (canEnableAfterSave && translationInput.textContent.trim()) {
                 setSaveButtonState(true, 'Add to vocabulary');
             }
         }

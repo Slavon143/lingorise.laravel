@@ -293,26 +293,41 @@ class OpenAiProvider implements AiProviderInterface
                                 'meaning_in_context' => ['type' => 'string'],
                                 'why_this_meaning' => ['type' => 'string'],
                                 'role_in_sentence' => ['type' => 'string'],
-                                'base_form' => ['type' => 'string'],
-                                'part_of_speech' => ['type' => 'string'],
+                                'base_form' => ['type' => ['string', 'null']],
+                                'part_of_speech' => ['type' => ['string', 'null']],
                                 'fixed_expression' => ['type' => 'boolean'],
-                                'literal_translation_warning' => ['type' => 'string'],
-                                'register' => ['type' => 'string'],
-                                'connotation' => ['type' => 'string'],
+                                'literal_translation_warning' => ['type' => ['string', 'null']],
+                                'register' => ['type' => ['string', 'null']],
+                                'connotation' => ['type' => ['string', 'null']],
                                 'synonyms' => [
                                     'type' => 'array',
                                     'items' => ['type' => 'string'],
                                 ],
-                                'common_misunderstanding' => ['type' => 'string'],
-                                'natural_example' => ['type' => 'string'],
-                                'cefr_level' => ['type' => 'string'],
+                                'common_misunderstanding' => ['type' => ['string', 'null']],
+                                'natural_example' => ['type' => ['string', 'null']],
+                                'cefr_level' => ['type' => ['string', 'null']],
                             ],
-                            'required' => ['expression', 'meaning_in_context', 'why_this_meaning'],
+                            'required' => [
+                                'expression',
+                                'meaning_in_context',
+                                'why_this_meaning',
+                                'role_in_sentence',
+                                'base_form',
+                                'part_of_speech',
+                                'fixed_expression',
+                                'literal_translation_warning',
+                                'register',
+                                'connotation',
+                                'synonyms',
+                                'common_misunderstanding',
+                                'natural_example',
+                                'cefr_level',
+                            ],
                             'additionalProperties' => false,
                         ],
                     ],
                 ],
-                'max_output_tokens' => 500,
+                'max_completion_tokens' => 500,
             ]);
 
         $response->throw();
@@ -392,7 +407,7 @@ class OpenAiProvider implements AiProviderInterface
                             'properties' => [
                                 'construction' => ['type' => 'string'],
                                 'purpose' => ['type' => 'string'],
-                                'structure' => ['type' => 'string'],
+                                'structure' => ['type' => ['string', 'null']],
                                 'parts' => [
                                     'type' => 'array',
                                     'items' => [
@@ -406,10 +421,18 @@ class OpenAiProvider implements AiProviderInterface
                                     ],
                                 ],
                                 'simplified_translation' => ['type' => 'string'],
-                                'additional_example' => ['type' => 'string'],
-                                'common_mistake' => ['type' => 'string'],
+                                'additional_example' => ['type' => ['string', 'null']],
+                                'common_mistake' => ['type' => ['string', 'null']],
                             ],
-                            'required' => ['construction', 'purpose', 'simplified_translation'],
+                            'required' => [
+                                'construction',
+                                'purpose',
+                                'structure',
+                                'parts',
+                                'simplified_translation',
+                                'additional_example',
+                                'common_mistake',
+                            ],
                             'additionalProperties' => false,
                         ],
                     ],
@@ -465,17 +488,15 @@ class OpenAiProvider implements AiProviderInterface
                                     [
                                         'role' => 'system',
                                         'content' => 'You are a text simplifier for language learners. '
-                                            . 'Given a text in the source language and a target CEFR level (A1-C2): '
-                                            . '1. Rewrite the text at the target level while preserving all facts, names, and events. '
-                                            . '2. Do NOT add new information or events. '
-                                            . '3. Do NOT remove important details. '
-                                            . '4. Preserve names, places, and proper nouns exactly. '
-                                            . '5. Do NOT turn literary text into a dry summary. '
-                                            . '6. Do NOT spoil future chapters. '
-                                            . '7. List the main replacements made (replacements), each with the original word/phrase, the replacement, and why it was changed. '
-                                            . '8. Briefly explain what changed in the learner\'s native language (changes_explanation). '
-                                            . '9. If the meaning had to be adapted approximately, set meaning_adapted to true and explain in the learner\'s native language (meaning_adapted_warning). '
+                                            . 'Given a text in the source language and a target CEFR level (A1-C1): '
+                                            . 'Preserve the original meaning exactly. '
+                                            . 'Do not: change the subject; change existential constructions such as "there is/there are" into possession such as "they have"; add intensifiers such as "very", "really", or "extremely"; add facts not present in the source; invent missing continuation; remove negation; change tense, person, number, modality, quantity, or degree unless strictly required for basic grammar. '
+                                            . 'If the selected text is an incomplete sentence fragment, simplify only the available fragment and return is_fragment=true. Do not invent the missing continuation. '
+                                            . 'Before returning the answer, verify that subject, negation, quantity, degree, tense, modality, and meaning remain unchanged. '
+                                            . 'List only meaningful replacements, each with original, replacement, and reason. '
+                                            . 'Reason and explanation must be in the learner\'s native language: ' . $request->targetLanguage . '. '
                                             . 'The rewritten simplified text must stay in the source language. '
+                                            . ($request->validationFeedback ? 'Previous answer was rejected because: ' . $request->validationFeedback . '. Correct it. ' : '')
                                             . 'Return only valid JSON with no additional text.',
                     ],
                     [
@@ -483,6 +504,7 @@ class OpenAiProvider implements AiProviderInterface
                         'content' => json_encode([
                             'text' => $request->text,
                             'source_language' => $request->sourceLanguage,
+                            'native_language' => $request->targetLanguage,
                             'target_level' => $request->targetLevel,
                             'preserve_style' => $request->preserveStyle,
                         ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
@@ -498,6 +520,9 @@ class OpenAiProvider implements AiProviderInterface
                             'properties' => [
                                 'original' => ['type' => 'string'],
                                 'simplified' => ['type' => 'string'],
+                                'level' => ['type' => 'string'],
+                                'is_fragment' => ['type' => 'boolean'],
+                                'meaning_preserved' => ['type' => 'boolean'],
                                 'replacements' => [
                                     'type' => 'array',
                                     'items' => [
@@ -511,11 +536,17 @@ class OpenAiProvider implements AiProviderInterface
                                         'additionalProperties' => false,
                                     ],
                                 ],
-                                'changes_explanation' => ['type' => 'string'],
-                                'meaning_adapted' => ['type' => 'boolean'],
-                                'meaning_adapted_warning' => ['type' => 'string'],
+                                'explanation' => ['type' => 'string'],
                             ],
-                            'required' => ['original', 'simplified'],
+                            'required' => [
+                                'original',
+                                'simplified',
+                                'level',
+                                'is_fragment',
+                                'meaning_preserved',
+                                'replacements',
+                                'explanation',
+                            ],
                             'additionalProperties' => false,
                         ],
                     ],
@@ -539,11 +570,11 @@ class OpenAiProvider implements AiProviderInterface
         return new SimplificationResult(
             original: trim((string) ($result['original'] ?? '')),
             simplified: trim((string) ($result['simplified'] ?? '')),
-            targetLevel: $request->targetLevel,
+            targetLevel: trim((string) ($result['level'] ?? $request->targetLevel)),
+            isFragment: (bool) ($result['is_fragment'] ?? false),
+            meaningPreserved: (bool) ($result['meaning_preserved'] ?? true),
             replacements: $result['replacements'] ?? [],
-            changesExplanation: isset($result['changes_explanation']) ? trim((string) $result['changes_explanation']) : null,
-            meaningAdapted: (bool) ($result['meaning_adapted'] ?? false),
-            meaningAdaptedWarning: isset($result['meaning_adapted_warning']) ? trim((string) $result['meaning_adapted_warning']) : null,
+            explanation: trim((string) ($result['explanation'] ?? $result['changes_explanation'] ?? '')),
             inputTokens: (int) ($usage['prompt_tokens'] ?? 0),
             outputTokens: (int) ($usage['completion_tokens'] ?? 0),
             providerDurationMs: $providerDuration,

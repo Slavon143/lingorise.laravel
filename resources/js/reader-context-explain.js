@@ -35,7 +35,7 @@ const init = () => {
                 selected_text: phrase,
                 context,
                 source_language: page.dataset.bookLanguage || page.dataset.nativeLanguage || 'en',
-            }, controller.signal);
+            }, { signal: controller.signal });
             const data = result.data;
 
             const sections = [];

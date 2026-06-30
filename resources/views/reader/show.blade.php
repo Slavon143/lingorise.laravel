@@ -183,8 +183,34 @@
             'simplify.title' => __('reader.simplify.title'),
             'simplify.original' => __('reader.simplify.original'),
             'simplify.simplified' => __('reader.simplify.simplified'),
+            'simplify.replacements' => __('reader.simplify.replacements'),
+            'simplify.fragment_warning' => __('reader.simplify.fragment_warning'),
+            'simplify.original_value' => __('reader.simplify.original_value'),
+            'simplify.replacement_value' => __('reader.simplify.replacement_value'),
+            'simplify.reason' => __('reader.simplify.reason'),
+            'simplify.meaning_preserved' => __('reader.simplify.meaning_preserved'),
+            'simplify.validation_failed' => __('reader.simplify.validation_failed'),
             'simplify.loading_title' => __('reader.simplify.loading_title'),
             'simplify.loading_subtitle' => __('reader.simplify.loading_subtitle'),
+            'practice.title' => __('reader.practice.title'),
+            'practice.listen' => __('reader.practice.listen'),
+            'practice.start_recording' => __('reader.practice.start_recording'),
+            'practice.stop' => __('reader.practice.stop'),
+            'practice.cancel' => __('reader.practice.cancel'),
+            'practice.recording' => __('reader.practice.recording'),
+            'practice.your_recording' => __('reader.practice.your_recording'),
+            'practice.play' => __('reader.practice.play'),
+            'practice.pause' => __('reader.practice.pause'),
+            'practice.record_again' => __('reader.practice.record_again'),
+            'practice.delete' => __('reader.practice.delete'),
+            'practice.max_time_reached' => __('reader.practice.max_time_reached'),
+            'practice.microphone_denied' => __('reader.practice.microphone_denied'),
+            'practice.microphone_not_found' => __('reader.practice.microphone_not_found'),
+            'practice.microphone_busy' => __('reader.practice.microphone_busy'),
+            'practice.secure_context_required' => __('reader.practice.secure_context_required'),
+            'practice.recording_failed' => __('reader.practice.recording_failed'),
+            'practice.select_shorter_text' => __('reader.practice.select_shorter_text'),
+            'practice.recording_local_only' => __('reader.practice.recording_local_only'),
             'error.title' => __('reader.error.title'),
             'error.subtitle' => __('reader.error.subtitle'),
             'error.try_again' => __('reader.error.try_again'),
@@ -248,22 +274,35 @@
         <button type="button" class="word-card-practice-btn" data-practice-btn disabled>{{ __('reader.practice_pronunciation') }}</button>
         <div class="word-card-shadowing" data-shadowing-mode hidden>
             <div class="shadowing-head">
-                <strong>{{ __('reader.practice_pronunciation') }}</strong>
+                <strong data-shadowing-title>{{ __('reader.practice.title') }}</strong>
             </div>
             <div class="shadowing-phrase" data-shadowing-phrase></div>
+            <p class="shadowing-local-note" data-shadowing-local-only>{{ __('reader.practice.recording_local_only') }}</p>
+            <div class="shadowing-status" data-shadowing-status hidden></div>
+            <div class="shadowing-timer" data-shadowing-timer aria-live="polite">{{ __('reader.practice.recording') }} 00:00 / 00:30</div>
             <div class="shadowing-bar">
+                <button type="button" class="shadowing-listen-btn" data-shadowing-listen>{{ __('reader.practice.listen') }}</button>
                 <button type="button" class="shadowing-record-btn" data-shadowing-record disabled>
                     <span class="shadowing-record-icon">●</span>
-                    <strong>Record</strong>
+                    <strong data-shadowing-record-label>{{ __('reader.practice.start_recording') }}</strong>
                 </button>
-                <button type="button" class="shadowing-play-btn" data-shadowing-play disabled hidden>Play my recording</button>
-                <button type="button" class="shadowing-listen-btn" data-shadowing-listen>Listen to example</button>
+                <button type="button" class="shadowing-stop-btn" data-shadowing-stop hidden disabled>{{ __('reader.practice.stop') }}</button>
+                <button type="button" class="shadowing-cancel-btn" data-shadowing-cancel hidden disabled>{{ __('reader.practice.cancel') }}</button>
+            </div>
+            <div class="shadowing-result" data-shadowing-result hidden>
+                <strong data-shadowing-result-title>{{ __('reader.practice.your_recording') }}</strong>
+                <div class="shadowing-result-actions">
+                    <button type="button" class="shadowing-play-btn" data-shadowing-play disabled>{{ __('reader.practice.play') }}</button>
+                    <button type="button" class="shadowing-pause-btn" data-shadowing-pause disabled>{{ __('reader.practice.pause') }}</button>
+                    <button type="button" class="shadowing-record-again-btn" data-shadowing-record-again disabled>{{ __('reader.practice.record_again') }}</button>
+                    <button type="button" class="shadowing-delete-btn" data-shadowing-delete disabled>{{ __('reader.practice.delete') }}</button>
+                </div>
             </div>
             <div class="shadowing-rating" data-shadowing-rating hidden>
                 <span>How was it?</span>
-                <button type="button" data-shadowing-rate="easy">Easy</button>
-                <button type="button" data-shadowing-rate="okay">Okay</button>
-                <button type="button" data-shadowing-rate="difficult">Difficult</button>
+                <button type="button" data-shadowing-rate="difficult">{{ __('reader.practice.difficult') }}</button>
+                <button type="button" data-shadowing-rate="almost_correct">{{ __('reader.practice.almost_correct') }}</button>
+                <button type="button" data-shadowing-rate="good">{{ __('reader.practice.good') }}</button>
             </div>
             <button type="button" class="shadowing-back-btn" data-shadowing-back>Back to translation</button>
         </div>

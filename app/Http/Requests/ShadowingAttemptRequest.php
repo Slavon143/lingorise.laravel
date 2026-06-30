@@ -13,7 +13,7 @@ class ShadowingAttemptRequest extends FormRequest
             'word_index_start' => ['required', 'integer', 'min:0'],
             'word_index_end' => ['required', 'integer', 'min:0', 'gte:word_index_start'],
             'sentence_hash' => ['required', 'string', 'max:64'],
-            'self_rating' => ['nullable', 'string', 'in:easy,okay,difficult'],
+            'self_rating' => ['nullable', 'string', 'in:easy,okay,difficult,almost_correct,good'],
         ];
     }
 
