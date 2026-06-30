@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\ContextExplanationRequest;
 use App\Models\Book;
 use App\Services\Intelligence\Explanation\ContextExplanationService;
+use App\Http\Responses\AiErrorResponse;
 use App\Services\Intelligence\Subscription\AiQuotaExceededException;
 use App\Services\Intelligence\Subscription\AiQuotaGuard;
 use App\Services\Intelligence\Subscription\BookAccessService;
@@ -63,11 +64,7 @@ class ContextExplanationController extends Controller
         } catch (Throwable $exception) {
             report($exception);
 
-            return response()->json([
-                'success' => false,
-                'message' => 'Context explanation is temporarily unavailable.',
-                'error' => 'service_unavailable',
-            ], 503);
+            return AiErrorResponse::fromException($exception, 'Context explanation is temporarily unavailable.');
         }
     }
 }

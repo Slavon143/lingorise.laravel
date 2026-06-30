@@ -1,0 +1,52 @@
+<?php
+
+return [
+    'selected_word' => 'Выбранное слово',
+    'translation' => 'Перевод',
+    'save_to_vocabulary' => 'Сохранить в словарь',
+    'saving' => 'Сохранение…',
+    'saved' => 'Сохранено ✓',
+    'study_tools' => 'Инструменты',
+    'context' => 'Контекст',
+    'grammar' => 'Грамматика',
+    'simplify' => 'Упрощение',
+    'practice_pronunciation' => 'Потренировать произношение',
+    'close' => 'Закрыть перевод',
+    'listen' => 'Прослушать произношение',
+
+    'context.meaning' => 'Значение здесь',
+    'context.why' => 'Почему именно это значение',
+    'context.role' => 'Роль в предложении',
+    'context.fixed_expression' => 'Устойчивое выражение',
+    'context.literal_warning' => 'Дословный перевод',
+    'context.register' => 'Стиль',
+    'context.connotation' => 'Оттенок',
+    'context.synonyms' => 'Похожие слова',
+    'context.common_mistake' => 'Типичная ошибка',
+    'context.example' => 'Пример',
+    'context.level' => 'Уровень',
+    'context.base_form' => 'Исходная форма',
+    'context.tags' => 'Теги',
+
+    'grammar.title' => 'Объяснение грамматики',
+    'grammar.parts' => 'Части предложения',
+
+    'simplify.title' => 'Упрощённо',
+    'simplify.original' => 'Оригинал',
+    'simplify.simplified' => 'Упрощённо',
+    'simplify.replacements' => 'Замены',
+    'simplify.changes' => 'Изменения',
+
+    'context.loading_title' => 'Анализ фразы',
+    'context.loading_subtitle' => 'Определяем значение в контексте…',
+    'grammar.loading_title' => 'Анализ грамматики',
+    'grammar.loading_subtitle' => 'Разбираем структуру предложения…',
+    'simplify.loading_title' => 'Упрощение',
+    'simplify.loading_subtitle' => 'Сохраняем исходный смысл…',
+
+    'error.title' => 'Не удалось загрузить объяснение',
+    'error.subtitle' => 'Сервис временно недоступен.',
+    'error.try_again' => 'Попробовать снова',
+    'error.quota_exceeded' => 'Дневной лимит исчерпан. Сброс в :time.',
+    'error.upgrade' => 'Улучшить тариф',
+];

@@ -15,6 +15,7 @@ use App\Services\Intelligence\Exceptions\AiInvalidResponseException;
 use App\Services\Intelligence\Usage\AiUsageContext;
 use App\Services\Intelligence\Usage\AiUsageRecorder;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Throwable;
 
@@ -140,7 +141,19 @@ class SimplificationService
                     preserveStyle: $preserveStyle,
                 );
 
+                Log::debug('SimplificationService: calling provider', [
+                    'text' => mb_substr($text, 0, 100),
+                    'source_language' => $sourceLanguage,
+                    'target_level' => $targetLevel,
+                ]);
+
                 $result = $this->provider->simplify($request);
+
+                Log::debug('SimplificationService: provider returned', [
+                    'input_tokens' => $result->inputTokens,
+                    'output_tokens' => $result->outputTokens,
+                    'provider_duration_ms' => $result->providerDurationMs,
+                ]);
 
                 $responseJson = $this->validateResponse($result);
 

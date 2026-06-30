@@ -1,71 +1,71 @@
 import {
-    readerPage, wordCard, setStatus, setWordCardLoading,
-    showUpgrade, positionWordCard, apiPost,
+    readerPage, setStatus, setWordCardLoading, apiPost, escHtml,
 } from './reader-ui.js';
+import { showLoading, showResult, showError, i18n, state } from './reader/translation-panel.js';
 
 const init = () => {
     const page = readerPage();
     if (!page) return;
-    const btn = wordCard()?.querySelector('[data-ai-tool="grammar-explain"]');
-    const output = wordCard()?.querySelector('[data-ai-output]');
-    if (!btn || !output) return;
+    const btn = document.querySelector('[data-ai-tool="grammar-explain"]');
     const url = page.dataset.grammarExplainUrl;
-    if (!url) return;
+    if (!btn || !url) return;
+    let controller = null;
 
     btn.addEventListener('click', async () => {
-        const selectedWord = wordCard().querySelector('[data-selected-word]');
-        const contextNode = wordCard().querySelector('[data-word-context]');
+        if (controller) {
+            controller.abort();
+        }
+        if (state.requests.grammar) {
+            state.requests.grammar.abort();
+        }
+        const selectedWord = document.querySelector('[data-selected-word]');
+        const contextNode = document.querySelector('[data-word-context]');
         const phrase = selectedWord?.textContent?.trim();
         const context = contextNode?.textContent?.trim();
         if (!phrase) return;
 
+        controller = new AbortController();
+        state.requests.grammar = controller;
         btn.disabled = true;
         setWordCardLoading(true);
-        setStatus('Analysing grammar…');
-        output.innerHTML = '';
-        output.hidden = false;
+        showLoading('grammar', 'grammar.loading_title', 'grammar.loading_subtitle');
 
         try {
             const result = await apiPost(url, {
                 text: phrase,
                 context: context || null,
-                source_language: page.dataset.nativeLanguage || 'en',
-                target_language: page.dataset.nativeLanguage || 'de',
-            });
+                source_language: page.dataset.bookLanguage || page.dataset.nativeLanguage || 'en',
+            }, controller.signal);
             const data = result.data;
-            output.innerHTML = `
-                <div class="ai-tool-section">
-                    <span class="ai-tool-label">Grammar explanation</span>
-                    <strong class="ai-tool-construction">${escHtml(data.construction || '')}</strong>
-                    <p class="ai-tool-purpose">${escHtml(data.purpose || '')}</p>
-                    <div class="ai-tool-structure">
-                        <span class="ai-tool-label-small">Structure</span>
-                        <code>${escHtml(data.structure || '')}</code>
-                    </div>
-                    ${data.simplified_translation ? `<p class="ai-tool-translation">→ ${escHtml(data.simplified_translation)}</p>` : ''}
-                    ${data.additional_example ? `<blockquote class="ai-tool-example">${escHtml(data.additional_example)}</blockquote>` : ''}
-                    ${data.common_mistake ? `<p class="ai-tool-mistake">⚠ ${escHtml(data.common_mistake)}</p>` : ''}
-                    ${result.meta?.cache_hit ? '<small class="ai-cache-note">cached</small>' : ''}
-                </div>`;
+            let partsHtml = '';
+            if (data.parts?.length) {
+                partsHtml = '<div class="ai-tool-meta">' +
+                    data.parts.map((p) =>
+                        `<span class="ai-tag">${escHtml(p.text || '')} — ${escHtml(p.role || '')}</span>`
+                    ).join('') +
+                    '</div>';
+            }
+            showResult('grammar', `
+                <span class="ai-tool-label">${escHtml(i18n['grammar.title'] || 'Grammar explanation')}</span>
+                <strong class="ai-tool-construction">${escHtml(data.construction || '')}</strong>
+                <p class="ai-tool-purpose">${escHtml(data.purpose || '')}</p>
+                ${data.structure ? `<div class="ai-tool-structure"><code>${escHtml(data.structure)}</code></div>` : ''}
+                ${partsHtml}
+                ${data.simplified_translation ? `<p class="ai-tool-translation">→ ${escHtml(data.simplified_translation)}</p>` : ''}
+                ${data.additional_example ? `<blockquote class="ai-tool-example">${escHtml(data.additional_example)}</blockquote>` : ''}
+                ${data.common_mistake ? `<p class="ai-tool-mistake">${escHtml(data.common_mistake)}</p>` : ''}`);
             setStatus('');
         } catch (err) {
-            if (err.upgrade_url) {
-                setStatus(err.message || 'Upgrade to use this feature');
-                showUpgrade();
-            } else {
-                setStatus(err.message || 'Grammar explanation unavailable.');
+            if (err.name !== 'AbortError') {
+                showError('grammar', err);
             }
         } finally {
             btn.disabled = false;
             setWordCardLoading(false);
+            controller = null;
+            state.requests.grammar = null;
         }
     });
-};
-
-const escHtml = (str) => {
-    const div = document.createElement('div');
-    div.textContent = str;
-    return div.innerHTML;
 };
 
 if (document.readyState !== 'loading') {

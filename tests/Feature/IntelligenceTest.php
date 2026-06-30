@@ -77,15 +77,20 @@ class IntelligenceTest extends TestCase
     public function test_context_explanation_service(): void
     {
         $this->fakeChoice([
+            'expression' => 'wonderful',
             'meaning_in_context' => 'Something that causes great joy.',
+            'why_this_meaning' => 'Describes something very good in this context.',
+            'role_in_sentence' => 'Adjective modifying the noun.',
             'base_form' => 'wonderful',
             'part_of_speech' => 'adjective',
-            'translation' => 'wunderbar',
-            'simple_explanation' => 'Used to describe something very good.',
-            'example' => 'It was a wonderful experience.',
+            'fixed_expression' => false,
+            'literal_translation_warning' => null,
+            'register' => 'neutral',
+            'connotation' => 'positive',
+            'synonyms' => ['marvelous', 'fantastic'],
+            'common_misunderstanding' => 'Not used for formal descriptions.',
+            'natural_example' => 'It was a wonderful experience.',
             'cefr_level' => 'A2',
-            'grammar_form' => 'positive',
-            'fixed_expression' => null,
         ]);
 
         $service = $this->app->make(ContextExplanationService::class);
@@ -99,22 +104,27 @@ class IntelligenceTest extends TestCase
             usageContext: new AiUsageContext(userId: $this->user->id),
         );
 
-        $this->assertEquals('wunderbar', $result['data']['translation']);
+        $this->assertEquals('wonderful', $result['data']['expression']);
         $this->assertFalse($result['meta']['cache_hit']);
     }
 
     public function test_context_explanation_endpoint(): void
     {
         $this->fakeChoice([
+            'expression' => 'wonderful',
             'meaning_in_context' => 'Something that causes great joy.',
+            'why_this_meaning' => 'Describes something very good in this context.',
+            'role_in_sentence' => 'Adjective modifying the noun.',
             'base_form' => 'wonderful',
             'part_of_speech' => 'adjective',
-            'translation' => 'wunderbar',
-            'simple_explanation' => 'Used to describe something very good.',
-            'example' => 'It was a wonderful experience.',
+            'fixed_expression' => false,
+            'literal_translation_warning' => null,
+            'register' => 'neutral',
+            'connotation' => 'positive',
+            'synonyms' => ['marvelous', 'fantastic'],
+            'common_misunderstanding' => null,
+            'natural_example' => 'It was a wonderful experience.',
             'cefr_level' => 'A2',
-            'grammar_form' => 'positive',
-            'fixed_expression' => null,
         ]);
 
         $response = $this->actingAs($this->user)
@@ -127,7 +137,7 @@ class IntelligenceTest extends TestCase
             ->assertOk();
 
         $this->assertTrue($response->json('success'));
-        $this->assertEquals('wunderbar', $response->json('data.translation'));
+        $this->assertEquals('wonderful', $response->json('data.expression'));
         $this->assertNotNull($response->json('meta.cache_key'));
     }
 
@@ -137,7 +147,10 @@ class IntelligenceTest extends TestCase
             'construction' => 'Present Perfect',
             'purpose' => 'Used for past actions with present relevance.',
             'structure' => 'have + past participle',
-            'parts' => ['have', 'past participle'],
+            'sentence_parts' => [
+                ['word' => 'have', 'function' => 'auxiliary'],
+                ['word' => 'visited', 'function' => 'past participle'],
+            ],
             'simplified_translation' => 'I have visited London.',
             'additional_example' => 'She has eaten.',
             'common_mistake' => 'Using past simple instead.',
@@ -164,7 +177,10 @@ class IntelligenceTest extends TestCase
             'construction' => 'Present Perfect',
             'purpose' => 'Used for past actions with present relevance.',
             'structure' => 'have + past participle',
-            'parts' => ['have', 'past participle'],
+            'sentence_parts' => [
+                ['word' => 'have', 'function' => 'auxiliary'],
+                ['word' => 'visited', 'function' => 'past participle'],
+            ],
             'simplified_translation' => 'I have visited London.',
             'additional_example' => 'She has eaten.',
             'common_mistake' => 'Using past simple instead.',
@@ -275,14 +291,72 @@ class IntelligenceTest extends TestCase
         $this->assertEquals(2, $response->json('data.attempts_count'));
     }
 
+    public function test_context_explain_fallback_to_native_locale(): void
+    {
+        $this->fakeChoice([
+            'expression' => 'wonderful',
+            'meaning_in_context' => 'Something that causes great joy.',
+            'why_this_meaning' => 'Describes something very good in this context.',
+            'role_in_sentence' => 'Adjective modifying the noun.',
+            'base_form' => 'wonderful',
+            'part_of_speech' => 'adjective',
+            'fixed_expression' => false,
+            'literal_translation_warning' => null,
+            'register' => 'neutral',
+            'connotation' => 'positive',
+            'synonyms' => ['marvelous', 'fantastic'],
+            'common_misunderstanding' => null,
+            'natural_example' => 'It was a wonderful experience.',
+            'cefr_level' => 'A2',
+        ]);
+
+        $this->actingAs($this->user)
+            ->postJson(route('reader.context-explain', $this->book), [
+                'selected_text' => 'wonderful',
+                'context' => 'The garden was full of wonderful secrets.',
+                'source_language' => 'en',
+            ])
+            ->assertOk()
+            ->assertJsonPath('success', true);
+    }
+
+    public function test_grammar_explain_fallback_to_native_locale(): void
+    {
+        $this->fakeChoice([
+            'construction' => 'Present Perfect',
+            'purpose' => 'Used for past actions with present relevance.',
+            'structure' => 'have + past participle',
+            'sentence_parts' => [
+                ['word' => 'have', 'function' => 'auxiliary'],
+                ['word' => 'visited', 'function' => 'past participle'],
+            ],
+            'simplified_translation' => 'I have visited London.',
+            'additional_example' => 'She has eaten.',
+            'common_mistake' => 'Using past simple instead.',
+        ]);
+
+        $this->actingAs($this->user)
+            ->postJson(route('reader.grammar-explain', $this->book), [
+                'text' => 'I have visited London.',
+                'source_language' => 'en',
+            ])
+            ->assertOk()
+            ->assertJsonPath('success', true);
+    }
+
     public function test_structured_cache_is_reused(): void
     {
         $this->fakeChoice([
+            'expression' => 'great',
             'meaning_in_context' => 'Something great.',
+            'why_this_meaning' => 'Describes something very good.',
             'base_form' => 'great',
             'part_of_speech' => 'adjective',
-            'translation' => 'großartig',
-            'simple_explanation' => 'Very good.',
+            'fixed_expression' => false,
+            'register' => 'neutral',
+            'connotation' => 'positive',
+            'synonyms' => ['excellent', 'wonderful'],
+            'natural_example' => 'That is great!',
             'cefr_level' => 'A1',
         ]);
 

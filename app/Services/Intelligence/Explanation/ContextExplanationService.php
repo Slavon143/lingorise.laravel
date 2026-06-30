@@ -15,6 +15,7 @@ use App\Services\Intelligence\Exceptions\AiInvalidResponseException;
 use App\Services\Intelligence\Usage\AiUsageContext;
 use App\Services\Intelligence\Usage\AiUsageRecorder;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Throwable;
 
@@ -136,7 +137,19 @@ class ContextExplanationService
                     targetLanguage: $targetLanguage,
                 );
 
+                Log::debug('ContextExplanationService: calling provider', [
+                    'selected_text' => mb_substr($selectedText, 0, 100),
+                    'source_language' => $sourceLanguage,
+                    'target_language' => $targetLanguage,
+                ]);
+
                 $result = $this->provider->explainInContext($request);
+
+                Log::debug('ContextExplanationService: provider returned', [
+                    'input_tokens' => $result->inputTokens,
+                    'output_tokens' => $result->outputTokens,
+                    'provider_duration_ms' => $result->providerDurationMs,
+                ]);
 
                 $responseJson = $this->validateResponse($result);
 
@@ -212,34 +225,39 @@ class ContextExplanationService
 
     private function validateResponse(ContextExplanationResult $result): array
     {
+        $expression = trim($result->expression);
         $meaning = trim($result->meaningInContext);
-        $translation = trim($result->translation);
-        $explanation = trim($result->simpleExplanation);
+        $why = trim($result->whyThisMeaning);
 
-        if ($meaning === '' || $translation === '' || $explanation === '') {
+        if ($expression === '' || $meaning === '' || $why === '') {
             throw new AiInvalidResponseException('Context explanation returned empty required fields.');
         }
 
-        $allowedLevels = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2', null];
+        $allowedLevels = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
         if ($result->cefrLevel !== null && !in_array($result->cefrLevel, $allowedLevels, true)) {
             throw new AiInvalidResponseException('Invalid CEFR level in context explanation.');
         }
 
         $maxLength = 2000;
-        if (mb_strlen($meaning) > $maxLength || mb_strlen($translation) > $maxLength || mb_strlen($explanation) > $maxLength) {
+        if (mb_strlen($expression) > $maxLength || mb_strlen($meaning) > $maxLength || mb_strlen($why) > $maxLength) {
             throw new AiInvalidResponseException('Context explanation field exceeds maximum length.');
         }
 
         return [
+            'expression' => $expression,
             'meaning_in_context' => $meaning,
-            'base_form' => $result->baseForm ? trim($result->baseForm) : null,
-            'part_of_speech' => $result->partOfSpeech ? trim($result->partOfSpeech) : null,
-            'translation' => $translation,
-            'simple_explanation' => $explanation,
-            'example' => $result->example ? trim($result->example) : null,
+            'why_this_meaning' => $why,
+            'role_in_sentence' => $result->roleInSentence,
+            'base_form' => $result->baseForm,
+            'part_of_speech' => $result->partOfSpeech,
+            'fixed_expression' => $result->fixedExpression,
+            'literal_translation_warning' => $result->literalTranslationWarning,
+            'register' => $result->register,
+            'connotation' => $result->connotation,
+            'synonyms' => array_values($result->synonyms),
+            'common_misunderstanding' => $result->commonMisunderstanding,
+            'natural_example' => $result->naturalExample,
             'cefr_level' => $result->cefrLevel,
-            'grammar_form' => $result->grammarForm ? trim($result->grammarForm) : null,
-            'fixed_expression' => $result->fixedExpression ? trim($result->fixedExpression) : null,
         ];
     }
 

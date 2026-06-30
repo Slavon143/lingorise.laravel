@@ -11,9 +11,9 @@ class AiStructuredCacheRepository
         private readonly AiCacheKeyFactory $keyFactory,
     ) {}
 
-    public const int PROMPT_VERSION = 1;
+    public const int PROMPT_VERSION = 3;
 
-    public const int RESPONSE_FORMAT_VERSION = 1;
+    public const int RESPONSE_FORMAT_VERSION = 3;
 
     public function cacheKey(
         string $operationType,

@@ -7,7 +7,7 @@
     <title>{{ $pageTitle }} · LingoRise Reader</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="reader-page" data-vocabulary-url="{{ route('vocabulary.store', $book) }}" data-translation-url="{{ route('reader.translate', $book) }}" data-context-explain-url="{{ route('reader.context-explain', $book) }}" data-grammar-explain-url="{{ route('reader.grammar-explain', $book) }}" data-simplify-url="{{ route('reader.simplify', $book) }}" data-shadowing-url="{{ route('reader.shadowing', $book) }}" data-speech-url="{{ route('speech.create') }}" data-native-language="{{ $nativeLanguage }}" data-page-number="{{ $page }}" data-focus-phrase="{{ $focusPhrase }}">
+<body class="reader-page" data-vocabulary-url="{{ route('vocabulary.store', $book) }}" data-translation-url="{{ route('reader.translate', $book) }}" data-context-explain-url="{{ route('reader.context-explain', $book) }}" data-grammar-explain-url="{{ route('reader.grammar-explain', $book) }}" data-simplify-url="{{ route('reader.simplify', $book) }}" data-shadowing-url="{{ route('reader.shadowing', $book) }}" data-speech-url="{{ route('speech.create') }}" data-native-language="{{ $nativeLanguage }}" data-book-language="{{ $book->language_locale }}" data-page-number="{{ $page }}" data-focus-phrase="{{ $focusPhrase }}">
     <header class="reader-app-header">
         <a href="{{ route('library.index') }}" class="reader-back">
             <span aria-hidden="true">←</span>
@@ -147,21 +147,67 @@
         @endif
     </footer>
 
-    <div class="word-card" data-word-card hidden>
+    <?php
+        $_i18n = [
+            'selected_word' => __('reader.selected_word'),
+            'translation' => __('reader.translation'),
+            'save_to_vocabulary' => __('reader.save_to_vocabulary'),
+            'saving' => __('reader.saving'),
+            'saved' => __('reader.saved'),
+            'study_tools' => __('reader.study_tools'),
+            'context' => __('reader.context'),
+            'grammar' => __('reader.grammar'),
+            'simplify' => __('reader.simplify'),
+            'practice_pronunciation' => __('reader.practice_pronunciation'),
+            'close' => __('reader.close'),
+            'listen' => __('reader.listen'),
+            'context.meaning' => __('reader.context.meaning'),
+            'context.why' => __('reader.context.why'),
+            'context.role' => __('reader.context.role'),
+            'context.fixed_expression' => __('reader.context.fixed_expression'),
+            'context.literal_warning' => __('reader.context.literal_warning'),
+            'context.register' => __('reader.context.register'),
+            'context.connotation' => __('reader.context.connotation'),
+            'context.synonyms' => __('reader.context.synonyms'),
+            'context.common_mistake' => __('reader.context.common_mistake'),
+            'context.example' => __('reader.context.example'),
+            'context.level' => __('reader.context.level'),
+            'context.base_form' => __('reader.context.base_form'),
+            'context.tags' => __('reader.context.tags'),
+            'context.loading_title' => __('reader.context.loading_title'),
+            'context.loading_subtitle' => __('reader.context.loading_subtitle'),
+            'grammar.title' => __('reader.grammar.title'),
+            'grammar.parts' => __('reader.grammar.parts'),
+            'grammar.loading_title' => __('reader.grammar.loading_title'),
+            'grammar.loading_subtitle' => __('reader.grammar.loading_subtitle'),
+            'simplify.title' => __('reader.simplify.title'),
+            'simplify.original' => __('reader.simplify.original'),
+            'simplify.simplified' => __('reader.simplify.simplified'),
+            'simplify.loading_title' => __('reader.simplify.loading_title'),
+            'simplify.loading_subtitle' => __('reader.simplify.loading_subtitle'),
+            'error.title' => __('reader.error.title'),
+            'error.subtitle' => __('reader.error.subtitle'),
+            'error.try_again' => __('reader.error.try_again'),
+        ];
+    ?>
+    <div class="word-card-overlay" data-word-card-overlay hidden></div>
+    <div class="word-card" data-word-card hidden role="dialog" aria-modal="true" aria-labelledby="word-card-title"
+         data-i18n='@json($_i18n)'>
+        <div class="word-card-mobile-handle" aria-hidden="true"></div>
         <span class="word-card-arrow" aria-hidden="true"></span>
         <div class="word-card-head">
-            <div class="word-card-title">
-                <span data-selection-label>Selected word</span>
-                <strong data-selected-word></strong>
+            <div class="word-card-title" id="word-card-title">
+                <span data-selection-label>{{ __('reader.selected_word') }}</span>
+                <strong class="selected-text" data-selected-word></strong>
             </div>
             <div class="word-card-head-actions">
-                <button class="word-card-speak" type="button" data-speak-word aria-label="Hear pronunciation" title="Hear pronunciation">
+                <button class="word-card-speak" type="button" data-speak-word aria-label="{{ __('reader.listen') }}" title="{{ __('reader.listen') }}">
                     <svg viewBox="0 0 20 20" aria-hidden="true">
                         <path d="M3 8h3l4-3.5v11L6 12H3V8Z"></path>
                         <path d="M13 7.2c1.5 1.5 1.5 4.1 0 5.6M15.2 5c2.8 2.8 2.8 7.2 0 10"></path>
                     </svg>
                 </button>
-                <button class="word-card-close" type="button" data-close-word-card aria-label="Close translation">
+                <button class="word-card-close" type="button" data-close-word-card aria-label="{{ __('reader.close') }}">
                     <svg viewBox="0 0 20 20" aria-hidden="true">
                         <path d="M5.5 5.5 14.5 14.5M14.5 5.5 5.5 14.5"></path>
                     </svg>
@@ -170,26 +216,56 @@
         </div>
         <div class="word-card-pronunciation" data-word-pronunciation hidden></div>
         <div class="word-card-translation">
-            <span data-native-label>Translation</span>
+            <span data-native-label>{{ __('reader.translation') }}</span>
             <strong data-word-translation></strong>
         </div>
-        <div class="word-card-explanation" data-word-explanation hidden>
-            <p></p>
-        </div>
-        <p data-word-context hidden></p>
-        <button class="word-card-save" type="button" data-save-word>
-            <span>＋</span> Add to vocabulary
-        </button>
+        <div class="word-card-explanation" data-word-explanation hidden><p></p></div>
+        <span data-word-context hidden></span>
+        <button class="word-card-save" type="button" data-save-word>{{ __('reader.save_to_vocabulary') }}</button>
         <small class="word-card-status" data-word-status></small>
-        <div class="word-card-ai-tools" data-ai-tools hidden>
-            <span class="word-card-ai-tools-label">AI tools</span>
-            <div class="word-card-ai-toolbar">
-                <button type="button" class="word-card-ai-btn" data-ai-tool="context-explain" disabled title="Explain in context">⊡ Context</button>
-                <button type="button" class="word-card-ai-btn" data-ai-tool="grammar-explain" disabled title="Explain grammar">◈ Grammar</button>
-                <button type="button" class="word-card-ai-btn" data-ai-tool="simplify" disabled title="Simplify text">▽ Simplify</button>
-                <button type="button" class="word-card-ai-btn" data-ai-tool="shadowing" disabled title="Shadowing practice">◉ Shadow</button>
+        <div class="word-card-study-tools" data-study-tools hidden>
+            <span class="word-card-study-tools-label">{{ __('reader.study_tools') }}</span>
+            <div class="word-card-study-toolbar" role="tablist" data-tablist>
+                <button type="button" class="word-card-study-btn" role="tab" aria-selected="false" data-ai-tool="context-explain" data-tab="context" disabled>{{ __('reader.context') }}</button>
+                <button type="button" class="word-card-study-btn" role="tab" aria-selected="false" data-ai-tool="grammar-explain" data-tab="grammar" disabled>{{ __('reader.grammar') }}</button>
+                <button type="button" class="word-card-study-btn" role="tab" aria-selected="false" data-ai-tool="simplify" data-tab="simplify" disabled>{{ __('reader.simplify') }}</button>
             </div>
-            <div class="word-card-ai-output" data-ai-output hidden></div>
+            <div class="word-card-tab-panels">
+                <div class="word-card-tab-content" role="tabpanel" data-tab-panel="context" hidden aria-live="polite"></div>
+                <div class="word-card-tab-content" role="tabpanel" data-tab-panel="grammar" hidden aria-live="polite"></div>
+                <div class="word-card-tab-content" role="tabpanel" data-tab-panel="simplify" hidden aria-live="polite">
+                    <div class="simplify-levels" data-simplify-levels hidden>
+                        <button type="button" class="simplify-level-btn" data-level="A1">A1</button>
+                        <button type="button" class="simplify-level-btn" data-level="A2">A2</button>
+                        <button type="button" class="simplify-level-btn is-active" data-level="B1">B1</button>
+                        <button type="button" class="simplify-level-btn" data-level="B2">B2</button>
+                        <button type="button" class="simplify-level-btn" data-level="C1">C1</button>
+                    </div>
+                    <div class="simplify-result" data-simplify-result></div>
+                </div>
+            </div>
+        </div>
+        <button type="button" class="word-card-practice-btn" data-practice-btn disabled>{{ __('reader.practice_pronunciation') }}</button>
+        <div class="word-card-shadowing" data-shadowing-mode hidden>
+            <div class="shadowing-head">
+                <strong>{{ __('reader.practice_pronunciation') }}</strong>
+            </div>
+            <div class="shadowing-phrase" data-shadowing-phrase></div>
+            <div class="shadowing-bar">
+                <button type="button" class="shadowing-record-btn" data-shadowing-record disabled>
+                    <span class="shadowing-record-icon">●</span>
+                    <strong>Record</strong>
+                </button>
+                <button type="button" class="shadowing-play-btn" data-shadowing-play disabled hidden>Play my recording</button>
+                <button type="button" class="shadowing-listen-btn" data-shadowing-listen>Listen to example</button>
+            </div>
+            <div class="shadowing-rating" data-shadowing-rating hidden>
+                <span>How was it?</span>
+                <button type="button" data-shadowing-rate="easy">Easy</button>
+                <button type="button" data-shadowing-rate="okay">Okay</button>
+                <button type="button" data-shadowing-rate="difficult">Difficult</button>
+            </div>
+            <button type="button" class="shadowing-back-btn" data-shadowing-back>Back to translation</button>
         </div>
         @if(!auth()->user()->isPro())
             <a href="{{ route('pricing.index') }}" class="word-card-upgrade" data-upgrade-btn hidden>

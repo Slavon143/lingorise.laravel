@@ -1,0 +1,52 @@
+<?php
+
+return [
+    'selected_word' => 'Valt ord',
+    'translation' => 'Översättning',
+    'save_to_vocabulary' => 'Spara i ordlistan',
+    'saving' => 'Sparar…',
+    'saved' => 'Sparad ✓',
+    'study_tools' => 'Verktyg',
+    'context' => 'Kontext',
+    'grammar' => 'Grammatik',
+    'simplify' => 'Förenkla',
+    'practice_pronunciation' => 'Öva uttal',
+    'close' => 'Stäng översättning',
+    'listen' => 'Hör uttal',
+
+    'context.meaning' => 'Betydelse här',
+    'context.why' => 'Varför just denna betydelse',
+    'context.role' => 'Roll i meningen',
+    'context.fixed_expression' => 'Fast uttryck',
+    'context.literal_warning' => 'Ordagrann översättning',
+    'context.register' => 'Stil',
+    'context.connotation' => 'Konnotation',
+    'context.synonyms' => 'Synonymer',
+    'context.common_mistake' => 'Vanligt missförstånd',
+    'context.example' => 'Exempel',
+    'context.level' => 'Nivå',
+    'context.base_form' => 'Grundform',
+    'context.tags' => 'Taggar',
+
+    'grammar.title' => 'Grammatikförklaring',
+    'grammar.parts' => 'Meningsdelar',
+
+    'simplify.title' => 'Förenklad',
+    'simplify.original' => 'Original',
+    'simplify.simplified' => 'Förenklad',
+    'simplify.replacements' => 'Ersättningar',
+    'simplify.changes' => 'Ändringar',
+
+    'context.loading_title' => 'Analyserar frasen',
+    'context.loading_subtitle' => 'Undersöker hur den används i denna mening…',
+    'grammar.loading_title' => 'Analyserar grammatik',
+    'grammar.loading_subtitle' => 'Bryter ner meningsstrukturen…',
+    'simplify.loading_title' => 'Förenklar',
+    'simplify.loading_subtitle' => 'Behåller den ursprungliga betydelsen…',
+
+    'error.title' => 'Kunde inte ladda förklaringen',
+    'error.subtitle' => 'Tjänsten är tillfälligt otillgänglig.',
+    'error.try_again' => 'Försök igen',
+    'error.quota_exceeded' => 'Daglig gräns nådd. Återställs :time.',
+    'error.upgrade' => 'Uppgradera plan',
+];

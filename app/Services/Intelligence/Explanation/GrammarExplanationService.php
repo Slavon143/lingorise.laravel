@@ -15,6 +15,7 @@ use App\Services\Intelligence\Exceptions\AiInvalidResponseException;
 use App\Services\Intelligence\Usage\AiUsageContext;
 use App\Services\Intelligence\Usage\AiUsageRecorder;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Throwable;
 
@@ -137,7 +138,19 @@ class GrammarExplanationService
                     targetLanguage: $targetLanguage,
                 );
 
+                Log::debug('GrammarExplanationService: calling provider', [
+                    'text' => mb_substr($text, 0, 100),
+                    'source_language' => $sourceLanguage,
+                    'target_language' => $targetLanguage,
+                ]);
+
                 $result = $this->provider->explainGrammar($request);
+
+                Log::debug('GrammarExplanationService: provider returned', [
+                    'input_tokens' => $result->inputTokens,
+                    'output_tokens' => $result->outputTokens,
+                    'provider_duration_ms' => $result->providerDurationMs,
+                ]);
 
                 $responseJson = $this->validateResponse($result);
 
@@ -228,7 +241,7 @@ class GrammarExplanationService
             'construction' => $construction,
             'purpose' => $purpose,
             'structure' => $result->structure ? trim($result->structure) : null,
-            'parts' => $result->parts,
+            'parts' => array_values($result->parts),
             'simplified_translation' => $result->simplifiedTranslation,
             'additional_example' => $result->additionalExample ? trim($result->additionalExample) : null,
             'common_mistake' => $result->commonMistake ? trim($result->commonMistake) : null,

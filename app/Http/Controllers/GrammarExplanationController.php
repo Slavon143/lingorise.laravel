@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\GrammarExplanationRequest;
 use App\Models\Book;
 use App\Services\Intelligence\Explanation\GrammarExplanationService;
+use App\Http\Responses\AiErrorResponse;
 use App\Services\Intelligence\Subscription\AiQuotaExceededException;
 use App\Services\Intelligence\Subscription\AiQuotaGuard;
 use App\Services\Intelligence\Subscription\BookAccessService;
@@ -63,11 +64,7 @@ class GrammarExplanationController extends Controller
         } catch (Throwable $exception) {
             report($exception);
 
-            return response()->json([
-                'success' => false,
-                'message' => 'Grammar explanation is temporarily unavailable.',
-                'error' => 'service_unavailable',
-            ], 503);
+            return AiErrorResponse::fromException($exception, 'Grammar explanation is temporarily unavailable.');
         }
     }
 }

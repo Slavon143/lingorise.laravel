@@ -1,69 +1,100 @@
 import {
-    readerPage, wordCard, setStatus, setWordCardLoading,
-    showUpgrade, positionWordCard, apiPost,
+    readerPage, setStatus, setWordCardLoading, apiPost, escHtml,
 } from './reader-ui.js';
+import { showLoading, showResult, showError, i18n, state } from './reader/translation-panel.js';
 
 const init = () => {
     const page = readerPage();
     if (!page) return;
-    const btn = wordCard()?.querySelector('[data-ai-tool="context-explain"]');
-    const output = wordCard()?.querySelector('[data-ai-output]');
-    if (!btn || !output) return;
+    const btn = document.querySelector('[data-ai-tool="context-explain"]');
     const url = page.dataset.contextExplainUrl;
-    if (!url) return;
+    if (!btn || !url) return;
+    let controller = null;
 
     btn.addEventListener('click', async () => {
-        const selectedWord = wordCard().querySelector('[data-selected-word]');
-        const contextNode = wordCard().querySelector('[data-word-context]');
+        if (state.requests.context) {
+            state.requests.context.abort();
+        }
+        if (controller) {
+            controller.abort();
+        }
+        const selectedWord = document.querySelector('[data-selected-word]');
+        const contextNode = document.querySelector('[data-word-context]');
         const phrase = selectedWord?.textContent?.trim();
         const context = contextNode?.textContent?.trim();
         if (!phrase || !context) return;
 
+        controller = new AbortController();
+        state.requests.context = controller;
         btn.disabled = true;
         setWordCardLoading(true);
-        setStatus('Explaining…');
-        output.innerHTML = '';
-        output.hidden = false;
+        showLoading('context', 'context.loading_title', 'context.loading_subtitle');
 
         try {
             const result = await apiPost(url, {
                 selected_text: phrase,
                 context,
-                source_language: page.dataset.nativeLanguage || 'en',
-            });
+                source_language: page.dataset.bookLanguage || page.dataset.nativeLanguage || 'en',
+            }, controller.signal);
             const data = result.data;
-            output.innerHTML = `
-                <div class="ai-tool-section">
-                    <span class="ai-tool-label">Context explanation</span>
-                    <p class="ai-tool-meaning">${escHtml(data.meaning_in_context || '')}</p>
-                    ${data.simple_explanation ? `<p class="ai-tool-simple">${escHtml(data.simple_explanation)}</p>` : ''}
-                    <div class="ai-tool-meta">
-                        ${data.part_of_speech ? `<span class="ai-tag">${escHtml(data.part_of_speech)}</span>` : ''}
-                        ${data.cefr_level ? `<span class="ai-tag">${escHtml(data.cefr_level)}</span>` : ''}
-                        ${data.grammar_form ? `<span class="ai-tag">${escHtml(data.grammar_form)}</span>` : ''}
-                    </div>
-                    ${data.example ? `<blockquote class="ai-tool-example">${escHtml(data.example)}</blockquote>` : ''}
-                    ${result.meta?.cache_hit ? '<small class="ai-cache-note">cached</small>' : ''}
-                </div>`;
+
+            const sections = [];
+
+            if (data.meaning_in_context) {
+                sections.push(`<div class="ai-context-meaning">${escHtml(data.meaning_in_context)}</div>`);
+            }
+
+            const tags = [];
+            if (data.cefr_level) tags.push(`<span class="ai-tag">${escHtml(data.cefr_level)}</span>`);
+            if (data.part_of_speech) tags.push(`<span class="ai-tag">${escHtml(data.part_of_speech)}</span>`);
+            if (data.register) tags.push(`<span class="ai-tag">${escHtml(data.register)}</span>`);
+            if (data.connotation) tags.push(`<span class="ai-tag">${escHtml(data.connotation)}</span>`);
+            if (tags.length) {
+                sections.push(`<div class="ai-context-tags">${tags.join('')}</div>`);
+            }
+
+            if (data.why_this_meaning) {
+                sections.push(renderSection(i18n['context.why'] || 'Why', data.why_this_meaning));
+            }
+            if (data.role_in_sentence) {
+                sections.push(renderSection(i18n['context.role'] || 'Role', data.role_in_sentence));
+            }
+            if (data.base_form) {
+                sections.push(renderSection(i18n['context.meaning'] || 'Base form', data.base_form));
+            }
+            if (data.fixed_expression) {
+                sections.push(`<div class="ai-context-section"><span class="ai-context-section-label">${escHtml(i18n['context.fixed_expression'] || 'Fixed expression')}</span><p>${escHtml(data.expression || '')}</p></div>`);
+            }
+            if (data.literal_translation_warning) {
+                sections.push(`<div class="ai-context-warning">${escHtml(data.literal_translation_warning)}</div>`);
+            }
+            if (Array.isArray(data.synonyms) && data.synonyms.length) {
+                sections.push(`<div class="ai-context-synonyms"><strong>${escHtml(i18n['context.synonyms'] || 'Synonyms')}:</strong> ${data.synonyms.map(s => escHtml(s)).join(' · ')}</div>`);
+            }
+            if (data.common_misunderstanding) {
+                sections.push(renderSection(i18n['context.common_mistake'] || 'Common misunderstanding', data.common_misunderstanding));
+            }
+            if (data.natural_example) {
+                sections.push(`<div class="ai-context-example">${escHtml(data.natural_example)}</div>`);
+            }
+
+            showResult('context', sections.join(''));
             setStatus('');
         } catch (err) {
-            if (err.upgrade_url) {
-                setStatus(err.message || 'Upgrade to use this feature');
-                showUpgrade();
-            } else {
-                setStatus(err.message || 'Explanation unavailable.');
+            if (err.name !== 'AbortError') {
+                showError('context', err);
             }
         } finally {
             btn.disabled = false;
             setWordCardLoading(false);
+            controller = null;
+            state.requests.context = null;
         }
     });
 };
 
-const escHtml = (str) => {
-    const div = document.createElement('div');
-    div.textContent = str;
-    return div.innerHTML;
+const renderSection = (label, text) => {
+    return `<div class="ai-context-section"><span class="ai-context-section-label">${escHtml(label)}</span><p>${escHtml(text)}</p></div>`;
 };
 
 if (document.readyState !== 'loading') {

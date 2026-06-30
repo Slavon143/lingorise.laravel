@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\SimplificationRequest;
 use App\Models\Book;
 use App\Services\Intelligence\Explanation\SimplificationService;
+use App\Http\Responses\AiErrorResponse;
 use App\Services\Intelligence\Subscription\AiQuotaExceededException;
 use App\Services\Intelligence\Subscription\AiQuotaGuard;
 use App\Services\Intelligence\Subscription\BookAccessService;
@@ -59,11 +60,7 @@ class SimplificationController extends Controller
         } catch (Throwable $exception) {
             report($exception);
 
-            return response()->json([
-                'success' => false,
-                'message' => 'Simplification is temporarily unavailable.',
-                'error' => 'service_unavailable',
-            ], 503);
+            return AiErrorResponse::fromException($exception, 'Simplification is temporarily unavailable.');
         }
     }
 }

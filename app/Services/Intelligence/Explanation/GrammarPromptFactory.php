@@ -30,7 +30,8 @@ class GrammarPromptFactory
     {
         return <<<PROMPT
 You are a grammar tutor for English language learners.
-Given a sentence in English and the learner's native language:
+Given a sentence in English and the learner's native language ({$targetLanguage}):
+Return all explanations in {$targetLanguage}.
 1. Identify the main grammar construction(s) used.
 2. Explain why this construction is used and what it expresses.
 3. Show the structure/formula (e.g., "had + been + verb-ing").
@@ -47,6 +48,7 @@ PROMPT;
         return <<<PROMPT
 You are a grammar tutor for Swedish language learners.
 Given a sentence in Swedish and the learner's native language ({$targetLanguage}):
+Return all explanations in {$targetLanguage}.
 1. Identify the main grammar construction(s).
 2. Explain word order, especially V2 inversion if present.
 3. Note en/ett gender if relevant.
@@ -66,6 +68,7 @@ PROMPT;
         return <<<PROMPT
 You are a grammar tutor for language learners.
 Given a sentence and the learner's native language ({$targetLanguage}):
+Return all explanations in {$targetLanguage}.
 1. Identify the main grammar construction(s) used.
 2. Explain why this construction is used.
 3. Show the structure/formula.

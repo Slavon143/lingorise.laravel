@@ -1,0 +1,52 @@
+<?php
+
+return [
+    'selected_word' => 'Обране слово',
+    'translation' => 'Переклад',
+    'save_to_vocabulary' => 'Зберегти до словника',
+    'saving' => 'Збереження…',
+    'saved' => 'Збережено ✓',
+    'study_tools' => 'Інструменти',
+    'context' => 'Контекст',
+    'grammar' => 'Граматика',
+    'simplify' => 'Спрощення',
+    'practice_pronunciation' => 'Потренувати вимову',
+    'close' => 'Закрити переклад',
+    'listen' => 'Прослухати вимову',
+
+    'context.meaning' => 'Значення тут',
+    'context.why' => 'Чому саме це значення',
+    'context.role' => 'Роль у реченні',
+    'context.fixed_expression' => 'Сталий вираз',
+    'context.literal_warning' => 'Дослівний переклад',
+    'context.register' => 'Стиль',
+    'context.connotation' => 'Відтінок',
+    'context.synonyms' => 'Синоніми',
+    'context.common_mistake' => 'Типова помилка',
+    'context.example' => 'Приклад',
+    'context.level' => 'Рівень',
+    'context.base_form' => 'Початкова форма',
+    'context.tags' => 'Теги',
+
+    'grammar.title' => 'Пояснення граматики',
+    'grammar.parts' => 'Частини речення',
+
+    'simplify.title' => 'Спрощено',
+    'simplify.original' => 'Оригінал',
+    'simplify.simplified' => 'Спрощено',
+    'simplify.replacements' => 'Заміни',
+    'simplify.changes' => 'Зміни',
+
+    'context.loading_title' => 'Аналіз фрази',
+    'context.loading_subtitle' => 'Визначаємо значення в контексті…',
+    'grammar.loading_title' => 'Аналіз граматики',
+    'grammar.loading_subtitle' => 'Розбираємо структуру речення…',
+    'simplify.loading_title' => 'Спрощення',
+    'simplify.loading_subtitle' => 'Зберігаємо початковий сенс…',
+
+    'error.title' => 'Не вдалося завантажити пояснення',
+    'error.subtitle' => 'Сервіс тимчасово недоступний.',
+    'error.try_again' => 'Спробувати знову',
+    'error.quota_exceeded' => 'Денний ліміт вичерпано. Скидання о :time.',
+    'error.upgrade' => 'Покращити тариф',
+];

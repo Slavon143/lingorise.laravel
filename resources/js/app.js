@@ -5,66 +5,10 @@ import './reader-grammar-explain.js';
 import './reader-simplify.js';
 import './reader-shadowing.js';
 
-let activeNaturalAudio = null;
-
-const playBrowserVoice = (text, locale = 'en') => {
-    if (!('speechSynthesis' in window)) return;
-
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = locale;
-    utterance.rate = .88;
-    window.speechSynthesis.speak(utterance);
-};
-
-const playNaturalVoice = async (text, locale = 'en', button = null) => {
-    const speechUrl = document.body.dataset.speechUrl;
-
-    if (!speechUrl) {
-        return { ok: false, message: 'Voice playback is unavailable.' };
-    }
-
-    button?.classList.add('is-loading');
-
-    try {
-        const response = await fetch(speechUrl, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'audio/mpeg',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content ?? '',
-            },
-            body: JSON.stringify({ text, locale }),
-        });
-
-        if (!response.ok) {
-            const contentType = response.headers.get('content-type') || '';
-            const payload = contentType.includes('application/json')
-                ? await response.json().catch(() => ({}))
-                : {};
-
-            return {
-                ok: false,
-                blocked: response.status === 403,
-                message: payload.message || 'Natural voice unavailable.',
-                upgradeUrl: payload.upgrade_url,
-            };
-        }
-
-        activeNaturalAudio?.pause();
-        if (activeNaturalAudio?.src?.startsWith('blob:')) URL.revokeObjectURL(activeNaturalAudio.src);
-
-        const audioUrl = URL.createObjectURL(await response.blob());
-        activeNaturalAudio = new Audio(audioUrl);
-        activeNaturalAudio.addEventListener('ended', () => URL.revokeObjectURL(audioUrl), { once: true });
-        await activeNaturalAudio.play();
-        return { ok: true };
-    } catch {
-        return { ok: false, message: 'Natural voice unavailable.' };
-    } finally {
-        button?.classList.remove('is-loading');
-    }
-};
+import { playNaturalVoice, playBrowserVoice, stop as stopAudio } from './reader/audio.js';
+import { showContextualMenu } from './reader/contextual-menu.js';
+import { init as initPanel, clearState as clearPanelState, enterShadowing, state as panelState } from './reader/translation-panel.js';
+import { apiPost } from './reader/api-client.js';
 
 const saveButton = document.querySelector('.save-word');
 
@@ -304,9 +248,8 @@ if (readerPage && readingText && wordCard) {
 
     const setSaveButtonState = (enabled, label = 'Add to vocabulary') => {
         if (!saveButton) return;
-
         saveButton.disabled = !enabled;
-        saveButton.innerHTML = `<span>${enabled ? '＋' : '•'}</span> ${label}`;
+        saveButton.textContent = label;
     };
 
     const languageNamesForTranslation = {
@@ -332,16 +275,41 @@ if (readerPage && readingText && wordCard) {
         });
     }
 
+    initPanel(wordCard);
+
+    const practiceBtn = wordCard.querySelector('[data-practice-btn]');
+    if (practiceBtn) {
+        practiceBtn.addEventListener('click', () => {
+            if (practiceBtn.disabled || !activeTokens.length) return;
+            const phrase = activeTokens.map((t) => t.dataset.readerWord).join(' ');
+            const locale = document.documentElement.lang || 'en';
+            enterShadowing({
+                phrase,
+                locale,
+                listenFn: (text, l, btn) => playNaturalVoice(text, l, btn),
+            });
+            apiPost(readerPage.dataset.shadowingUrl, {
+                original_text: phrase,
+                source_language: readerPage.dataset.bookLanguage || readerPage.dataset.nativeLanguage || 'en',
+            }).catch(() => {});
+        });
+    }
+
     const closeWordCard = () => {
         wordCard.hidden = true;
         activeTokens.forEach((token) => token.classList.remove('is-selected'));
         activeToken = null;
         activeTokens = [];
         selectionAnchor = null;
+        clearPanelState();
+        stopAudio();
     };
 
-    const positionWordCard = () => {
-        if (!activeToken || wordCard.hidden) return;
+    const positionWordCard = (force = false) => {
+        if (!activeToken) return;
+        if (!force && wordCard.hidden) return;
+        const wasHidden = wordCard.hidden;
+        if (wasHidden) wordCard.hidden = false; // force layout to measure offsetHeight
 
         const tokenRects = activeTokens.map((token) => token.getBoundingClientRect());
         if (!tokenRects.length) return;
@@ -398,6 +366,7 @@ if (readerPage && readingText && wordCard) {
             wordCard.classList.toggle('is-above', useAbove);
             wordCard.style.top = `${safeTop}px`;
         }
+        if (wasHidden) wordCard.hidden = true;
     };
 
     const allTokens = [...readingText.querySelectorAll('.reader-token')];
@@ -444,10 +413,15 @@ if (readerPage && readingText && wordCard) {
             : '';
         const phrase = selectedTokens.map((token) => token.dataset.readerWord).join(' ');
 
-        const aiTools = wordCard.querySelector('[data-ai-tools]');
-        const aiOutput = wordCard.querySelector('[data-ai-output]');
+        const studyTools = wordCard.querySelector('[data-study-tools]');
+        const tabPanelsContainer = wordCard.querySelector('[data-tab-panel]');
         selectionLabel.textContent = selectedTokens.length > 1 ? 'Selected phrase' : 'Selected word';
         selectedWord.textContent = phrase;
+        selectedWord.className = 'selected-text';
+        const wc = phrase.split(/\s+/u).length;
+        if (wc <= 3) selectedWord.classList.add('selected-text--large');
+        else if (wc <= 10) selectedWord.classList.add('selected-text--medium');
+        else selectedWord.classList.add('selected-text--compact');
         contextNode.textContent = context;
         translationInput.textContent = '';
         pronunciationNode.hidden = true;
@@ -455,11 +429,12 @@ if (readerPage && readingText && wordCard) {
         statusNode.textContent = 'Translating…';
         setSaveButtonState(false, 'Waiting for translation');
         if (upgradeBtn) upgradeBtn.hidden = true;
-        if (aiTools) aiTools.hidden = true;
-        if (aiOutput) { aiOutput.innerHTML = ''; aiOutput.hidden = true; }
+        if (studyTools) studyTools.hidden = true;
+        clearPanelState();
         wordCard.querySelectorAll('[data-ai-tool]').forEach((btn) => { btn.disabled = true; });
+        positionWordCard(true);
         wordCard.hidden = false;
-        positionWordCard();
+        requestAnimationFrame(() => positionWordCard());
 
         translationRequest?.abort();
         translationRequest = new AbortController();
@@ -503,8 +478,10 @@ if (readerPage && readingText && wordCard) {
                 statusNode.textContent = '';
                 setSaveButtonState(Boolean(result.translation), 'Add to vocabulary');
                 const aiTools = wordCard.querySelector('[data-ai-tools]');
-                if (aiTools) aiTools.hidden = false;
+                if (studyTools) studyTools.hidden = false;
                 wordCard.querySelectorAll('[data-ai-tool]').forEach((btn) => { btn.disabled = false; });
+                const practiceBtn = wordCard.querySelector('[data-practice-btn]');
+                if (practiceBtn) practiceBtn.disabled = false;
                 positionWordCard();
             })
             .catch((error) => {
@@ -700,7 +677,18 @@ if (readerPage && readingText && wordCard) {
         if (!wordCard.hidden) closeWordCard();
     }, { passive: true });
     document.addEventListener('keydown', (event) => {
-        if (event.key === 'Escape' && !wordCard.hidden) closeWordCard();
+        if (event.key === 'Escape' && !wordCard.hidden) {
+            if (panelState.shadowing.active) {
+                const backBtn = wordCard.querySelector('[data-shadowing-back]');
+                backBtn?.click();
+                return;
+            }
+            if (panelState.activeTab) {
+                clearPanelState();
+                return;
+            }
+            closeWordCard();
+        }
     });
     document.addEventListener('pointerdown', (event) => {
         if (!wordCard.hidden && !wordCard.contains(event.target) && !event.target.closest('.reader-token')) {
@@ -748,7 +736,9 @@ if (readerPage && readingText && wordCard) {
             }
 
             const result = await response.json();
-            statusNode.textContent = 'Saved to vocabulary ✓';
+            saveButton.textContent = 'Saved ✓';
+            saveButton.disabled = true;
+            panelState.isSaved = true;
             activeTokens.forEach((token) => token.classList.add('is-saved'));
 
             if (vocabularyList && result.entry) {
@@ -829,6 +819,42 @@ if (readerPage && readingText && wordCard) {
         readerPanelsButton?.setAttribute('aria-label', 'Show reading panels');
         if (readerPanelsLabel) readerPanelsLabel.textContent = 'Show panels';
     }
+
+    readingText.addEventListener('contextmenu', (event) => {
+        const token = event.target.closest('.reader-token');
+        if (!token) return;
+        event.preventDefault();
+
+        if (wordCard.hidden || activeTokens[0] !== token) {
+            selectionAnchor = token;
+            openTranslation([token]);
+        }
+
+        const count = activeTokens.length;
+        const type = count > 6 ? 'paragraph' : count > 3 ? 'sentence' : count > 1 ? 'phrase' : 'word';
+
+        showContextualMenu(event.clientX, event.clientY, type, (action) => {
+            if (action === 'translate') return;
+
+            if (action === 'listen') {
+                speakButton?.click();
+                return;
+            }
+
+            if (action === 'save') {
+                saveButton?.click();
+                return;
+            }
+
+            if (action === 'shadowing') {
+                practiceBtn?.click();
+                return;
+            }
+
+            const btn = wordCard.querySelector(`[data-ai-tool="${action}"]`);
+            if (btn) btn.click();
+        });
+    });
 }
 
 const speakingPractice = document.querySelector('[data-speaking-practice]');
