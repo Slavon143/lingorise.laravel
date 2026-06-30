@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Book;
 use App\Services\Intelligence\Subscription\BookAccessService;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -60,6 +61,13 @@ class PublicLibraryController extends Controller
                 ->with('status', 'Your plan limits how many books you can add from the library. Upgrade to Pro for unlimited access.');
         }
 
+        $slug = Str::slug($book->title);
+        $baseSlug = $slug;
+        $counter = 1;
+        while (Book::where('slug', $slug)->exists()) {
+            $slug = $baseSlug . '-' . $counter++;
+        }
+
         $request->user()->books()->create([
             'title' => $book->title,
             'author' => $book->author,
@@ -72,6 +80,7 @@ class PublicLibraryController extends Controller
             'total_words' => $book->total_words,
             'visibility' => 'private',
             'original_book_id' => $book->id,
+            'slug' => $slug,
             'processing_status' => 'ready',
         ]);
 

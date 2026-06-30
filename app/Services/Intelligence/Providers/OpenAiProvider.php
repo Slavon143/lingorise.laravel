@@ -58,7 +58,6 @@ class OpenAiProvider implements AiProviderInterface
                     'format' => [
                         'type' => 'json_schema',
                         'name' => 'word_translation',
-                        'strict' => true,
                         'schema' => [
                             'type' => 'object',
                             'properties' => [
@@ -121,17 +120,16 @@ class OpenAiProvider implements AiProviderInterface
             ->acceptJson()
             ->timeout(20)
             ->retry(2, 250)
-            ->post('https://api.openai.com/v1/responses', [
+            ->post('https://api.openai.com/v1/chat/completions', [
                 'model' => $request->model,
-                'store' => false,
-                'input' => [
+                'messages' => [
                     [
                         'role' => 'system',
                         'content' => 'You are a concise dictionary for language learners. '
                             . 'Explain the selected word or phrase in the learner native language. '
                             . 'Use the sentence context to disambiguate meaning. '
                             . 'Keep the explanation natural but faithful and concise. '
-                            . 'Return only the requested structure.',
+                            . 'Return only valid JSON with "explanation" (string) and "examples" (array of strings).',
                     ],
                     [
                         'role' => 'user',
@@ -143,32 +141,14 @@ class OpenAiProvider implements AiProviderInterface
                         ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
                     ],
                 ],
-                'text' => [
-                    'format' => [
-                        'type' => 'json_schema',
-                        'name' => 'word_explanation',
-                        'strict' => true,
-                        'schema' => [
-                            'type' => 'object',
-                            'properties' => [
-                                'explanation' => ['type' => 'string'],
-                                'examples' => [
-                                    'type' => 'array',
-                                    'items' => ['type' => 'string'],
-                                ],
-                            ],
-                            'required' => ['explanation'],
-                            'additionalProperties' => false,
-                        ],
-                    ],
-                ],
-                'max_output_tokens' => 300,
+                'response_format' => ['type' => 'json_object'],
+                'max_completion_tokens' => 300,
             ]);
 
         $response->throw();
 
         $payload = $response->json();
-        $text = data_get($payload, 'output.0.content.0.text');
+        $text = data_get($payload, 'choices.0.message.content');
         $result = is_string($text) ? json_decode($text, true) : null;
 
         if (! is_array($result) || ! isset($result['explanation'])) {
@@ -189,8 +169,8 @@ class OpenAiProvider implements AiProviderInterface
             examples: isset($result['examples']) ? (array) $result['examples'] : null,
             provider: 'openai',
             model: $request->model,
-            inputTokens: (int) ($usage['input_tokens'] ?? 0),
-            outputTokens: (int) ($usage['output_tokens'] ?? 0),
+            inputTokens: (int) ($usage['prompt_tokens'] ?? 0),
+            outputTokens: (int) ($usage['completion_tokens'] ?? 0),
             providerDurationMs: $providerDuration,
         );
     }
