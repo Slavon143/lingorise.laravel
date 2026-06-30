@@ -202,11 +202,104 @@ document.querySelectorAll('[data-language-group]').forEach((group) => {
 
 const bookFileInput = document.querySelector('.file-drop-zone input[type="file"]');
 const bookFileName = document.querySelector('[data-file-name]');
+const bookCreateForm = document.querySelector('[data-book-create-form]');
+const bookAutofillStatus = document.querySelector('[data-file-autofill-status]');
+
+const touchedBookFields = new Set();
+let isBookAutofilling = false;
+
+bookCreateForm?.querySelectorAll('[data-autofill-field]').forEach((field) => {
+    field.addEventListener('input', () => {
+        if (!isBookAutofilling) touchedBookFields.add(field.name);
+    });
+    field.addEventListener('change', () => {
+        if (!isBookAutofilling) touchedBookFields.add(field.name);
+    });
+});
+
+const titleFromFilename = (filename) => filename
+    .replace(/\.[^.]+$/u, '')
+    .replace(/[_-]+/gu, ' ')
+    .replace(/\s+/gu, ' ')
+    .trim()
+    .replace(/\w\S*/gu, (part) => part.charAt(0).toLocaleUpperCase() + part.slice(1));
+
+const fillBookField = (name, value, forceWhenDefault = false) => {
+    if (!value || !bookCreateForm) return false;
+    const field = bookCreateForm.querySelector(`[name="${name}"]`);
+    if (!field || touchedBookFields.has(name)) return false;
+
+    const current = field.value?.trim?.() ?? '';
+    const defaultValues = {
+        language_locale: 'en',
+        level: 'A2',
+        visibility: 'private',
+    };
+    const canFill = current === '' || (forceWhenDefault && current === defaultValues[name]);
+
+    if (!canFill) return false;
+
+    isBookAutofilling = true;
+    field.value = value;
+    field.dispatchEvent(new Event('change', { bubbles: true }));
+    isBookAutofilling = false;
+    return true;
+};
 
 bookFileInput?.addEventListener('change', () => {
+    const file = bookFileInput.files?.[0];
     if (bookFileName) {
-        bookFileName.textContent = bookFileInput.files?.[0]?.name ?? 'No file selected';
+        bookFileName.textContent = file?.name ?? 'No file selected';
     }
+
+    if (!file || !bookCreateForm) return;
+
+    fillBookField('title', titleFromFilename(file.name));
+    fillBookField('category', 'Fiction');
+    fillBookField('language_locale', 'en', true);
+    fillBookField('level', 'A2', true);
+    fillBookField('visibility', 'private', true);
+
+    if (bookAutofillStatus) {
+        bookAutofillStatus.hidden = false;
+        bookAutofillStatus.textContent = 'Detecting book details…';
+    }
+
+    const formData = new FormData();
+    formData.append('book_file', file);
+
+    fetch(bookCreateForm.dataset.bookMetadataUrl, {
+        method: 'POST',
+        headers: {
+            'Accept': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content ?? '',
+        },
+        body: formData,
+    })
+        .then(async (response) => {
+            if (!response.ok) throw new Error('metadata failed');
+            return response.json();
+        })
+        .then(({ metadata }) => {
+            let filled = 0;
+            filled += fillBookField('title', metadata?.title) ? 1 : 0;
+            filled += fillBookField('author', metadata?.author) ? 1 : 0;
+            filled += fillBookField('category', metadata?.category) ? 1 : 0;
+            filled += fillBookField('language_locale', metadata?.language_locale, true) ? 1 : 0;
+            filled += fillBookField('level', metadata?.level, true) ? 1 : 0;
+            filled += fillBookField('visibility', metadata?.visibility, true) ? 1 : 0;
+
+            if (bookAutofillStatus) {
+                bookAutofillStatus.textContent = filled > 0
+                    ? 'Book details filled automatically. You can edit them.'
+                    : 'Filename used for title. You can edit the details.';
+            }
+        })
+        .catch(() => {
+            if (bookAutofillStatus) {
+                bookAutofillStatus.textContent = 'Could not read metadata, but filename defaults were applied.';
+            }
+        });
 });
 
 const readerPage = document.querySelector('.reader-page');

@@ -2495,6 +2495,12 @@ h1 em::after {
     font-weight: 800;
 }
 .file-drop-zone em { margin-top: 12px; color: var(--blue); font-size: 11px; font-style: normal; font-weight: 700; }
+.file-drop-zone .file-autofill-status {
+    margin-top: 7px;
+    color: #657186;
+    font-size: 12px;
+    font-weight: 800;
+}
 .content-divider { margin: 19px 0; display: flex; align-items: center; gap: 12px; color: #9a9fab; font-size: 11px; }
 .content-divider::before, .content-divider::after { content: ""; flex: 1; height: 1px; background: #e1e0db; }
 .book-form-summary { position: sticky; top: 92px; color: white; background: var(--ink); }

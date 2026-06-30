@@ -7,6 +7,7 @@ use App\Models\Book;
 use App\Services\EpubTextExtractor;
 use App\Services\Plans\ReaderEntitlementService;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -31,6 +32,34 @@ class LibraryController extends Controller
     public function create(): View
     {
         return view('library.create');
+    }
+
+    public function metadata(Request $request, EpubTextExtractor $epubExtractor): JsonResponse
+    {
+        $validated = $request->validate([
+            'book_file' => ['required', 'file', 'max:10240', 'extensions:txt,epub'],
+        ]);
+
+        $file = $validated['book_file'];
+        $extension = strtolower($file->getClientOriginalExtension());
+        $metadata = [
+            'title' => $this->titleFromFilename($file->getClientOriginalName()),
+            'author' => null,
+            'category' => 'Fiction',
+            'language_locale' => 'en',
+            'level' => 'A2',
+            'visibility' => 'private',
+        ];
+
+        if ($extension === 'epub') {
+            try {
+                $metadata = array_merge($metadata, $epubExtractor->metadata($file->getRealPath()));
+            } catch (RuntimeException) {
+                // Filename defaults are still useful if EPUB metadata cannot be read.
+            }
+        }
+
+        return response()->json(['metadata' => $metadata]);
     }
 
     public function store(StoreBookRequest $request, EpubTextExtractor $epubExtractor, ReaderEntitlementService $entitlements): RedirectResponse
@@ -117,5 +146,14 @@ class LibraryController extends Controller
         $status = $book->visibility === 'public' ? 'public' : 'private';
 
         return back()->with('status', "\"{$book->title}\" is now {$status}.");
+    }
+
+    private function titleFromFilename(string $filename): string
+    {
+        $title = pathinfo($filename, PATHINFO_FILENAME);
+        $title = preg_replace('/[_-]+/u', ' ', $title);
+        $title = preg_replace('/\s+/u', ' ', trim($title));
+
+        return Str::headline($title ?: 'Untitled book');
     }
 }

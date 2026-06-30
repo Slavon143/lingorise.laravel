@@ -45,6 +45,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/library', [LibraryController::class, 'index'])->name('library.index');
     Route::get('/library/create', [LibraryController::class, 'create'])->name('library.create');
+    Route::post('/library/metadata', [LibraryController::class, 'metadata'])->name('library.metadata');
     Route::post('/library', [LibraryController::class, 'store'])->name('library.store');
     Route::delete('/library/{book}', [LibraryController::class, 'destroy'])->name('library.destroy');
     Route::patch('/library/{book}/visibility', [LibraryController::class, 'toggleVisibility'])->name('library.visibility');

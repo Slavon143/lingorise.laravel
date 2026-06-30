@@ -10,6 +10,43 @@ use RuntimeException;
 
 class EpubTextExtractor
 {
+    public function metadata(string $path): array
+    {
+        try {
+            $archive = new PharData($path);
+        } catch (\Throwable $exception) {
+            throw new RuntimeException('The EPUB file could not be opened.', previous: $exception);
+        }
+
+        $packagePath = $this->packagePath($archive);
+
+        if (! $packagePath) {
+            return [];
+        }
+
+        $packageXml = file_get_contents($packagePath);
+
+        if ($packageXml === false) {
+            return [];
+        }
+
+        $package = new DOMDocument;
+
+        if (! @$package->loadXML($packageXml, LIBXML_NOERROR | LIBXML_NOWARNING)) {
+            return [];
+        }
+
+        $xpath = new DOMXPath($package);
+        $value = fn (string $name): ?string => $this->metadataValue($xpath, $name);
+        $language = $value('language');
+
+        return array_filter([
+            'title' => $value('title'),
+            'author' => $value('creator'),
+            'language_locale' => $language ? strtolower(substr($language, 0, 2)) : null,
+        ], fn ($item) => $item !== null && $item !== '');
+    }
+
     public function extract(string $path): string
     {
         try {
@@ -86,16 +123,11 @@ class EpubTextExtractor
     private function orderedDocuments(PharData $archive): array
     {
         $documents = [];
-        $packagePath = null;
         $iterator = new RecursiveIteratorIterator($archive);
 
         foreach ($iterator as $file) {
             $path = str_replace('\\', '/', $file->getPathname());
             $extension = strtolower(pathinfo($file->getFilename(), PATHINFO_EXTENSION));
-
-            if ($extension === 'opf') {
-                $packagePath = $path;
-            }
 
             if (in_array($extension, ['html', 'htm', 'xhtml'], true)) {
                 $documents[] = [
@@ -104,6 +136,8 @@ class EpubTextExtractor
                 ];
             }
         }
+
+        $packagePath = $this->packagePath($archive);
 
         if (! $packagePath) {
             return $documents;
@@ -149,6 +183,27 @@ class EpubTextExtractor
         }
 
         return $ordered !== [] ? $ordered : $documents;
+    }
+
+    private function packagePath(PharData $archive): ?string
+    {
+        $iterator = new RecursiveIteratorIterator($archive);
+
+        foreach ($iterator as $file) {
+            if (strtolower(pathinfo($file->getFilename(), PATHINFO_EXTENSION)) === 'opf') {
+                return str_replace('\\', '/', $file->getPathname());
+            }
+        }
+
+        return null;
+    }
+
+    private function metadataValue(DOMXPath $xpath, string $name): ?string
+    {
+        $node = $xpath->query('//*[local-name()="metadata"]/*[local-name()="'.$name.'"]')->item(0);
+        $value = preg_replace('/\s+/u', ' ', trim($node?->textContent ?? ''));
+
+        return $value !== '' ? $value : null;
     }
 
     public function extractCover(string $path): ?array
