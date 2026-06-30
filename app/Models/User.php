@@ -3,17 +3,18 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Enums\SubscriptionStatus;
+use App\Services\Intelligence\Subscription\SubscriptionResolver;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use App\Services\Intelligence\Subscription\SubscriptionResolver;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-#[Fillable(['name', 'email', 'password', 'google_id', 'avatar_url', 'email_verified_at'])]
+#[Fillable(['name', 'email', 'password', 'google_id', 'avatar_url', 'email_verified_at', 'daily_goal_minutes'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -27,10 +28,12 @@ class User extends Authenticatable
 
     public function isPro(): bool
     {
-        return $this->plan()?->isPremium() ?? false;
+        $plan = $this->plan();
+
+        return $plan->isPremium() || $plan->isPro() || $plan->isAdmin();
     }
 
-    public function plan(): \App\Models\Plan
+    public function plan(): Plan
     {
         return app(SubscriptionResolver::class)->resolvePlan($this);
     }
@@ -43,7 +46,7 @@ class User extends Authenticatable
     public function activeSubscription(): HasOne
     {
         return $this->hasOne(UserSubscription::class)
-            ->whereIn('status', [\App\Enums\SubscriptionStatus::Active->value, \App\Enums\SubscriptionStatus::Trialing->value])
+            ->whereIn('status', [SubscriptionStatus::Active->value, SubscriptionStatus::Trialing->value])
             ->where(function ($q) {
                 $q->whereNull('ends_at')->orWhere('ends_at', '>', now());
             })
@@ -80,6 +83,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'is_admin' => 'boolean',
+            'daily_goal_minutes' => 'integer',
             'password' => 'hashed',
         ];
     }

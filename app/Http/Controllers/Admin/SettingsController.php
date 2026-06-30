@@ -2,15 +2,19 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Http\Requests\Admin\UpdateDailyGoalSettingsRequest;
 use App\Http\Controllers\Controller;
+use App\Services\DailyGoalSettingsService;
 use Illuminate\Foundation\Application;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 
 class SettingsController extends Controller
 {
-    public function __invoke(): View
+    public function __invoke(DailyGoalSettingsService $dailyGoalSettings): View
     {
         return view('admin.settings.index', [
+            'dailyGoalSettings' => $dailyGoalSettings->get(),
             'settings' => [
                 'Application name' => config('app.name'),
                 'Environment' => app()->environment(),
@@ -26,5 +30,12 @@ class SettingsController extends Controller
                 'Mail configured' => config('mail.mailers.'.config('mail.default').'.host') ? 'yes' : 'no',
             ],
         ]);
+    }
+
+    public function updateDailyGoal(UpdateDailyGoalSettingsRequest $request, DailyGoalSettingsService $dailyGoalSettings): RedirectResponse
+    {
+        $dailyGoalSettings->update($request->settingsData());
+
+        return back()->with('status', 'Daily goal settings updated.');
     }
 }

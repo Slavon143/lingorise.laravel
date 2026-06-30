@@ -39,9 +39,22 @@ const playNaturalVoice = async (text, locale = 'en', button = null) => {
             return { ok: false, aborted: true };
         }
         cleanup();
+
+        if (err.fallback === 'browser_tts' && isBrowserTtsAvailable()) {
+            playBrowserVoice(text, locale);
+
+            return {
+                ok: true,
+                fallback: 'browser_tts',
+                message: err.message || 'Standard browser voice is being used.',
+            };
+        }
+
         return {
             ok: false,
             blocked: err.status === 403,
+            code: err.code,
+            fallback: err.fallback,
             message: err.message || 'Natural voice unavailable.',
             upgradeUrl: err.upgradeUrl,
         };

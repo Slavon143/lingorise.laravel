@@ -3,8 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Book;
-use App\Services\Intelligence\Subscription\AiQuotaGuard;
 use App\Services\Intelligence\Subscription\AiQuotaExceededException;
+use App\Services\Intelligence\Subscription\AiQuotaGuard;
+use App\Services\Plans\ReaderEntitlementService;
 use App\Services\WordTranslationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -17,6 +18,7 @@ class WordTranslationController extends Controller
         Book $book,
         WordTranslationService $translator,
         AiQuotaGuard $quotaGuard,
+        ReaderEntitlementService $entitlements,
     ): JsonResponse {
         abort_unless($book->owner_id === $request->user()->id || $book->isPublic(), 403);
 
@@ -27,6 +29,34 @@ class WordTranslationController extends Controller
 
         $user = $request->user();
 
+        if (! $entitlements->isFeatureEnabled($user, 'translation')) {
+            return response()->json([
+                'code' => 'feature_not_available',
+                'feature' => 'translation',
+                'message' => 'Translation is not available on your current plan.',
+                'upgrade_available' => true,
+                'upgrade_url' => route('pricing.index'),
+            ], 403);
+        }
+
+        $wordLimit = $entitlements->validateWordLimit($user, 'translation', $validated['word']);
+
+        if (! $wordLimit['allowed']) {
+            return response()->json([
+                'code' => 'word_limit_exceeded',
+                'feature' => 'translation',
+                'current_words' => $wordLimit['current_words'],
+                'max_words' => $wordLimit['max_words'],
+                'plan' => $wordLimit['plan'],
+                'message' => 'You can translate up to '.$wordLimit['max_words'].' words at once.',
+                'errors' => [
+                    'word' => ['You can translate up to '.$wordLimit['max_words'].' words at once.'],
+                ],
+                'upgrade_available' => true,
+                'upgrade_url' => route('pricing.index'),
+            ], 422);
+        }
+
         try {
             $quotaGuard->assertTranslationAllowed($user);
         } catch (AiQuotaExceededException $e) {
@@ -36,15 +66,6 @@ class WordTranslationController extends Controller
                 'upgrade_url' => route('pricing.index'),
                 'resets_at' => $e->resetsAt?->toIso8601String(),
             ], 403);
-        }
-
-        if (count(preg_split('/\s+/u', trim($validated['word']), -1, PREG_SPLIT_NO_EMPTY) ?: []) > 10) {
-            return response()->json([
-                'message' => 'You can translate up to 10 words at once.',
-                'errors' => [
-                    'word' => ['You can translate up to 10 words at once.'],
-                ],
-            ], 422);
         }
 
         try {

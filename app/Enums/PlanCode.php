@@ -6,5 +6,6 @@ enum PlanCode: string
 {
     case Free = 'free';
     case Premium = 'premium';
+    case Pro = 'pro';
     case Admin = 'admin';
 }

@@ -7,8 +7,9 @@ const normalizeError = async (response) => {
             const body = await response.json();
             return {
                 status: response.status,
-                code: body.error_code || 'unknown',
+                code: body.code || body.error || body.error_code || 'unknown',
                 message: body.message || 'An error occurred.',
+                fallback: body.fallback ?? null,
                 resetsAt: body.resets_at ?? null,
                 upgradeUrl: body.upgrade_url ?? null,
             };
@@ -17,6 +18,7 @@ const normalizeError = async (response) => {
                 status: response.status,
                 code: 'invalid_json',
                 message: 'Invalid response from server.',
+                fallback: null,
                 resetsAt: null,
                 upgradeUrl: null,
             };
@@ -27,6 +29,7 @@ const normalizeError = async (response) => {
         status: response.status,
         code: 'server_error',
         message: text || `HTTP ${response.status}`,
+        fallback: null,
         resetsAt: null,
         upgradeUrl: null,
     };
@@ -87,6 +90,7 @@ export const apiPostAudio = async (url, body, { signal } = {}) => {
             status: response.status,
             code: 'audio_error',
             message: 'Voice playback unavailable.',
+            fallback: null,
             resetsAt: null,
             upgradeUrl: null,
         };

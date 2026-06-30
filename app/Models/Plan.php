@@ -34,6 +34,11 @@ class Plan extends Model
         return $this->code === PlanCode::Premium->value;
     }
 
+    public function isPro(): bool
+    {
+        return $this->code === PlanCode::Pro->value;
+    }
+
     public function isAdmin(): bool
     {
         return $this->code === PlanCode::Admin->value;
@@ -42,6 +47,11 @@ class Plan extends Model
     public function aiLimits(): HasOne
     {
         return $this->hasOne(PlanAiLimit::class);
+    }
+
+    public function readerSettings(): HasOne
+    {
+        return $this->hasOne(PlanReaderSettings::class);
     }
 
     public function subscriptions(): HasMany

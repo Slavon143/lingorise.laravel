@@ -15,7 +15,7 @@
         </div>
         <div class="streak-summary">
             <span>◆</span>
-            <div><strong>{{ $streak }} {{ Str::plural('day', $streak) }}</strong><small>Current streak</small></div>
+            <div><strong>{{ trans_choice('daily_goal.streak', $streak, ['count' => $streak]) }}</strong><small>Current streak</small></div>
         </div>
     </section>
 
@@ -139,12 +139,54 @@
             </article>
         @endif
 
-        <article class="daily-goal-card">
-            <div class="card-heading"><div><span>Daily goal</span><h2>Keep it light.</h2></div></div>
-            <div class="goal-ring">
-                <div><strong>{{ $dailyMinutes }}</strong><span>/ {{ $dailyGoal }} min</span><small>today</small></div>
+        <article class="daily-goal-card" data-daily-goal-card>
+            <div class="daily-goal-head">
+                <div>
+                    <span>{{ __('daily_goal.title') }}</span>
+                    <h2>{{ __('daily_goal.subtitle') }}</h2>
+                </div>
+                @if($dailyGoal['current_streak'] > 0)
+                    <span class="daily-goal-streak">{{ trans_choice('daily_goal.streak', $dailyGoal['current_streak'], ['count' => $dailyGoal['current_streak']]) }}</span>
+                @endif
             </div>
-            <p>{{ $dailyMinutes >= $dailyGoal ? 'Great job! You hit your daily goal.' : ($dailyGoal - $dailyMinutes . ' more ' . Str::plural('minute', $dailyGoal - $dailyMinutes) . ' will keep your streak alive.') }}</p>
+
+            <div class="daily-goal-meter">
+                <div>
+                    <strong data-daily-goal-progress-text>{{ __('daily_goal.progress', ['read' => $dailyGoal['read_minutes_today'], 'goal' => $dailyGoal['goal_minutes']]) }}</strong>
+                    <span data-daily-goal-percent>{{ $dailyGoal['progress_percent'] }}%</span>
+                </div>
+                <div class="daily-goal-progress"
+                     role="progressbar"
+                     aria-label="{{ __('daily_goal.progress_label') }}"
+                     aria-valuemin="0"
+                     aria-valuemax="100"
+                     aria-valuenow="{{ $dailyGoal['visual_percent'] }}"
+                     data-daily-goal-progressbar>
+                    <i class="daily-goal-progress-fill" style="--daily-goal-progress: {{ $dailyGoal['visual_percent'] }}%"></i>
+                </div>
+            </div>
+
+            <div class="daily-goal-message" data-daily-goal-message>
+                @if($dailyGoal['is_over_goal'] && $dailyGoal['settings']['over_goal_message_enabled'])
+                    <strong>{{ __('daily_goal.over_goal') }}</strong>
+                @elseif($dailyGoal['is_completed'])
+                    <strong>{{ __('daily_goal.completed') }}</strong>
+                    <p>{{ __('daily_goal.completed_message') }}<br>{{ __('daily_goal.streak_message') }}</p>
+                @elseif($dailyGoal['read_minutes_today'] === 0)
+                    <p>{{ __('daily_goal.no_progress_message') }}</p>
+                @else
+                    <p>{{ trans_choice('daily_goal.left_today', $dailyGoal['remaining_minutes'], ['count' => $dailyGoal['remaining_minutes']]) }}</p>
+                @endif
+            </div>
+
+            <div class="daily-goal-actions">
+                <a href="{{ $dailyGoal['continue_url'] }}" data-daily-goal-continue>
+                    {{ $dailyGoal['has_active_book'] ? __('daily_goal.continue_reading') : __('daily_goal.start_reading') }}
+                    <span>→</span>
+                </a>
+                <button type="button" data-open-daily-goal>{{ __('daily_goal.edit_goal') }}</button>
+            </div>
+            <p class="daily-goal-feedback" data-daily-goal-feedback aria-live="polite"></p>
         </article>
 
         <article class="stat-card">
@@ -237,4 +279,139 @@
             </form>
         </div>
     </div>
+
+    <div class="daily-goal-modal" data-daily-goal-modal hidden>
+        <button class="modal-backdrop" type="button" data-close-daily-goal aria-label="{{ __('daily_goal.close') }}"></button>
+        <div class="daily-goal-modal-card" role="dialog" aria-modal="true" aria-labelledby="daily-goal-modal-title">
+            <button class="modal-close" type="button" data-close-daily-goal aria-label="{{ __('daily_goal.close') }}">×</button>
+            <span class="section-kicker">{{ __('daily_goal.title') }}</span>
+            <h2 id="daily-goal-modal-title">{{ __('daily_goal.edit_goal') }}</h2>
+            <p>{{ __('daily_goal.edit_goal_hint') }}</p>
+
+            <form method="POST" action="{{ route('settings.daily-goal') }}" data-daily-goal-form>
+                @csrf
+                @method('PUT')
+
+                <div class="daily-goal-presets" role="radiogroup" aria-label="{{ __('daily_goal.edit_goal') }}">
+                    @foreach($dailyGoal['settings']['preset_minutes'] as $preset)
+                        <label>
+                            <input type="radio" name="daily_goal_minutes" value="{{ $preset }}" @checked($dailyGoal['goal_minutes'] === $preset)>
+                            <span>{{ $preset }} min</span>
+                        </label>
+                    @endforeach
+                </div>
+
+                @if($dailyGoal['settings']['custom_goal_enabled'])
+                    <label class="daily-goal-custom">
+                        <span>{{ __('daily_goal.custom_goal') }}</span>
+                        @php $goalUsesPreset = in_array($dailyGoal['goal_minutes'], $dailyGoal['settings']['preset_minutes'], true); @endphp
+                        <input type="number"
+                               name="daily_goal_minutes_custom"
+                               min="{{ $dailyGoal['settings']['minimum_minutes'] }}"
+                               max="{{ $dailyGoal['settings']['maximum_minutes'] }}"
+                               step="1"
+                               value="{{ $goalUsesPreset ? '' : $dailyGoal['goal_minutes'] }}"
+                               placeholder="{{ $dailyGoal['goal_minutes'] }}">
+                    </label>
+                @endif
+
+                <button type="submit">{{ __('daily_goal.save_goal') }}</button>
+            </form>
+        </div>
+    </div>
+@endpush
+
+@push('scripts')
+    <script>
+        (() => {
+            const modal = document.querySelector('[data-daily-goal-modal]');
+            const openButton = document.querySelector('[data-open-daily-goal]');
+            const closeButtons = document.querySelectorAll('[data-close-daily-goal]');
+            const form = document.querySelector('[data-daily-goal-form]');
+            if (!modal || !openButton || !form) return;
+
+            const close = () => {
+                modal.hidden = true;
+                openButton.focus();
+            };
+            const open = () => {
+                modal.hidden = false;
+                modal.querySelector('input, button')?.focus();
+            };
+
+            openButton.addEventListener('click', open);
+            closeButtons.forEach(button => button.addEventListener('click', close));
+            modal.addEventListener('keydown', event => {
+                if (event.key === 'Escape') close();
+                if (event.key === 'Tab') {
+                    const focusable = [...modal.querySelectorAll('button, input, a, select, textarea')].filter(el => !el.disabled && el.offsetParent !== null);
+                    const first = focusable[0];
+                    const last = focusable[focusable.length - 1];
+                    if (!first || !last) return;
+                    if (event.shiftKey && document.activeElement === first) {
+                        event.preventDefault();
+                        last.focus();
+                    } else if (!event.shiftKey && document.activeElement === last) {
+                        event.preventDefault();
+                        first.focus();
+                    }
+                }
+            });
+
+            const customInput = form.querySelector('[name="daily_goal_minutes_custom"]');
+            form.querySelectorAll('[name="daily_goal_minutes"]').forEach(input => {
+                input.addEventListener('change', () => {
+                    if (customInput) customInput.value = '';
+                    form.querySelector('[name="daily_goal_minutes"][type="hidden"]')?.remove();
+                });
+            });
+            customInput?.addEventListener('input', () => {
+                if (customInput.value) {
+                    form.querySelectorAll('[name="daily_goal_minutes"]').forEach(input => input.checked = false);
+                }
+            });
+
+            form.addEventListener('submit', async (event) => {
+                const checked = form.querySelector('[name="daily_goal_minutes"]:checked');
+                if (customInput?.value) {
+                    let hidden = form.querySelector('[name="daily_goal_minutes"][type="hidden"]');
+                    if (!hidden) {
+                        hidden = document.createElement('input');
+                        hidden.type = 'hidden';
+                        hidden.name = 'daily_goal_minutes';
+                        form.appendChild(hidden);
+                    }
+                    hidden.value = customInput.value;
+                } else if (!checked) {
+                    form.querySelector('[name="daily_goal_minutes"][type="hidden"]')?.remove();
+                    form.querySelector('[name="daily_goal_minutes"]')?.click();
+                } else {
+                    form.querySelector('[name="daily_goal_minutes"][type="hidden"]')?.remove();
+                }
+
+                if (!window.fetch) return;
+                event.preventDefault();
+                const response = await fetch(form.action, {
+                    method: 'POST',
+                    headers: {'Accept': 'application/json'},
+                    body: new FormData(form),
+                });
+                if (!response.ok) {
+                    form.submit();
+                    return;
+                }
+
+                const payload = await response.json();
+                const goal = payload.daily_goal;
+                document.querySelector('[data-daily-goal-progress-text]').textContent = `${goal.read_minutes_today} of ${goal.goal_minutes} min`;
+                document.querySelector('[data-daily-goal-percent]').textContent = `${goal.progress_percent}%`;
+                const bar = document.querySelector('[data-daily-goal-progressbar]');
+                bar.setAttribute('aria-valuenow', goal.visual_percent);
+                const fill = bar.querySelector('i');
+                fill.style.setProperty('--daily-goal-progress', `${goal.visual_percent}%`);
+                document.querySelector('[data-daily-goal-feedback]').textContent = payload.message;
+                close();
+            });
+        })();
+    </script>
 @endpush

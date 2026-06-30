@@ -3,13 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\GrammarExplanationRequest;
+use App\Http\Responses\AiErrorResponse;
 use App\Models\Book;
 use App\Services\Intelligence\Explanation\GrammarExplanationService;
-use App\Http\Responses\AiErrorResponse;
 use App\Services\Intelligence\Subscription\AiQuotaExceededException;
 use App\Services\Intelligence\Subscription\AiQuotaGuard;
 use App\Services\Intelligence\Subscription\BookAccessService;
 use App\Services\Intelligence\Usage\AiUsageContext;
+use App\Services\Plans\ReaderEntitlementService;
 use Illuminate\Http\JsonResponse;
 use Throwable;
 
@@ -19,6 +20,7 @@ class GrammarExplanationController extends Controller
         private readonly GrammarExplanationService $explanationService,
         private readonly AiQuotaGuard $quotaGuard,
         private readonly BookAccessService $bookAccess,
+        private readonly ReaderEntitlementService $entitlements,
     ) {}
 
     public function __invoke(GrammarExplanationRequest $request, Book $book): JsonResponse
@@ -34,6 +36,28 @@ class GrammarExplanationController extends Controller
             ?? 'de';
 
         $validated = $request->validated();
+
+        if (! $this->entitlements->isFeatureEnabled($user, 'grammar')) {
+            return response()->json([
+                'code' => 'feature_not_available',
+                'feature' => 'grammar',
+                'message' => 'Grammar explanation is not available on your current plan.',
+            ], 403);
+        }
+
+        $wordLimit = $this->entitlements->validateWordLimit($user, 'grammar', $validated['text']);
+
+        if (! $wordLimit['allowed']) {
+            return response()->json([
+                'code' => 'word_limit_exceeded',
+                'feature' => 'grammar',
+                'current_words' => $wordLimit['current_words'],
+                'max_words' => $wordLimit['max_words'],
+                'plan' => $wordLimit['plan'],
+                'upgrade_available' => true,
+                'upgrade_url' => route('pricing.index'),
+            ], 422);
+        }
 
         try {
             $this->quotaGuard->assertGrammarExplanationAllowed($user);

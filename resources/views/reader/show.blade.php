@@ -7,7 +7,7 @@
     <title>{{ $pageTitle }} · LingoRise Reader</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="reader-page" data-vocabulary-url="{{ route('vocabulary.store', $book) }}" data-translation-url="{{ route('reader.translate', $book) }}" data-context-explain-url="{{ route('reader.context-explain', $book) }}" data-grammar-explain-url="{{ route('reader.grammar-explain', $book) }}" data-simplify-url="{{ route('reader.simplify', $book) }}" data-shadowing-url="{{ route('reader.shadowing', $book) }}" data-speech-url="{{ route('speech.create') }}" data-native-language="{{ $nativeLanguage }}" data-book-language="{{ $book->language_locale }}" data-page-number="{{ $page }}" data-focus-phrase="{{ $focusPhrase }}">
+<body class="reader-page" data-vocabulary-url="{{ route('vocabulary.store', $book) }}" data-translation-url="{{ route('reader.translate', $book) }}" data-context-explain-url="{{ route('reader.context-explain', $book) }}" data-grammar-explain-url="{{ route('reader.grammar-explain', $book) }}" data-simplify-url="{{ route('reader.simplify', $book) }}" data-shadowing-url="{{ route('reader.shadowing', $book) }}" data-speech-url="{{ route('speech.create') }}" data-native-language="{{ $nativeLanguage }}" data-book-language="{{ $book->language_locale }}" data-page-number="{{ $page }}" data-focus-phrase="{{ $focusPhrase }}" data-reader-capabilities='@json($readerCapabilities)'>
     <header class="reader-app-header">
         <a href="{{ route('library.index') }}" class="reader-back">
             <span aria-hidden="true">←</span>

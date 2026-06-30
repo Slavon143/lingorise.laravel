@@ -3,13 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\SimplificationRequest;
+use App\Http\Responses\AiErrorResponse;
 use App\Models\Book;
 use App\Services\Intelligence\Explanation\SimplificationService;
-use App\Http\Responses\AiErrorResponse;
 use App\Services\Intelligence\Subscription\AiQuotaExceededException;
 use App\Services\Intelligence\Subscription\AiQuotaGuard;
 use App\Services\Intelligence\Subscription\BookAccessService;
 use App\Services\Intelligence\Usage\AiUsageContext;
+use App\Services\Plans\ReaderEntitlementService;
 use Illuminate\Http\JsonResponse;
 use Throwable;
 
@@ -19,6 +20,7 @@ class SimplificationController extends Controller
         private readonly SimplificationService $simplificationService,
         private readonly AiQuotaGuard $quotaGuard,
         private readonly BookAccessService $bookAccess,
+        private readonly ReaderEntitlementService $entitlements,
     ) {}
 
     public function __invoke(SimplificationRequest $request, Book $book): JsonResponse
@@ -30,6 +32,29 @@ class SimplificationController extends Controller
         }
 
         $validated = $request->validated();
+
+        if (! $this->entitlements->isFeatureEnabled($user, 'simplify')) {
+            return response()->json([
+                'code' => 'feature_not_available',
+                'feature' => 'simplify',
+                'message' => 'Simplification is not available on your current plan.',
+            ], 403);
+        }
+
+        $wordLimit = $this->entitlements->validateWordLimit($user, 'simplify', $validated['text']);
+
+        if (! $wordLimit['allowed']) {
+            return response()->json([
+                'code' => 'word_limit_exceeded',
+                'feature' => 'simplify',
+                'current_words' => $wordLimit['current_words'],
+                'max_words' => $wordLimit['max_words'],
+                'plan' => $wordLimit['plan'],
+                'upgrade_available' => true,
+                'upgrade_url' => route('pricing.index'),
+            ], 422);
+        }
+
         $targetLanguage = $request->input('target_language')
             ?? $user->languagePreference?->native_locale
             ?? 'de';

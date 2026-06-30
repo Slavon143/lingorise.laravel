@@ -9,7 +9,7 @@
         ['label' => 'Plans', 'route' => 'admin.plans.index', 'match' => 'admin.plans.*', 'icon' => '◈'],
         ['label' => 'AI & TTS', 'route' => 'admin.ai.overview', 'match' => 'admin.ai.*', 'icon' => '✦'],
         ['label' => 'Learning', 'route' => 'admin.learning.index', 'match' => 'admin.learning.*', 'icon' => '◈'],
-        ['label' => 'Settings', 'route' => 'admin.settings.index', 'match' => 'admin.settings.*', 'icon' => '⚙'],
+        ['label' => 'Reading settings', 'route' => 'admin.settings.index', 'match' => 'admin.settings.*', 'icon' => '◉'],
         ['label' => 'Audit logs', 'route' => 'admin.audit-logs.index', 'match' => 'admin.audit-logs.*', 'icon' => '◷'],
     ];
 @endphp

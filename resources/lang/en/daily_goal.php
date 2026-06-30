@@ -1,0 +1,25 @@
+<?php
+
+return [
+    'title' => 'Daily goal',
+    'subtitle' => 'A little reading every day adds up.',
+    'progress' => ':read of :goal min',
+    'progress_label' => 'Daily reading goal progress',
+    'minute' => 'minute',
+    'minutes' => 'minutes',
+    'left_today' => '{1}Only :count minute left today.|[2,*]Only :count minutes left today.',
+    'completed' => 'Goal completed',
+    'completed_message' => 'Great job — you reached today’s reading goal.',
+    'streak_message' => 'Come back tomorrow to keep your streak going.',
+    'over_goal' => 'You went beyond today’s goal.',
+    'start_reading' => 'Start reading',
+    'continue_reading' => 'Continue reading',
+    'edit_goal' => 'Edit goal',
+    'edit_goal_hint' => 'Choose a comfortable daily reading target. You can change it anytime.',
+    'custom_goal' => 'Custom minutes',
+    'save_goal' => 'Save goal',
+    'goal_updated' => 'Daily goal updated.',
+    'streak' => '{0}0-day streak|{1}:count-day streak|[2,*]:count-day streak',
+    'no_progress_message' => 'Start with a few minutes of reading today.',
+    'close' => 'Close',
+];

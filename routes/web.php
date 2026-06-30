@@ -66,6 +66,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/speaking', [SpeakingController::class, 'index'])->name('speaking.index');
     Route::post('/speech', SpeechController::class)->middleware('throttle:ai-speech')->name('speech.create');
     Route::put('/settings/languages', [DashboardController::class, 'updateLanguages'])->name('settings.languages');
+    Route::put('/settings/daily-goal', [DashboardController::class, 'updateDailyGoal'])->name('settings.daily-goal');
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 });
 
@@ -135,4 +136,5 @@ Route::middleware(['auth', 'admin'])
         Route::post('/users/{user}/remove-override/{override}', [AdminUserController::class, 'removeOverride'])->name('users.remove-override');
 
         Route::get('/settings', AdminSettingsController::class)->name('settings.index');
+        Route::patch('/settings/daily-goal', [AdminSettingsController::class, 'updateDailyGoal'])->name('settings.daily-goal.update');
     });

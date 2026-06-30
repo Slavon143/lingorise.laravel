@@ -3,14 +3,17 @@
 namespace App\Http\Controllers;
 
 use App\Models\Book;
+use App\Http\Requests\UpdateDailyGoalRequest;
+use App\Services\DailyGoalService;
 use App\Services\ReaderTextFormatter;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 use Illuminate\View\View;
 
 class DashboardController extends Controller
 {
-    public function index(Request $request, ReaderTextFormatter $formatter): View
+    public function index(Request $request, ReaderTextFormatter $formatter, DailyGoalService $dailyGoalService): View
     {
         $user = $request->user()->load('languagePreference');
 
@@ -49,40 +52,7 @@ class DashboardController extends Controller
         $recentEntries = $user->dictionaryEntries()->count();
         $totalWordsRead = $user->readingProgress()->sum('words_read');
 
-        $dailyMinutes = $user->readingProgress()
-            ->whereDate('updated_at', today())
-            ->get()
-            ->sum(fn ($p) => max(0, (int) round($p->words_read / 200)));
-
-        $dailyGoal = 10;
-        $dailyMinutes = min($dailyMinutes, $dailyGoal);
-
-        $streakDates = $user->readingProgress()
-            ->whereNotNull('last_read_at')
-            ->selectRaw('DATE(last_read_at) as read_date')
-            ->distinct()
-            ->pluck('read_date')
-            ->sort()
-            ->reverse()
-            ->values();
-
-        $streak = 0;
-        $checkDate = today()->toDateString();
-        if ($streakDates->isNotEmpty()) {
-            if ($streakDates->first() === $checkDate || $streakDates->first() === today()->subDay()->toDateString()) {
-                if ($streakDates->first() !== $checkDate) {
-                    $checkDate = today()->subDay()->toDateString();
-                }
-                foreach ($streakDates as $date) {
-                    if ($date === $checkDate) {
-                        $streak++;
-                        $checkDate = \Carbon\Carbon::parse($checkDate)->subDay()->toDateString();
-                    } elseif ($date < $checkDate) {
-                        break;
-                    }
-                }
-            }
-        }
+        $dailyGoal = $dailyGoalService->viewModel($user);
 
         $learningLocale = $user->languagePreference?->learning_locale;
 
@@ -129,14 +99,31 @@ class DashboardController extends Controller
             'continueReadingTime' => $continueReadingTime,
             'recentEntries' => $recentEntries,
             'totalWordsRead' => $totalWordsRead,
-            'dailyMinutes' => $dailyMinutes,
             'dailyGoal' => $dailyGoal,
             'recommended' => $recommended,
             'greeting' => $greeting,
             'learningLanguageName' => $learningLanguageName,
             'languageNames' => $languageNames,
-            'streak' => $streak,
+            'streak' => $dailyGoal['current_streak'],
         ]);
+    }
+
+    public function updateDailyGoal(UpdateDailyGoalRequest $request, DailyGoalService $dailyGoalService): RedirectResponse|JsonResponse
+    {
+        $request->user()->forceFill([
+            'daily_goal_minutes' => (int) $request->validated('daily_goal_minutes'),
+        ])->save();
+
+        $viewModel = $dailyGoalService->viewModel($request->user()->fresh());
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'message' => __('daily_goal.goal_updated'),
+                'daily_goal' => $viewModel,
+            ]);
+        }
+
+        return back()->with('status', __('daily_goal.goal_updated'));
     }
 
     public function updateLanguages(Request $request): RedirectResponse

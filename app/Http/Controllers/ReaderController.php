@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Book;
+use App\Services\Plans\ReaderEntitlementService;
 use App\Services\ReaderTextFormatter;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -10,7 +11,7 @@ use Illuminate\View\View;
 
 class ReaderController extends Controller
 {
-    public function show(Request $request, Book $book, ReaderTextFormatter $formatter): View
+    public function show(Request $request, Book $book, ReaderTextFormatter $formatter, ReaderEntitlementService $entitlements): View
     {
         abort_unless($book->owner_id === $request->user()->id || $book->isPublic(), 403);
 
@@ -67,6 +68,7 @@ class ReaderController extends Controller
             'minutesThisSession' => max(0, (int) round($newWordsThisSession / 200)),
             'pageTitle' => Str::limit($book->title, 55),
             'focusPhrase' => trim((string) $request->query('focus')),
+            'readerCapabilities' => $entitlements->getUserCapabilities($request->user()),
             'savedEntries' => $request->user()->dictionaryEntries()
                 ->where('book_id', $book->id)
                 ->latest('updated_at')

@@ -1,0 +1,25 @@
+<?php
+
+return [
+    'title' => 'Dagens mål',
+    'subtitle' => 'Lite läsning varje dag gör stor skillnad.',
+    'progress' => ':read av :goal min',
+    'progress_label' => 'Framsteg för dagens läsmål',
+    'minute' => 'minut',
+    'minutes' => 'minuter',
+    'left_today' => '{1}Bara :count minut kvar idag.|[2,*]Bara :count minuter kvar idag.',
+    'completed' => 'Målet är klart',
+    'completed_message' => 'Bra jobbat — du nådde dagens läsmål.',
+    'streak_message' => 'Kom tillbaka i morgon för att hålla sviten vid liv.',
+    'over_goal' => 'Du gick förbi dagens mål.',
+    'start_reading' => 'Börja läsa',
+    'continue_reading' => 'Fortsätt läsa',
+    'edit_goal' => 'Ändra mål',
+    'edit_goal_hint' => 'Välj ett dagligt läsmål som känns bekvämt. Du kan ändra det när som helst.',
+    'custom_goal' => 'Egna minuter',
+    'save_goal' => 'Spara mål',
+    'goal_updated' => 'Dagens mål har uppdaterats.',
+    'streak' => '{0}0 dagar i rad|{1}:count dag i rad|[2,*]:count dagar i rad',
+    'no_progress_message' => 'Börja med några minuters läsning idag.',
+    'close' => 'Stäng',
+];

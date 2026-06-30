@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Book;
 use App\Models\DictionaryEntry;
 use App\Services\Intelligence\Subscription\EffectiveAiLimitsResolver;
+use App\Services\Plans\ReaderEntitlementService;
 use App\Services\ReaderTextFormatter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -15,6 +16,7 @@ class VocabularyController extends Controller
 {
     public function __construct(
         private readonly EffectiveAiLimitsResolver $limitsResolver,
+        private readonly ReaderEntitlementService $entitlements,
     ) {}
 
     public function index(Request $request, ReaderTextFormatter $formatter): View
@@ -55,6 +57,16 @@ class VocabularyController extends Controller
     {
         abort_unless($book->owner_id === $request->user()->id || $book->isPublic(), 403);
 
+        if (! $this->entitlements->isFeatureEnabled($request->user(), 'vocabulary')) {
+            return response()->json([
+                'saved' => false,
+                'code' => 'feature_not_available',
+                'feature' => 'vocabulary',
+                'message' => 'Vocabulary saving is not available on your current plan.',
+                'upgrade_url' => route('pricing.index'),
+            ], 403);
+        }
+
         $limits = $this->limitsResolver->resolve($request->user());
 
         $entryCount = $request->user()->dictionaryEntries()->count();
@@ -73,6 +85,21 @@ class VocabularyController extends Controller
             'translated_text' => ['required', 'string', 'max:255'],
             'context' => ['nullable', 'string', 'max:1000'],
         ]);
+
+        $wordLimit = $this->entitlements->validateWordLimit($request->user(), 'vocabulary', $validated['original_text']);
+
+        if (! $wordLimit['allowed']) {
+            return response()->json([
+                'saved' => false,
+                'code' => 'word_limit_exceeded',
+                'feature' => 'vocabulary',
+                'current_words' => $wordLimit['current_words'],
+                'max_words' => $wordLimit['max_words'],
+                'plan' => $wordLimit['plan'],
+                'upgrade_available' => true,
+                'upgrade_url' => route('pricing.index'),
+            ], 422);
+        }
 
         $entry = $request->user()->dictionaryEntries()->updateOrCreate(
             [

@@ -245,6 +245,14 @@ if (readerPage && readingText && wordCard) {
     };
     const storedFont = localStorage.getItem('lingorise-reader-font-v2') ?? 'readera';
     const savedFont = fontAliases[storedFont] ?? storedFont;
+    const readerCapabilities = (() => {
+        try {
+            return JSON.parse(readerPage.dataset.readerCapabilities || '{}');
+        } catch {
+            return {};
+        }
+    })();
+    const translationMaxWords = Number(readerCapabilities?.limits?.translation_max_words || 10);
 
     readingText.dataset.font = savedFont;
 
@@ -422,7 +430,7 @@ if (readerPage && readingText && wordCard) {
     };
 
     const openTranslation = (tokens) => {
-        const selectedTokens = tokens.slice(0, 10);
+        const selectedTokens = tokens.slice(0, translationMaxWords);
         if (!selectedTokens.length) return;
 
         activeTokens.forEach((token) => token.classList.remove('is-selected'));
@@ -623,9 +631,9 @@ if (readerPage && readingText && wordCard) {
             const from = Math.min(start, end);
             const to = Math.max(start, end);
 
-            if (to - from + 1 > 10) {
-                statusNode.textContent = 'Select up to 10 words.';
-                openTranslation(allTokens.slice(from, from + 10));
+            if (to - from + 1 > translationMaxWords) {
+                statusNode.textContent = `Select up to ${translationMaxWords} words.`;
+                openTranslation(allTokens.slice(from, from + translationMaxWords));
                 return;
             }
 
@@ -647,10 +655,10 @@ if (readerPage && readingText && wordCard) {
 
         suppressNextClick = true;
         selectionAnchor = selectedTokens[0];
-        openTranslation(selectedTokens.slice(0, 10));
+        openTranslation(selectedTokens.slice(0, translationMaxWords));
 
-        if (selectedTokens.length > 10) {
-            statusNode.textContent = 'Only the first 10 words were selected.';
+        if (selectedTokens.length > translationMaxWords) {
+            statusNode.textContent = `Only the first ${translationMaxWords} words were selected.`;
         }
 
         selection.removeAllRanges();
