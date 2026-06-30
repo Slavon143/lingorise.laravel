@@ -17,6 +17,10 @@ class ReaderEntitlementService
         'grammar' => 'grammar_enabled',
         'simplify' => 'simplify_enabled',
         'vocabulary' => 'vocabulary_enabled',
+        'daily_goal' => 'daily_goal_enabled',
+        'streak' => 'streak_enabled',
+        'import_private_books' => 'import_private_books_enabled',
+        'public_library' => 'public_library_enabled',
         'browser_tts' => 'browser_tts_enabled',
         'ai_tts' => 'ai_tts_enabled',
         'pronunciation' => 'pronunciation_recording_enabled',
@@ -52,10 +56,7 @@ class ReaderEntitlementService
             return $plan->readerSettings;
         }
 
-        return new PlanReaderSettings(array_merge(
-            ['plan_id' => $plan->id],
-            $this->defaultSettingsForPlan($plan),
-        ));
+        return new PlanReaderSettings(array_merge(['plan_id' => $plan->id], PlanDefaults::for($plan->code)));
     }
 
     public function isFeatureEnabled(User $user, string $feature): bool
@@ -107,6 +108,31 @@ class ReaderEntitlementService
         return $this->isFeatureEnabled($user, 'shadowing');
     }
 
+    public function getLimit(User $user, string $limit): ?int
+    {
+        $settings = $this->getReaderSettings($user);
+
+        return match ($limit) {
+            'ai_actions_daily_limit' => $settings->ai_actions_daily_limit,
+            'ai_actions_monthly_limit' => $settings->ai_actions_monthly_limit,
+            'ai_tts_monthly_characters' => $settings->ai_tts_monthly_characters,
+            'vocabulary_entries_limit' => $settings->vocabulary_entries_limit,
+            'private_books_limit' => $settings->private_books_limit,
+            default => null,
+        };
+    }
+
+    public function canImportBook(User $user): bool
+    {
+        if (! $this->isFeatureEnabled($user, 'import_private_books')) {
+            return false;
+        }
+
+        $limit = $this->getLimit($user, 'private_books_limit');
+
+        return $limit === null || $user->books()->count() < $limit;
+    }
+
     public function canSelectVoice(User $user): bool
     {
         return $this->isFeatureEnabled($user, 'voice_selection');
@@ -115,6 +141,11 @@ class ReaderEntitlementService
     public function getDailyAiLimit(User $user): int
     {
         return (int) $this->getReaderSettings($user)->ai_actions_daily_limit;
+    }
+
+    public function getMonthlyAiLimit(User $user): ?int
+    {
+        return $this->getReaderSettings($user)->ai_actions_monthly_limit;
     }
 
     public function getMonthlyTtsCharacterLimit(User $user): ?int
@@ -145,6 +176,7 @@ class ReaderEntitlementService
             'current_words' => $currentWords,
             'max_words' => $maxWords,
             'plan' => $this->getPlanForUser($user)->code,
+            'upgrade_available' => ! $this->getPlanForUser($user)->isPro(),
         ];
     }
 
@@ -164,6 +196,7 @@ class ReaderEntitlementService
                 'tts_max_words' => $settings->tts_max_words,
                 'pronunciation_max_words' => $settings->pronunciation_max_words,
                 'vocabulary_max_words' => $settings->vocabulary_max_words,
+                'vocabulary_phrase_max_words' => $settings->vocabulary_max_words,
             ],
             'features' => [
                 'translation' => $settings->translation_enabled,
@@ -176,10 +209,17 @@ class ReaderEntitlementService
                 'shadowing' => $settings->shadowing_enabled,
                 'voice_selection' => $settings->voice_selection_enabled,
                 'vocabulary' => $settings->vocabulary_enabled,
+                'daily_goal' => $settings->daily_goal_enabled,
+                'streak' => $settings->streak_enabled,
+                'import_private_books' => $settings->import_private_books_enabled,
+                'public_library' => $settings->public_library_enabled,
             ],
             'usage' => [
                 'ai_actions_remaining_today' => max(0, $settings->ai_actions_daily_limit - $this->getDailyAiUsage($user)),
-                'tts_characters_remaining_this_month' => $monthlyTtsLimit === null
+                'ai_actions_remaining_month' => $settings->ai_actions_monthly_limit === null
+                    ? null
+                    : max(0, $settings->ai_actions_monthly_limit - $this->getMonthlyAiUsage($user)),
+                'tts_characters_remaining_month' => $monthlyTtsLimit === null
                     ? null
                     : max(0, $monthlyTtsLimit - $this->getMonthlyTtsUsage($user)),
             ],
@@ -195,79 +235,12 @@ class ReaderEntitlementService
             ->count();
     }
 
-    private function defaultSettingsForPlan(Plan $plan): array
+    private function getMonthlyAiUsage(User $user): int
     {
-        if ($plan->isPremium()) {
-            return [
-                'translation_max_words' => 30,
-                'context_max_words' => 20,
-                'grammar_max_words' => 30,
-                'simplify_max_words' => 30,
-                'tts_max_words' => 30,
-                'pronunciation_max_words' => 25,
-                'vocabulary_max_words' => 20,
-                'ai_actions_daily_limit' => 100,
-                'ai_tts_monthly_characters' => 50000,
-                'ai_tts_enabled' => true,
-                'browser_tts_enabled' => true,
-                'pronunciation_recording_enabled' => true,
-                'shadowing_enabled' => true,
-                'voice_selection_enabled' => false,
-                'context_enabled' => true,
-                'grammar_enabled' => true,
-                'simplify_enabled' => true,
-                'translation_enabled' => true,
-                'vocabulary_enabled' => true,
-                'is_active' => true,
-            ];
-        }
-
-        if ($plan->isPro() || $plan->isAdmin()) {
-            return [
-                'translation_max_words' => 50,
-                'context_max_words' => 30,
-                'grammar_max_words' => 50,
-                'simplify_max_words' => 40,
-                'tts_max_words' => 50,
-                'pronunciation_max_words' => 30,
-                'vocabulary_max_words' => 25,
-                'ai_actions_daily_limit' => 300,
-                'ai_tts_monthly_characters' => 200000,
-                'ai_tts_enabled' => true,
-                'browser_tts_enabled' => true,
-                'pronunciation_recording_enabled' => true,
-                'shadowing_enabled' => true,
-                'voice_selection_enabled' => true,
-                'context_enabled' => true,
-                'grammar_enabled' => true,
-                'simplify_enabled' => true,
-                'translation_enabled' => true,
-                'vocabulary_enabled' => true,
-                'is_active' => true,
-            ];
-        }
-
-        return [
-            'translation_max_words' => 10,
-            'context_max_words' => 6,
-            'grammar_max_words' => 10,
-            'simplify_max_words' => 10,
-            'tts_max_words' => 10,
-            'pronunciation_max_words' => 10,
-            'vocabulary_max_words' => 10,
-            'ai_actions_daily_limit' => 10,
-            'ai_tts_monthly_characters' => null,
-            'ai_tts_enabled' => false,
-            'browser_tts_enabled' => true,
-            'pronunciation_recording_enabled' => true,
-            'shadowing_enabled' => false,
-            'voice_selection_enabled' => false,
-            'context_enabled' => true,
-            'grammar_enabled' => true,
-            'simplify_enabled' => true,
-            'translation_enabled' => true,
-            'vocabulary_enabled' => true,
-            'is_active' => true,
-        ];
+        return (int) AiUsageEvent::query()
+            ->where('user_id', $user->id)
+            ->where('provider_called', true)
+            ->where('created_at', '>=', now()->startOfMonth())
+            ->count();
     }
 }

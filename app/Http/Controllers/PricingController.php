@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\PlanCode;
 use App\Enums\SubscriptionSource;
 use App\Enums\SubscriptionStatus;
 use App\Models\Plan;
@@ -19,13 +20,47 @@ class PricingController extends Controller
     public function index(): View
     {
         $plans = Plan::where('is_active', true)
-            ->with('aiLimits')
+            ->whereIn('code', [
+                PlanCode::Free->value,
+                PlanCode::Premium->value,
+                PlanCode::Pro->value,
+            ])
+            ->with(['aiLimits', 'readerSettings'])
             ->orderBy('position')
             ->get();
+
+        $matrixRows = [
+            'Reader' => [
+                ['label' => 'Translation max words', 'key' => 'translation_max_words', 'suffix' => ' words'],
+                ['label' => 'Context max words', 'key' => 'context_max_words', 'suffix' => ' words'],
+                ['label' => 'Grammar max words', 'key' => 'grammar_max_words', 'suffix' => ' words'],
+                ['label' => 'Simplify max words', 'key' => 'simplify_max_words', 'suffix' => ' words'],
+                ['label' => 'Listen max words', 'key' => 'tts_max_words', 'suffix' => ' words'],
+                ['label' => 'Pronunciation max words', 'key' => 'pronunciation_max_words', 'suffix' => ' words'],
+            ],
+            'AI' => [
+                ['label' => 'AI actions per day', 'key' => 'ai_actions_daily_limit'],
+                ['label' => 'AI actions per month', 'key' => 'ai_actions_monthly_limit'],
+                ['label' => 'Natural AI voice', 'key' => 'ai_tts_enabled', 'boolean' => true],
+                ['label' => 'Monthly AI TTS characters', 'key' => 'ai_tts_monthly_characters', 'suffix' => ' characters/month'],
+                ['label' => 'Browser voice', 'key' => 'browser_tts_enabled', 'boolean' => true],
+                ['label' => 'Voice selection', 'key' => 'voice_selection_enabled', 'boolean' => true],
+                ['label' => 'Shadowing', 'key' => 'shadowing_enabled', 'boolean' => true],
+            ],
+            'Learning' => [
+                ['label' => 'Vocabulary entries', 'key' => 'vocabulary_entries_limit'],
+                ['label' => 'Private books', 'key' => 'private_books_limit'],
+                ['label' => 'Daily goal', 'key' => 'daily_goal_enabled', 'boolean' => true],
+                ['label' => 'Reading streak', 'key' => 'streak_enabled', 'boolean' => true],
+                ['label' => 'Practice pronunciation', 'key' => 'pronunciation_recording_enabled', 'boolean' => true],
+                ['label' => 'Public library', 'key' => 'public_library_enabled', 'boolean' => true],
+            ],
+        ];
 
         return view('pricing.index', [
             'plans' => $plans,
             'currentPlan' => $this->subscriptionResolver->resolvePlan(request()->user()),
+            'matrixRows' => $matrixRows,
         ]);
     }
 
@@ -36,10 +71,15 @@ class PricingController extends Controller
         if ($planId <= 0) {
             $plan = Plan::where('code', 'premium')->where('is_active', true)->firstOrFail();
         } else {
-            $plan = Plan::findOrFail($planId);
+            $plan = Plan::whereIn('code', [
+                    PlanCode::Free->value,
+                    PlanCode::Premium->value,
+                    PlanCode::Pro->value,
+                ])
+                ->findOrFail($planId);
         }
 
-        if (! $plan->is_active) {
+        if (! $plan->is_active || $plan->isAdmin()) {
             return back()->withErrors(['plan' => 'This plan is not available.']);
         }
 

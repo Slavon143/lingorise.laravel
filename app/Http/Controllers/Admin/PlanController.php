@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\UpdatePlanReaderSettingsRequest;
 use App\Models\AdminAuditLog;
 use App\Models\Plan;
+use App\Services\Plans\PlanDefaults;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\View\View;
@@ -99,7 +100,10 @@ class PlanController extends Controller
             'pronunciation_max_words' => $validated['pronunciation_max_words'],
             'vocabulary_max_words' => $validated['vocabulary_max_words'],
             'ai_actions_daily_limit' => $validated['ai_actions_daily_limit'],
+            'ai_actions_monthly_limit' => $validated['ai_actions_monthly_limit'] ?? null,
             'ai_tts_monthly_characters' => $validated['ai_tts_monthly_characters'] ?? null,
+            'vocabulary_entries_limit' => $validated['vocabulary_entries_limit'] ?? null,
+            'private_books_limit' => $validated['reader_private_books_limit'] ?? null,
             'ai_tts_enabled' => $request->boolean('reader_ai_tts_enabled'),
             'browser_tts_enabled' => $request->boolean('reader_browser_tts_enabled'),
             'pronunciation_recording_enabled' => $request->boolean('pronunciation_recording_enabled'),
@@ -110,6 +114,10 @@ class PlanController extends Controller
             'simplify_enabled' => $request->boolean('simplify_enabled'),
             'translation_enabled' => $request->boolean('translation_enabled'),
             'vocabulary_enabled' => $request->boolean('vocabulary_enabled'),
+            'daily_goal_enabled' => $request->boolean('daily_goal_enabled'),
+            'streak_enabled' => $request->boolean('streak_enabled'),
+            'import_private_books_enabled' => $request->boolean('import_private_books_enabled'),
+            'public_library_enabled' => $request->boolean('public_library_enabled'),
             'is_active' => $request->boolean('reader_is_active'),
         ]);
 
@@ -137,5 +145,31 @@ class PlanController extends Controller
         return redirect()
             ->route('admin.plans.edit', $plan)
             ->with('status', 'Plan settings updated.');
+    }
+
+    public function resetDefaults(Plan $plan): RedirectResponse
+    {
+        abort_if($plan->isAdmin(), 404);
+
+        $plan->loadMissing('readerSettings');
+        $oldValues = $plan->readerSettings?->toArray() ?? [];
+
+        $plan->readerSettings()->updateOrCreate([], PlanDefaults::for($plan->code));
+
+        AdminAuditLog::create([
+            'admin_id' => request()->user()?->id,
+            'action' => 'plan.reader_settings.reset_defaults',
+            'entity_type' => Plan::class,
+            'entity_id' => $plan->id,
+            'old_values' => ['reader_settings' => $oldValues],
+            'new_values' => ['reader_settings' => $plan->fresh('readerSettings')->readerSettings?->toArray() ?? []],
+            'ip_address' => request()->ip(),
+            'user_agent' => request()->userAgent(),
+            'created_at' => now(),
+        ]);
+
+        Cache::forget('plan-reader-settings:'.$plan->id);
+
+        return back()->with('status', 'Recommended defaults restored for '.$plan->name.'.');
     }
 }

@@ -129,6 +129,7 @@ Route::middleware(['auth', 'admin'])
         Route::get('/plans', [AdminPlanController::class, 'index'])->name('plans.index');
         Route::get('/plans/{plan}', [AdminPlanController::class, 'edit'])->name('plans.edit');
         Route::patch('/plans/{plan}', [AdminPlanController::class, 'update'])->name('plans.update');
+        Route::post('/plans/{plan}/reset-defaults', [AdminPlanController::class, 'resetDefaults'])->name('plans.reset-defaults');
 
         Route::post('/users/{user}/change-plan', [AdminUserController::class, 'changePlan'])->name('users.change-plan');
         Route::post('/users/{user}/cancel-subscription', [AdminUserController::class, 'cancelSubscription'])->name('users.cancel-subscription');

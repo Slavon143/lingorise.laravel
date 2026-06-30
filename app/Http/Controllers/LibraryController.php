@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreBookRequest;
 use App\Models\Book;
 use App\Services\EpubTextExtractor;
+use App\Services\Plans\ReaderEntitlementService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -32,8 +33,18 @@ class LibraryController extends Controller
         return view('library.create');
     }
 
-    public function store(StoreBookRequest $request, EpubTextExtractor $epubExtractor): RedirectResponse
+    public function store(StoreBookRequest $request, EpubTextExtractor $epubExtractor, ReaderEntitlementService $entitlements): RedirectResponse
     {
+        if (! $entitlements->canImportBook($request->user())) {
+            $limit = $entitlements->getLimit($request->user(), 'private_books_limit');
+
+            return back()->withInput()->withErrors([
+                'book_file' => $limit === null
+                    ? 'Private book import is not available on your current plan.'
+                    : "Your plan allows up to {$limit} private books. Upgrade to add more.",
+            ]);
+        }
+
         $content = trim((string) $request->input('content'));
         $sourceType = 'text';
         $coverPath = null;

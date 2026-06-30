@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\Book;
 use App\Models\DictionaryEntry;
-use App\Services\Intelligence\Subscription\EffectiveAiLimitsResolver;
 use App\Services\Plans\ReaderEntitlementService;
 use App\Services\ReaderTextFormatter;
 use Illuminate\Http\JsonResponse;
@@ -15,7 +14,6 @@ use Illuminate\View\View;
 class VocabularyController extends Controller
 {
     public function __construct(
-        private readonly EffectiveAiLimitsResolver $limitsResolver,
         private readonly ReaderEntitlementService $entitlements,
     ) {}
 
@@ -67,10 +65,8 @@ class VocabularyController extends Controller
             ], 403);
         }
 
-        $limits = $this->limitsResolver->resolve($request->user());
-
         $entryCount = $request->user()->dictionaryEntries()->count();
-        $vocabLimit = $limits->privateBooksLimit();
+        $vocabLimit = $this->entitlements->getLimit($request->user(), 'vocabulary_entries_limit');
 
         if ($vocabLimit !== null && $entryCount >= $vocabLimit) {
             return response()->json([

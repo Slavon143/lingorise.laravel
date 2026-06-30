@@ -53,7 +53,10 @@ class UpdatePlanReaderSettingsRequest extends FormRequest
             'pronunciation_max_words' => ['required', 'integer', 'min:1', 'max:200'],
             'vocabulary_max_words' => ['required', 'integer', 'min:1', 'max:200'],
             'ai_actions_daily_limit' => ['required', 'integer', 'min:0'],
+            'ai_actions_monthly_limit' => ['nullable', 'integer', 'min:0'],
             'ai_tts_monthly_characters' => ['nullable', 'integer', 'min:0'],
+            'vocabulary_entries_limit' => ['nullable', 'integer', 'min:1'],
+            'reader_private_books_limit' => ['nullable', 'integer', 'min:1'],
         ];
     }
 }

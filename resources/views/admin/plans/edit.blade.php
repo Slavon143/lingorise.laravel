@@ -34,6 +34,10 @@
             ['name' => 'pronunciation_recording_enabled', 'label' => 'Pronunciation recording', 'checked' => $reader?->pronunciation_recording_enabled ?? true],
             ['name' => 'reader_shadowing_enabled', 'label' => 'Shadowing', 'checked' => $reader?->shadowing_enabled ?? false],
             ['name' => 'voice_selection_enabled', 'label' => 'Voice selection', 'checked' => $reader?->voice_selection_enabled ?? false],
+            ['name' => 'daily_goal_enabled', 'label' => 'Daily goal', 'checked' => $reader?->daily_goal_enabled ?? true],
+            ['name' => 'streak_enabled', 'label' => 'Reading streak', 'checked' => $reader?->streak_enabled ?? true],
+            ['name' => 'import_private_books_enabled', 'label' => 'Private book import', 'checked' => $reader?->import_private_books_enabled ?? true],
+            ['name' => 'public_library_enabled', 'label' => 'Public library', 'checked' => $reader?->public_library_enabled ?? true],
             ['name' => 'reader_is_active', 'label' => 'Reader settings active', 'checked' => $readerEnabled],
         ];
     @endphp
@@ -58,6 +62,18 @@
                 @endforeach
             </div>
         </section>
+
+        @unless($plan->isAdmin())
+            <div class="admin-plan-warning">
+                <strong>Recommended defaults</strong>
+                <span>Restore the standard {{ $plan->name }} features and limits without touching name, price, billing interval, Stripe metadata, or subscriptions.</span>
+                <button type="submit"
+                        form="reset-plan-defaults"
+                        onclick="return confirm('Reset {{ $plan->name }} features and limits to recommended defaults?')">
+                    Reset to recommended defaults
+                </button>
+            </div>
+        @endunless
 
         @if($plan->isFree())
             <div class="admin-plan-warning">
@@ -150,8 +166,20 @@
                         <input type="number" name="ai_actions_daily_limit" value="{{ old('ai_actions_daily_limit', $reader?->ai_actions_daily_limit ?? 10) }}" min="0" required>
                     </label>
                     <label>
+                        <span>Monthly AI actions</span>
+                        <input type="number" name="ai_actions_monthly_limit" value="{{ old('ai_actions_monthly_limit', $reader?->ai_actions_monthly_limit) }}" min="0" placeholder="Unlimited">
+                    </label>
+                    <label>
                         <span>Monthly AI TTS characters</span>
                         <input type="number" name="ai_tts_monthly_characters" value="{{ old('ai_tts_monthly_characters', $reader?->ai_tts_monthly_characters) }}" min="0" placeholder="Unlimited">
+                    </label>
+                    <label>
+                        <span>Vocabulary entries limit</span>
+                        <input type="number" name="vocabulary_entries_limit" value="{{ old('vocabulary_entries_limit', $reader?->vocabulary_entries_limit) }}" min="1" placeholder="Unlimited">
+                    </label>
+                    <label>
+                        <span>Private books limit</span>
+                        <input type="number" name="reader_private_books_limit" value="{{ old('reader_private_books_limit', $reader?->private_books_limit) }}" min="1" placeholder="Unlimited">
                     </label>
                 </div>
             </section>
@@ -241,4 +269,10 @@
             <button type="submit" class="admin-primary-button">Save changes</button>
         </div>
     </form>
+
+    @unless($plan->isAdmin())
+        <form id="reset-plan-defaults" method="POST" action="{{ route('admin.plans.reset-defaults', $plan) }}" hidden>
+            @csrf
+        </form>
+    @endunless
 @endsection

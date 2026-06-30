@@ -210,38 +210,49 @@
     </section>
 
     <section class="dashboard-lower">
-        <article class="recommended-card">
+        <article class="recommended-card dashboard-soft-card">
             <div class="card-heading">
                 <div><span>Recommended for you</span><h2>Your next short read</h2></div>
                 <a href="{{ route('library.public', ['language' => $preference?->learning_locale]) }}">View library</a>
             </div>
             @if($recommended)
                 <div class="recommendation">
-                    <div class="recommendation-cover"><span>{{ strtoupper($recommended->language_locale) }}</span><strong>{{ $recommended->title }}</strong></div>
-                    <div>
+                    <div class="recommendation-cover">
+                        <span>{{ strtoupper($recommended->language_locale) }}</span>
+                        <strong>{{ $recommended->title }}</strong>
+                    </div>
+                    <div class="recommendation-copy">
                         <span class="level-pill level-{{ strtolower($recommended->level) === 'a1' ? 'easy' : (in_array($recommended->level, ['A2','B1']) ? 'medium' : 'hard') }}">{{ $recommended->level }}</span>
                         <h3>{{ $recommended->title }}</h3>
                         <p>{{ \Illuminate\Support\Str::limit(strip_tags($recommended->content), 120) }}</p>
                         <small>{{ max(1, (int) ceil($recommended->total_words / 200)) }} min read · {{ number_format($recommended->total_words) }} words</small>
                     </div>
-                    <form method="POST" action="{{ route('library.public.add', $recommended) }}" style="display:contents;">
+                    <form class="recommendation-action" method="POST" action="{{ route('library.public.add', $recommended) }}">
                         @csrf
-                        <button type="submit" aria-label="Add to library">→</button>
+                        <button type="submit" aria-label="Add to library"><span>＋</span>Add</button>
                     </form>
                 </div>
             @else
-                <div class="recommendation" style="justify-content:center;min-height:100px;color:var(--muted);font-size:13px;">
-                    <p>No recommendations yet. Add a book to get started.</p>
+                <div class="recommendation recommendation-empty">
+                    <div class="recommendation-empty-art" aria-hidden="true">
+                        <span></span>
+                        <span></span>
+                    </div>
+                    <div>
+                        <strong>No recommendations yet</strong>
+                        <p>Add a book or choose a learning language to unlock short reads picked for you.</p>
+                    </div>
+                    <a href="{{ route('library.create') }}">Add a book <span>→</span></a>
                 </div>
             @endif
         </article>
 
-        <article class="quick-actions-card">
+        <article class="quick-actions-card dashboard-soft-card">
             <div class="card-heading"><div><span>Quick actions</span><h2>What next?</h2></div></div>
             <div class="quick-actions">
-                <a href="{{ route('library.create') }}"><span>＋</span><div><strong>Upload a text</strong><small>TXT or EPUB</small></div></a>
-                <a href="{{ route('vocabulary.index') }}"><span>Aa</span><div><strong>Review vocabulary</strong><small>{{ $recentEntries }} {{ Str::plural('word', $recentEntries) }} saved</small></div></a>
-                <a href="{{ route('speaking.index') }}"><span>◉</span><div><strong>Speaking practice</strong><small>Start with a phrase</small></div></a>
+                <a href="{{ route('library.create') }}"><span>＋</span><div><strong>Upload a text</strong><small>TXT or EPUB</small></div><em>→</em></a>
+                <a href="{{ route('vocabulary.index') }}"><span>Aa</span><div><strong>Review vocabulary</strong><small>{{ $recentEntries }} {{ Str::plural('word', $recentEntries) }} saved</small></div><em>→</em></a>
+                <a href="{{ route('speaking.index') }}"><span>◉</span><div><strong>Speaking practice</strong><small>Start with a phrase</small></div><em>→</em></a>
             </div>
         </article>
     </section>
