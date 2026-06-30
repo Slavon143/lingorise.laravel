@@ -3,6 +3,29 @@
 @section('title', 'Speaking practice')
 
 @section('content')
+    @php
+        $practiceI18n = [
+            'listen' => __('reader.practice.listen'),
+            'start_recording' => __('reader.practice.start_recording'),
+            'stop' => __('reader.practice.stop'),
+            'cancel' => __('reader.practice.cancel'),
+            'recording' => __('reader.practice.recording'),
+            'your_recording' => __('reader.practice.your_recording'),
+            'play' => __('reader.practice.play'),
+            'pause' => __('reader.practice.pause'),
+            'record_again' => __('reader.practice.record_again'),
+            'delete' => __('reader.practice.delete'),
+            'max_time_reached' => __('reader.practice.max_time_reached'),
+            'microphone_denied' => __('reader.practice.microphone_denied'),
+            'microphone_not_found' => __('reader.practice.microphone_not_found'),
+            'microphone_busy' => __('reader.practice.microphone_busy'),
+            'secure_context_required' => __('reader.practice.secure_context_required'),
+            'recording_failed' => __('reader.practice.recording_failed'),
+            'select_shorter_text' => __('reader.practice.select_shorter_text'),
+            'recording_local_only' => __('reader.practice.recording_local_only'),
+        ];
+    @endphp
+
     <section class="speaking-page-heading">
         <div>
             <span class="dashboard-date">Private pronunciation practice</span>
@@ -27,6 +50,7 @@
             data-speaking-practice
             data-speaking-text="{{ $entry->original_text }}"
             data-speaking-locale="{{ $entry->book?->language_locale ?: 'en' }}"
+            data-practice-i18n='@json($practiceI18n)'
         >
             <div class="speaking-session-card">
                 <header>
@@ -53,11 +77,28 @@
                     <div class="speaking-wave" aria-hidden="true">
                         @for($i = 0; $i < 18; $i++) <i></i> @endfor
                     </div>
-                    <button type="button" data-speaking-record>
-                        <span class="speaking-record-icon"></span>
-                        <strong>Start recording</strong>
-                    </button>
-                    <small data-speaking-support>Your voice stays in this browser.</small>
+                    <div class="speaking-recorder-actions">
+                        <button type="button" class="speaking-listen-inline" data-speaking-listen-inline>{{ __('reader.practice.listen') }}</button>
+                        <button type="button" class="speaking-record-main" data-speaking-record>
+                            <span class="speaking-record-icon"></span>
+                            <strong data-speaking-record-label>{{ __('reader.practice.start_recording') }}</strong>
+                        </button>
+                        <button type="button" class="speaking-stop" data-speaking-stop hidden disabled>{{ __('reader.practice.stop') }}</button>
+                        <button type="button" class="speaking-cancel" data-speaking-cancel hidden disabled>{{ __('reader.practice.cancel') }}</button>
+                    </div>
+                    <div class="speaking-timer" data-speaking-timer aria-live="polite">{{ __('reader.practice.recording') }} 00:00 / 00:30</div>
+                    <small data-speaking-support>{{ __('reader.practice.recording_local_only') }}</small>
+                    <div class="speaking-status" data-speaking-status hidden></div>
+
+                    <div class="speaking-recording-result" data-speaking-recording-result hidden>
+                        <strong data-speaking-recording-result-title>{{ __('reader.practice.your_recording') }}</strong>
+                        <div class="speaking-recording-actions">
+                            <button type="button" data-speaking-play disabled>{{ __('reader.practice.play') }}</button>
+                            <button type="button" data-speaking-pause disabled>{{ __('reader.practice.pause') }}</button>
+                            <button type="button" data-speaking-record-again disabled>{{ __('reader.practice.record_again') }}</button>
+                            <button type="button" data-speaking-delete disabled>{{ __('reader.practice.delete') }}</button>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="speaking-result" data-speaking-result hidden>

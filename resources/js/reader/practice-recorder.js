@@ -100,6 +100,8 @@ const createPracticeRecorder = ({
     listenFn = null,
     rateFn = null,
     stopExternalAudio = null,
+    onRecordingStarted = null,
+    onRecordingStopped = null,
     env = globalThis,
 } = {}) => {
     const l = { ...defaultLabels, ...labels };
@@ -239,6 +241,7 @@ const createPracticeRecorder = ({
         }
 
         setIdleUi();
+        onRecordingStopped?.(reason, state);
     };
 
     const stopRecording = (reason = 'manual') => {
@@ -330,6 +333,7 @@ const createPracticeRecorder = ({
             recorder.start();
             setRecordingUi();
             startTimer();
+            onRecordingStarted?.(state);
         } catch (error) {
             state.isRecording = false;
             state.isStopping = false;

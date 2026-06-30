@@ -9,6 +9,7 @@ import { playNaturalVoice, playBrowserVoice, stop as stopAudio } from './reader/
 import { showContextualMenu } from './reader/contextual-menu.js';
 import { init as initPanel, clearState as clearPanelState, enterShadowing, state as panelState } from './reader/translation-panel.js';
 import { apiPost } from './reader/api-client.js';
+import { createPracticeRecorder } from './reader/practice-recorder.js';
 
 const saveButton = document.querySelector('.save-word');
 
@@ -894,16 +895,25 @@ if (speakingPractice) {
     const phrase = speakingPractice.dataset.speakingText;
     const locale = speakingPractice.dataset.speakingLocale || 'en';
     const listenButton = speakingPractice.querySelector('[data-speaking-listen]');
-    const recordButton = speakingPractice.querySelector('[data-speaking-record]');
     const recorder = speakingPractice.querySelector('.speaking-recorder');
     const supportNode = speakingPractice.querySelector('[data-speaking-support]');
+    const statusNode = speakingPractice.querySelector('[data-speaking-status]');
     const resultNode = speakingPractice.querySelector('[data-speaking-result]');
     const transcriptNode = speakingPractice.querySelector('[data-speaking-transcript]');
     const scoreNode = speakingPractice.querySelector('[data-speaking-score]');
     const feedbackNode = speakingPractice.querySelector('[data-speaking-feedback]');
     const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     let recognition = null;
-    let recording = false;
+    let recognitionStarted = false;
+    let practiceLabels = {};
+
+    try {
+        practiceLabels = speakingPractice.dataset.practiceI18n
+            ? JSON.parse(speakingPractice.dataset.practiceI18n)
+            : {};
+    } catch {
+        practiceLabels = {};
+    }
 
     const normalizeSpeech = (text) => text.toLocaleLowerCase()
         .replace(/[^\p{L}\p{N}\s]/gu, '')
@@ -929,17 +939,20 @@ if (speakingPractice) {
         return Math.max(0, Math.round((1 - rows[left.length][right.length] / Math.max(left.length, right.length, 1)) * 100));
     };
 
-    listenButton?.addEventListener('click', async () => {
-        const result = await playNaturalVoice(phrase, locale, listenButton);
+    const listenToPhrase = async (text = phrase, l = locale, button = listenButton) => {
+        const result = await playNaturalVoice(text, l, button);
 
-        if (!result.ok && supportNode) {
-            supportNode.textContent = result.message || 'Voice playback is unavailable.';
+        if (!result.ok && statusNode) {
+            statusNode.hidden = false;
+            statusNode.textContent = result.message || 'Voice playback is unavailable.';
         }
-    });
+    };
+
+    listenButton?.addEventListener('click', () => listenToPhrase(phrase, locale, listenButton));
 
     if (!Recognition) {
-        recordButton.disabled = true;
-        supportNode.textContent = 'Speech recognition is not supported in this browser.';
+        statusNode.hidden = false;
+        statusNode.textContent = 'Speech recognition is not supported in this browser, but you can still record and play back your voice.';
     } else {
         recognition = new Recognition();
         recognition.lang = locale;
@@ -960,9 +973,7 @@ if (speakingPractice) {
         });
 
         recognition.addEventListener('end', () => {
-            recording = false;
-            recorder.classList.remove('is-recording');
-            recordButton.querySelector('strong').textContent = 'Start recording';
+            recognitionStarted = false;
         });
 
         let micBlocked = false;
@@ -970,42 +981,72 @@ if (speakingPractice) {
         recognition.addEventListener('error', (event) => {
             if (event.error === 'not-allowed') {
                 micBlocked = true;
-                const isLocalhost = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
-                supportNode.innerHTML = 'Microphone access was denied.'
-                    + (isLocalhost
-                        ? ' Open <strong>chrome://settings/content/microphone</strong> and allow localhost,'
-                        : ' Click the <strong>🔒</strong> in the address bar and allow the microphone,')
-                    + ' then <button type="button" data-retry-mic style="background:var(--lime);color:var(--ink);border:0;border-radius:999px;padding:4px 12px;font-size:10px;font-weight:800;cursor:pointer;">try again</button>.';
+                statusNode.hidden = false;
+                statusNode.textContent = practiceLabels.microphone_denied || 'Microphone access was denied. Allow access in your browser settings.';
                 return;
             }
-            supportNode.textContent = 'I could not hear that. Please try again.';
+            statusNode.hidden = false;
+            statusNode.textContent = 'I could not hear that. Please try again.';
         });
 
-        recordButton?.addEventListener('click', () => {
-            if (recording) {
-                recognition.stop();
-                return;
-            }
-
-            if (micBlocked) {
-                supportNode.textContent = 'Microphone access is blocked. Update your browser permissions.';
-                return;
-            }
-
-            resultNode.hidden = true;
-            recording = true;
-            recorder.classList.add('is-recording');
-            recordButton.querySelector('strong').textContent = 'Stop recording';
-            supportNode.textContent = 'Listening…';
-            recognition.start();
-        });
-
-        supportNode.addEventListener('click', (event) => {
-            if (event.target.matches('[data-retry-mic]')) {
-                micBlocked = false;
-                supportNode.textContent = 'Requesting microphone access…';
-                recognition.start();
-            }
+        recognition.addEventListener('start', () => {
+            micBlocked = false;
+            recognitionStarted = true;
         });
     }
+
+    const controller = createPracticeRecorder({
+        elements: {
+            root: recorder,
+            phraseNode: null,
+            listenBtn: speakingPractice.querySelector('[data-speaking-listen-inline]'),
+            startBtn: speakingPractice.querySelector('[data-speaking-record]'),
+            startBtnLabel: speakingPractice.querySelector('[data-speaking-record-label]'),
+            stopBtn: speakingPractice.querySelector('[data-speaking-stop]'),
+            cancelBtn: speakingPractice.querySelector('[data-speaking-cancel]'),
+            timerNode: speakingPractice.querySelector('[data-speaking-timer]'),
+            statusNode,
+            localOnlyNode: supportNode,
+            resultNode: speakingPractice.querySelector('[data-speaking-recording-result]'),
+            resultTitleNode: speakingPractice.querySelector('[data-speaking-recording-result-title]'),
+            playBtn: speakingPractice.querySelector('[data-speaking-play]'),
+            pauseBtn: speakingPractice.querySelector('[data-speaking-pause]'),
+            recordAgainBtn: speakingPractice.querySelector('[data-speaking-record-again]'),
+            deleteBtn: speakingPractice.querySelector('[data-speaking-delete]'),
+            ratingNode: null,
+            ratingButtons: [],
+        },
+        labels: practiceLabels,
+        phrase,
+        locale,
+        listenFn: listenToPhrase,
+        stopExternalAudio: stopAudio,
+        onRecordingStarted: () => {
+            resultNode.hidden = true;
+            if (recognition && !recognitionStarted) {
+                try {
+                    recognition.start();
+                    supportNode.textContent = practiceLabels.recording_local_only || 'Your voice stays in this browser.';
+                } catch {
+                    // Recording playback still works when speech recognition is unavailable.
+                }
+            }
+        },
+        onRecordingStopped: (reason) => {
+            if (recognition && recognitionStarted) {
+                try { recognition.stop(); } catch { /* ignore */ }
+            }
+            if (!['manual', 'time_limit'].includes(reason)) {
+                resultNode.hidden = true;
+            }
+        },
+    });
+
+    window.addEventListener('pagehide', () => controller.cleanupPracticeState({ reason: 'page_hide' }));
+    window.addEventListener('beforeunload', () => controller.cleanupPracticeState({ reason: 'page_hide' }));
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden && controller.state.isRecording) {
+            controller.cleanupPracticeState({ reason: 'page_hide' });
+        }
+    });
 }

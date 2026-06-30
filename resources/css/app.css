@@ -2294,12 +2294,33 @@ h1 em::after {
 .speaking-recorder.is-recording .speaking-wave i { background: var(--lime); animation: voice-wave .65s ease-in-out infinite alternate; }
 .speaking-wave i:nth-child(3n) { animation-delay: -.2s !important; }
 .speaking-wave i:nth-child(4n) { animation-delay: -.4s !important; }
-.speaking-recorder > button { margin-top: 12px; padding: 10px 18px 10px 10px; display: flex; align-items: center; gap: 10px; color: var(--ink); background: var(--lime); border: 0; border-radius: 999px; cursor: pointer; }
+.speaking-recorder-actions,
+.speaking-recording-actions { margin-top: 12px; display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap; }
+.speaking-recorder-actions button,
+.speaking-recording-actions button { min-height: 42px; padding: 10px 16px; display: flex; align-items: center; justify-content: center; gap: 10px; color: var(--ink); background: var(--lime); border: 0; border-radius: 999px; cursor: pointer; font-weight: 800; transition: background .18s ease, color .18s ease, filter .18s ease, box-shadow .18s ease; }
+.speaking-recorder-actions button:hover:not(:disabled),
+.speaking-recording-actions button:hover:not(:disabled) { color: #fff; background: var(--blue); box-shadow: 0 12px 26px rgba(70,102,255,.26); }
+.speaking-recorder-actions button:disabled,
+.speaking-recording-actions button:disabled { cursor: not-allowed; opacity: .45; }
+.speaking-record-main { padding-left: 10px !important; }
+.speaking-listen-inline { background: #eef1ff !important; color: var(--blue) !important; }
+.speaking-listen-inline:hover:not(:disabled) { color: #fff !important; background: var(--blue) !important; }
+.speaking-stop { color: #fff !important; background: linear-gradient(135deg, #4666ff, #2946d8) !important; }
+.speaking-cancel,
+.speaking-recording-actions [data-speaking-delete] { color: #fff !important; background: linear-gradient(135deg, #f97316, #dc2626) !important; }
+.speaking-recording-actions [data-speaking-pause] { background: #f6f3ea !important; }
 .speaking-record-icon { width: 34px; height: 34px; position: relative; display: block; background: var(--ink); border-radius: 50%; }
 .speaking-record-icon::after { content: ""; position: absolute; inset: 10px; background: #ff786b; border-radius: 50%; }
 .speaking-recorder.is-recording .speaking-record-icon::after { border-radius: 3px; }
-.speaking-recorder > button strong { font-size: 11px; }
+.speaking-recorder-actions button strong { font-size: 11px; }
 .speaking-recorder > small { margin-top: 10px; color: #8f99b5; font-size: 9px; }
+.speaking-timer { margin-top: 10px; color: #c7d0ea; font-size: 12px; font-weight: 850; letter-spacing: .02em; }
+.speaking-recorder.is-recording .speaking-timer { color: var(--lime); }
+.speaking-status { margin-top: 10px; padding: 8px 10px; color: #ffe8a3; background: rgba(255,244,207,.1); border: 1px solid rgba(255,244,207,.16); border-radius: 10px; font-size: 11px; font-weight: 650; text-align: center; }
+.speaking-status[data-status-type="error"] { color: #fecaca; background: rgba(254, 226, 226, .1); border-color: rgba(254, 226, 226, .18); }
+.speaking-recording-result { width: min(520px, 100%); margin-top: 14px; padding: 12px; color: #eef1ff; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.1); border-radius: 14px; text-align: center; }
+.speaking-recording-result[hidden] { display: none; }
+.speaking-recording-result > strong { display: block; margin-bottom: 8px; font-size: 12px; }
 .speaking-result { margin-top: 18px; padding: 18px; display: grid; grid-template-columns: 82px 1fr; align-items: center; gap: 18px; background: #eef1ff; border-radius: 16px; }
 .speaking-result[hidden] { display: none; }
 .speaking-score { width: 72px; height: 72px; display: grid; place-content: center; color: white; background: var(--blue); border-radius: 50%; text-align: center; }
@@ -3099,7 +3120,12 @@ h1 em::after {
 .word-card-shadowing.is-recording .shadowing-timer { color: #d32f2f; }
 .shadowing-bar, .shadowing-result-actions { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
 .shadowing-bar button, .shadowing-result-actions button { flex: 1; min-height: 38px; padding: 8px 12px; border: 1px solid rgba(17,27,61,.15); border-radius: 8px; background: rgba(240,239,233,.5); color: var(--ink); font-size: 11px; font-weight: 650; cursor: pointer; }
-.shadowing-bar button:hover:not(:disabled) { background: rgba(201,243,107,.4); border-color: rgba(166,215,65,.4); }
+.shadowing-bar button:hover:not(:disabled),
+.shadowing-result-actions button:hover:not(:disabled) {
+    color: #fff;
+    background: #111b3d;
+    border-color: #111b3d;
+}
 .shadowing-bar button:disabled, .shadowing-result-actions button:disabled { cursor: not-allowed; opacity: .4; }
 .shadowing-bar .shadowing-record-btn.is-recording { color: #d32f2f; background: rgba(211,47,47,.1); border-color: rgba(211,47,47,.3); animation: shadowing-pulse 1s ease-in-out infinite; }
 .shadowing-result { margin-bottom: 10px; padding: 10px; border: 1px solid rgba(17,27,61,.09); border-radius: 12px; background: rgba(255,254,249,.62); }
@@ -8098,8 +8124,16 @@ button:hover,
 .word-card-shadowing .shadowing-pause-btn:hover:not(:disabled),
 .word-card-shadowing .shadowing-record-again-btn:hover:not(:disabled),
 .word-card-shadowing .shadowing-delete-btn:hover:not(:disabled) {
-    filter: saturate(1.08) brightness(1.03);
-    box-shadow: 0 14px 28px rgba(17, 27, 61, .14);
+    filter: saturate(1.1) brightness(.92);
+    box-shadow: 0 14px 28px rgba(17, 27, 61, .2);
+}
+
+.word-card-shadowing .shadowing-listen-btn:hover:not(:disabled),
+.word-card-shadowing .shadowing-record-again-btn:hover:not(:disabled),
+.word-card-shadowing .shadowing-pause-btn:hover:not(:disabled) {
+    color: #fff;
+    background: #111b3d;
+    border-color: #111b3d;
 }
 
 .word-card-shadowing .shadowing-record-btn.is-recording {
@@ -8129,6 +8163,12 @@ button:hover,
 .word-card-shadowing .shadowing-rating button.is-selected {
     outline: 2px solid rgba(70, 102, 255, .3);
     outline-offset: 2px;
+}
+
+.word-card-shadowing .shadowing-rating button:hover:not(:disabled) {
+    color: #fff;
+    background: #111b3d;
+    border-color: #111b3d;
 }
 
 .word-card-shadowing .shadowing-back-btn {
