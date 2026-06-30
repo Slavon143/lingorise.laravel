@@ -2,15 +2,17 @@
 
 namespace App\Services\Intelligence\Cache;
 
+use App\Services\ContentHashService;
+
 class AiTextNormalizer
 {
+    public function __construct(
+        private readonly ContentHashService $hashes,
+    ) {}
+
     public function normalize(string $text): string
     {
-        $text = str_replace(["\r\n", "\r"], "\n", $text);
-        $text = preg_replace('/[ \t]+/u', ' ', $text);
-        $text = preg_replace('/\n{3,}/u', "\n\n", $text);
-
-        return trim($text);
+        return $this->hashes->normalize($text);
     }
 
     public function normalizeForCache(string $text): string
@@ -20,9 +22,6 @@ class AiTextNormalizer
 
     public function normalizeForTts(string $text): string
     {
-        $text = str_replace(["\r\n", "\r"], "\n", $text);
-        $text = preg_replace('/[ \t]+/u', ' ', $text);
-
-        return trim($text);
+        return $this->hashes->normalize($text);
     }
 }

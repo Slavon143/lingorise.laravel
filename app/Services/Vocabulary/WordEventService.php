@@ -7,11 +7,13 @@ use App\Models\Book;
 use App\Models\User;
 use App\Models\UserWord;
 use App\Models\UserWordEvent;
+use App\Services\ContentHashService;
 
 class WordEventService
 {
     public function __construct(
         private readonly WordMasteryService $mastery,
+        private readonly ContentHashService $hashes,
     ) {}
 
     public function record(
@@ -25,11 +27,13 @@ class WordEventService
         ?int $wordIndex = null,
         ?string $contextHash = null,
     ): UserWord {
+        $normalizedLemma = mb_strtolower($this->hashes->normalize($lemma));
+
         $word = UserWord::firstOrCreate(
             [
                 'user_id' => $user->id,
                 'language' => $language,
-                'lemma' => $lemma,
+                'lemma' => $normalizedLemma,
             ],
             [
                 'display_word' => $displayWord,

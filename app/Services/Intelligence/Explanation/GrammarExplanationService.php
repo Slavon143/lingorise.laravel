@@ -39,9 +39,6 @@ class GrammarExplanationService
         ?Book $book = null,
         ?AiUsageContext $usageContext = null,
     ): array {
-        $privacyScope = $book?->isPublic() ? 'public' : 'book';
-        $scopeId = $book?->isPublic() ? null : $book?->id;
-
         $cacheKey = $this->cache->cacheKey(
             operationType: 'grammar_explanation',
             sourceText: $text,
@@ -49,8 +46,6 @@ class GrammarExplanationService
             targetLanguage: $targetLanguage,
             context: $context,
             model: 'gpt-4o-mini',
-            privacyScope: $privacyScope,
-            scopeId: $scopeId,
         );
 
         $cached = $this->cache->find($cacheKey);
@@ -163,8 +158,6 @@ class GrammarExplanationService
                     responseJson: $responseJson,
                     context: $context,
                     model: 'gpt-4o-mini',
-                    privacyScope: $book?->isPublic() ? 'public' : 'book',
-                    scopeId: $book?->isPublic() ? null : $book?->id,
                 );
 
                 $duration = (int) round((microtime(true) - $started) * 1000);

@@ -153,7 +153,7 @@ class TtsService
                 'speed' => (string) $speed,
                 'model' => $model,
                 'format' => $format,
-                'source_text_hash' => sha1($normalizedText),
+                'source_text_hash' => hash('sha256', $normalizedText),
             ]);
 
             try {

@@ -6,7 +6,7 @@ const state = {
     activeTab: null,
     isSaved: false,
     requests: { context: null, grammar: null, simplify: null },
-    results: { context: null, grammar: null, simplifications: {} },
+    results: { context: {}, grammar: {}, simplifications: {} },
     shadowing: { active: false, controller: null, triggerEnter: false },
 };
 
@@ -120,7 +120,7 @@ const showError = (tabName, error) => {
 const clearState = (reason = 'selection_change') => {
     Object.values(state.requests).forEach((ctrl) => ctrl?.abort());
     state.requests = { context: null, grammar: null, simplify: null };
-    state.results = { context: null, grammar: null, simplifications: {} };
+    state.results = { context: {}, grammar: {}, simplifications: {} };
     state.activeTab = null;
     state.isSaved = false;
     delete state.selectionId;

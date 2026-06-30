@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Services\Intelligence\Budget\AiBudgetGuard;
+use App\Services\ContentHashService;
 use App\Services\Intelligence\Cache\AiCacheKeyFactory;
 use App\Services\Intelligence\Cache\AiStructuredCacheRepository;
 use App\Services\Intelligence\Cache\AiTextNormalizer;
@@ -39,6 +40,7 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->singleton(AiTextNormalizer::class);
+        $this->app->singleton(ContentHashService::class);
         $this->app->singleton(AiCacheKeyFactory::class);
         $this->app->singleton(PricingRegistry::class);
         $this->app->singleton(ExchangeRateService::class);
@@ -54,6 +56,7 @@ class AppServiceProvider extends ServiceProvider
             return new TranslationCacheRepository(
                 $app->make(AiTextNormalizer::class),
                 $app->make(AiCacheKeyFactory::class),
+                $app->make(ContentHashService::class),
             );
         });
 
@@ -61,6 +64,7 @@ class AppServiceProvider extends ServiceProvider
             return new ExplanationCacheRepository(
                 $app->make(AiTextNormalizer::class),
                 $app->make(AiCacheKeyFactory::class),
+                $app->make(ContentHashService::class),
             );
         });
 
@@ -68,6 +72,7 @@ class AppServiceProvider extends ServiceProvider
             return new TtsCacheRepository(
                 $app->make(AiTextNormalizer::class),
                 $app->make(AiCacheKeyFactory::class),
+                $app->make(ContentHashService::class),
             );
         });
 
@@ -85,6 +90,7 @@ class AppServiceProvider extends ServiceProvider
             return new AiStructuredCacheRepository(
                 $app->make(AiTextNormalizer::class),
                 $app->make(AiCacheKeyFactory::class),
+                $app->make(ContentHashService::class),
             );
         });
 

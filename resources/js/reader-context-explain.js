@@ -10,6 +10,12 @@ const init = () => {
     const url = page.dataset.contextExplainUrl;
     if (!btn || !url) return;
     let controller = null;
+    const cacheKey = (phrase, context) => JSON.stringify([
+        phrase.replace(/\s+/gu, ' ').trim(),
+        context.replace(/\s+/gu, ' ').trim(),
+        page.dataset.bookLanguage || page.dataset.nativeLanguage || 'en',
+        page.dataset.nativeLanguage || '',
+    ]);
 
     btn.addEventListener('click', async () => {
         if (state.requests.context) {
@@ -23,6 +29,13 @@ const init = () => {
         const phrase = selectedWord?.textContent?.trim();
         const context = contextNode?.textContent?.trim();
         if (!phrase || !context) return;
+        const key = cacheKey(phrase, context);
+
+        if (state.results.context[key]) {
+            showResult('context', state.results.context[key]);
+            setStatus('');
+            return;
+        }
 
         controller = new AbortController();
         state.requests.context = controller;
@@ -78,7 +91,9 @@ const init = () => {
                 sections.push(`<div class="ai-context-example">${escHtml(data.natural_example)}</div>`);
             }
 
-            showResult('context', sections.join(''));
+            const html = sections.join('');
+            state.results.context[key] = html;
+            showResult('context', html);
             setStatus('');
         } catch (err) {
             if (err.name !== 'AbortError') {

@@ -38,9 +38,6 @@ class ContextExplanationService
         ?Book $book = null,
         ?AiUsageContext $usageContext = null,
     ): array {
-        $privacyScope = $book?->isPublic() ? 'public' : 'book';
-        $scopeId = $book?->isPublic() ? null : $book?->id;
-
         $cacheKey = $this->cache->cacheKey(
             operationType: 'context_explanation',
             sourceText: $selectedText,
@@ -48,8 +45,6 @@ class ContextExplanationService
             targetLanguage: $targetLanguage,
             context: $context,
             model: 'gpt-4o-mini',
-            privacyScope: $privacyScope,
-            scopeId: $scopeId,
         );
 
         $cached = $this->cache->find($cacheKey);
@@ -162,8 +157,6 @@ class ContextExplanationService
                     responseJson: $responseJson,
                     context: $context,
                     model: 'gpt-4o-mini',
-                    privacyScope: $book?->isPublic() ? 'public' : 'book',
-                    scopeId: $book?->isPublic() ? null : $book?->id,
                 );
 
                 $duration = (int) round((microtime(true) - $started) * 1000);

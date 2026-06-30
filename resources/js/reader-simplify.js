@@ -104,6 +104,12 @@ const init = () => {
     };
 
     let currentLevel = localStorage.getItem(STORAGE_KEY) || 'B1';
+    const cacheKey = (text, level) => JSON.stringify([
+        text.replace(/\s+/gu, ' ').trim(),
+        page.dataset.bookLanguage || page.dataset.nativeLanguage || 'en',
+        page.dataset.nativeLanguage || '',
+        level,
+    ]);
     levelsContainer.querySelectorAll('[data-level]').forEach((lvl) => {
         lvl.classList.toggle('is-active', lvl.dataset.level === currentLevel);
     });
@@ -130,6 +136,12 @@ const init = () => {
 
         try {
             const text = context && context.includes(phrase) ? context : phrase;
+            const key = cacheKey(text, currentLevel);
+            if (state.results.simplifications[key]) {
+                showResultNode('simplify', renderResult(text, state.results.simplifications[key], currentLevel));
+                setStatus('');
+                return;
+            }
             const result = await apiPost(url, {
                 text,
                 source_language: page.dataset.bookLanguage || page.dataset.nativeLanguage || 'en',
@@ -137,6 +149,7 @@ const init = () => {
                 target_level: currentLevel,
             }, { signal: controller.signal });
             const data = result.data;
+            state.results.simplifications[key] = data;
             showResultNode('simplify', renderResult(text, data, currentLevel));
             setStatus('');
         } catch (err) {

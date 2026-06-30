@@ -3,17 +3,27 @@
 namespace App\Services\Intelligence\Cache;
 
 use App\Models\AiStructuredCache;
+use App\Services\ContentHashService;
 
 class AiStructuredCacheRepository
 {
     public function __construct(
         private readonly AiTextNormalizer $normalizer,
         private readonly AiCacheKeyFactory $keyFactory,
+        private readonly ContentHashService $hashes,
     ) {}
 
-    public const int PROMPT_VERSION = 3;
+    public const array PROMPT_VERSIONS = [
+        'context_explanation' => 3,
+        'grammar_explanation' => 3,
+        'simplification' => 4,
+    ];
 
-    public const int RESPONSE_FORMAT_VERSION = 3;
+    public const array SCHEMA_VERSIONS = [
+        'context_explanation' => 3,
+        'grammar_explanation' => 3,
+        'simplification' => 4,
+    ];
 
     public function cacheKey(
         string $operationType,
@@ -24,14 +34,16 @@ class AiStructuredCacheRepository
         ?string $targetLevel = null,
         string $model = 'gpt-4o-mini',
         string $provider = 'openai',
-        int $promptVersion = self::PROMPT_VERSION,
-        int $responseFormatVersion = self::RESPONSE_FORMAT_VERSION,
+        ?int $promptVersion = null,
+        ?int $responseFormatVersion = null,
         ?string $privacyScope = null,
         ?int $scopeId = null,
     ): string {
+        $promptVersion ??= self::PROMPT_VERSIONS[$operationType] ?? 1;
+        $responseFormatVersion ??= self::SCHEMA_VERSIONS[$operationType] ?? 1;
+
         $payload = [
-            'operation' => $operationType,
-            'source_text' => $this->normalizer->normalizeForCache($sourceText),
+            'source_text_hash' => $this->hashes->hashText($sourceText),
             'source_language' => $sourceLanguage,
             'target_language' => $targetLanguage,
             'provider' => $provider,
@@ -41,19 +53,14 @@ class AiStructuredCacheRepository
         ];
 
         if ($context !== null) {
-            $payload['context'] = $this->normalizer->normalizeForCache($context);
+            $payload['context_hash'] = $this->hashes->hashText($context);
         }
 
         if ($targetLevel !== null) {
             $payload['target_level'] = $targetLevel;
         }
 
-        if ($privacyScope !== null) {
-            $payload['privacy_scope'] = $privacyScope;
-            $payload['scope_id'] = $scopeId;
-        }
-
-        return $this->keyFactory->create($payload);
+        return $this->hashes->cacheKey($operationType, 'v' . $promptVersion . ':schema' . $responseFormatVersion, $payload);
     }
 
     public function find(string $cacheKey): ?AiStructuredCache
@@ -91,17 +98,17 @@ class AiStructuredCacheRepository
             [
                 'operation_type' => $operationType,
                 'source_text' => $normalized,
-                'source_text_hash' => sha1($normalized),
+                'source_text_hash' => $this->hashes->hashText($sourceText),
                 'context_text' => $normalizedContext,
-                'context_hash' => $normalizedContext ? sha1($normalizedContext) : null,
+                'context_hash' => $context ? $this->hashes->hashText($context) : null,
                 'source_language' => $sourceLanguage,
                 'target_language' => $targetLanguage,
                 'target_level' => $targetLevel,
                 'response_json' => $responseJson,
                 'model' => $model,
                 'provider' => $provider,
-                'prompt_version' => self::PROMPT_VERSION,
-                'response_format_version' => self::RESPONSE_FORMAT_VERSION,
+                'prompt_version' => self::PROMPT_VERSIONS[$operationType] ?? 1,
+                'response_format_version' => self::SCHEMA_VERSIONS[$operationType] ?? 1,
                 'privacy_scope' => $privacyScope,
                 'scope_id' => $scopeId,
                 'original_usage_event_id' => $originalUsageEventId,

@@ -3,16 +3,17 @@
 namespace App\Services\Intelligence\Cache;
 
 use App\Models\TranslationCache;
-use Illuminate\Support\Str;
+use App\Services\ContentHashService;
 
 class TranslationCacheRepository
 {
     public function __construct(
         private readonly AiTextNormalizer $normalizer,
         private readonly AiCacheKeyFactory $keyFactory,
+        private readonly ContentHashService $hashes,
     ) {}
 
-    public const int PROMPT_VERSION = 1;
+    public const int PROMPT_VERSION = 2;
 
     public const int RESPONSE_FORMAT_VERSION = 1;
 
@@ -31,9 +32,8 @@ class TranslationCacheRepository
         ?string $privacyScope = null,
         ?int $scopeId = null,
     ): string {
-        return $this->keyFactory->create([
-            'operation' => 'translation',
-            'text' => $this->normalizer->normalizeForCache($text),
+        return $this->hashes->cacheKey('translation', 'v' . $promptVersion . ':schema' . $responseFormatVersion, [
+            'text_hash' => $this->hashes->hashText($text),
             'source_language' => $sourceLanguage,
             'target_language' => $targetLanguage,
             'provider' => $provider,
@@ -41,8 +41,6 @@ class TranslationCacheRepository
             'prompt_version' => $promptVersion,
             'mode' => $mode,
             'response_format_version' => $responseFormatVersion,
-            'privacy_scope' => $privacyScope,
-            'scope_id' => $scopeId,
         ]);
     }
 
@@ -76,7 +74,7 @@ class TranslationCacheRepository
             ['cache_key' => $cacheKey],
             [
                 'source_text' => $normalized,
-                'source_text_hash' => sha1($normalized),
+                'source_text_hash' => $this->hashes->hashText($sourceText),
                 'source_language' => $sourceLanguage,
                 'target_language' => $targetLanguage,
                 'translated_text' => trim($translatedText),

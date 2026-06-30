@@ -5,12 +5,14 @@ namespace App\Services\Vocabulary;
 use App\Models\DictionaryEntry;
 use App\Models\User;
 use App\Models\UserWord;
+use App\Services\ContentHashService;
 
 class VocabularyService
 {
     public function __construct(
         private readonly WordMasteryService $mastery,
         private readonly WordEventService $eventService,
+        private readonly ContentHashService $hashes,
     ) {}
 
     public function ensureWord(
@@ -20,11 +22,13 @@ class VocabularyService
         string $language,
         ?string $translation = null,
     ): UserWord {
+        $normalizedLemma = mb_strtolower($this->hashes->normalize($lemma));
+
         return UserWord::firstOrCreate(
             [
                 'user_id' => $user->id,
                 'language' => $language,
-                'lemma' => $lemma,
+                'lemma' => $normalizedLemma,
             ],
             [
                 'display_word' => $displayWord,
@@ -36,7 +40,7 @@ class VocabularyService
 
     public function migrateFromDictionary(User $user, DictionaryEntry $entry): ?UserWord
     {
-        $lemma = mb_strtolower(trim($entry->original_text));
+        $lemma = mb_strtolower($this->hashes->normalize($entry->original_text));
 
         $word = UserWord::where('user_id', $user->id)
             ->where('language', $entry->book?->language_locale ?? 'en')

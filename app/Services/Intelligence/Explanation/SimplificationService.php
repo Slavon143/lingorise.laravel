@@ -44,9 +44,6 @@ class SimplificationService
         ?Book $book = null,
         ?AiUsageContext $usageContext = null,
     ): array {
-        $privacyScope = $book?->isPublic() ? 'public' : 'book';
-        $scopeId = $book?->isPublic() ? null : $book?->id;
-
         $cacheKey = $this->cache->cacheKey(
             operationType: 'simplification',
             sourceText: $text,
@@ -55,8 +52,6 @@ class SimplificationService
             context: null,
             targetLevel: $targetLevel,
             model: 'gpt-4o-mini',
-            privacyScope: $privacyScope,
-            scopeId: $scopeId,
         );
 
         $cached = $this->cache->find($cacheKey);
@@ -185,8 +180,6 @@ class SimplificationService
                     responseJson: $responseJson,
                     targetLevel: $targetLevel,
                     model: 'gpt-4o-mini',
-                    privacyScope: $book?->isPublic() ? 'public' : 'book',
-                    scopeId: $book?->isPublic() ? null : $book?->id,
                 );
 
                 $duration = (int) round((microtime(true) - $started) * 1000);

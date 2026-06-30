@@ -4,6 +4,7 @@ namespace App\Services\Intelligence\Cache;
 
 use App\Enums\TtsCacheStatus;
 use App\Models\TtsCache;
+use App\Services\ContentHashService;
 use Illuminate\Support\Facades\Storage;
 use RuntimeException;
 
@@ -12,9 +13,10 @@ class TtsCacheRepository
     public function __construct(
         private readonly AiTextNormalizer $normalizer,
         private readonly AiCacheKeyFactory $keyFactory,
+        private readonly ContentHashService $hashes,
     ) {}
 
-    public const int VERSION = 1;
+    public const int VERSION = 2;
 
     public function cacheKey(
         string $text,
@@ -27,9 +29,8 @@ class TtsCacheRepository
         ?int $sampleRate = null,
         int $version = self::VERSION,
     ): string {
-        return $this->keyFactory->create([
-            'operation' => 'tts',
-            'text' => $this->normalizer->normalizeForTts($text),
+        return $this->hashes->cacheKey('tts', 'v' . $version, [
+            'text_hash' => $this->hashes->hashText($text),
             'language' => $language,
             'provider' => $provider,
             'model' => $model,
@@ -37,7 +38,6 @@ class TtsCacheRepository
             'speed' => (string) $speed,
             'format' => $format,
             'sample_rate' => $sampleRate,
-            'version' => $version,
         ]);
     }
 
@@ -102,7 +102,7 @@ class TtsCacheRepository
     public function pathFor(string $cacheKey, string $format): string
     {
         return sprintf(
-            'private/tts/%s/%s/%s.%s',
+            'tts/%s/%s/%s.%s',
             substr($cacheKey, 0, 2),
             substr($cacheKey, 2, 2),
             $cacheKey,

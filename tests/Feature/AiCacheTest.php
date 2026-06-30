@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Book;
 use App\Models\TtsCache;
 use App\Models\User;
+use App\Services\ContentHashService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Routing\Middleware\ThrottleRequests;
 use Illuminate\Support\Facades\Http;
@@ -146,6 +147,7 @@ class AiCacheTest extends TestCase
             ->post(route('speech.create'), ['text' => 'Hello there', 'locale' => 'en'])
             ->assertOk()
             ->assertHeader('X-AI-Cache', 'MISS')
+            ->assertHeader('Cache-Control', 'immutable, max-age=31536000, public')
             ->assertContent('audio-one');
 
         $entry = TtsCache::firstOrFail();
@@ -213,6 +215,35 @@ class AiCacheTest extends TestCase
 
         $this->assertDatabaseCount('tts_cache', 1);
         $this->assertDatabaseHas('tts_cache', ['status' => 'failed']);
-        Storage::disk('local')->assertMissing('private/tts');
+        Storage::disk('local')->assertMissing('tts');
+    }
+
+    public function test_content_hash_normalizes_whitespace_and_preserves_case(): void
+    {
+        $hashes = app(ContentHashService::class);
+
+        $this->assertSame(
+            $hashes->hashText('Hello world'),
+            $hashes->hashText("  Hello\r\nworld  "),
+        );
+        $this->assertSame(
+            $hashes->hashText('Hello world'),
+            $hashes->hashText('Hello   world'),
+        );
+        $this->assertNotSame(
+            $hashes->hashText('US'),
+            $hashes->hashText('us'),
+        );
+    }
+
+    public function test_translation_cache_key_differs_by_target_locale(): void
+    {
+        $repo = app(\App\Services\Intelligence\Cache\TranslationCacheRepository::class);
+
+        $ru = $repo->cacheKey('Hello world', 'en', 'ru');
+        $uk = $repo->cacheKey('Hello world', 'en', 'uk');
+
+        $this->assertNotSame($ru, $uk);
+        $this->assertSame($ru, $repo->cacheKey(" Hello\nworld ", 'en', 'ru'));
     }
 }

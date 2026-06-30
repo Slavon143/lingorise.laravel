@@ -10,6 +10,12 @@ const init = () => {
     const url = page.dataset.grammarExplainUrl;
     if (!btn || !url) return;
     let controller = null;
+    const cacheKey = (phrase, context) => JSON.stringify([
+        phrase.replace(/\s+/gu, ' ').trim(),
+        (context || '').replace(/\s+/gu, ' ').trim(),
+        page.dataset.bookLanguage || page.dataset.nativeLanguage || 'en',
+        page.dataset.nativeLanguage || '',
+    ]);
 
     btn.addEventListener('click', async () => {
         if (controller) {
@@ -23,6 +29,13 @@ const init = () => {
         const phrase = selectedWord?.textContent?.trim();
         const context = contextNode?.textContent?.trim();
         if (!phrase) return;
+        const key = cacheKey(phrase, context);
+
+        if (state.results.grammar[key]) {
+            showResult('grammar', state.results.grammar[key]);
+            setStatus('');
+            return;
+        }
 
         controller = new AbortController();
         state.requests.grammar = controller;
@@ -45,7 +58,7 @@ const init = () => {
                     ).join('') +
                     '</div>';
             }
-            showResult('grammar', `
+            const html = `
                 <span class="ai-tool-label">${escHtml(i18n['grammar.title'] || 'Grammar explanation')}</span>
                 <strong class="ai-tool-construction">${escHtml(data.construction || '')}</strong>
                 <p class="ai-tool-purpose">${escHtml(data.purpose || '')}</p>
@@ -53,7 +66,9 @@ const init = () => {
                 ${partsHtml}
                 ${data.simplified_translation ? `<p class="ai-tool-translation">→ ${escHtml(data.simplified_translation)}</p>` : ''}
                 ${data.additional_example ? `<blockquote class="ai-tool-example">${escHtml(data.additional_example)}</blockquote>` : ''}
-                ${data.common_mistake ? `<p class="ai-tool-mistake">${escHtml(data.common_mistake)}</p>` : ''}`);
+                ${data.common_mistake ? `<p class="ai-tool-mistake">${escHtml(data.common_mistake)}</p>` : ''}`;
+            state.results.grammar[key] = html;
+            showResult('grammar', html);
             setStatus('');
         } catch (err) {
             if (err.name !== 'AbortError') {

@@ -47,13 +47,9 @@ class TranslationService
         $normalizedText = $this->normalizer->normalizeForCache($text);
         $normalizedContext = $this->normalizer->normalizeForCache($context);
 
-        $privacyScope = $book?->isPublic() ? 'public' : 'book';
-        $scopeId = $book?->isPublic() ? null : $book?->id;
-
         $cacheKey = $this->cache->cacheKey(
             $normalizedText, $sourceLanguage, $targetLanguage,
             $model, $provider,
-            privacyScope: $privacyScope, scopeId: $scopeId,
         );
 
         $cached = $this->cache->find($cacheKey);
