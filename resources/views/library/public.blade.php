@@ -10,7 +10,7 @@
             <p>Discover books shared by other readers. Add any book to your personal library.</p>
         </div>
         <a href="{{ route('library.public') }}">
-            <svg width="16" height="16" viewBox="0 0 22 22" fill="none" style="vertical-align:-3px;margin-right:6px;"><path d="M10 3H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M16 3 19 6 12 13H9v-3l7-7Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+            <svg width="16" height="16" viewBox="0 0 22 22" fill="none"><path d="M10 3H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M16 3 19 6 12 13H9v-3l7-7Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
             Browse all
         </a>
     </section>

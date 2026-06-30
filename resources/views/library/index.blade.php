@@ -10,7 +10,7 @@
             <p>Read your own books and keep every new word in context.</p>
         </div>
         <a href="{{ route('library.public') }}">
-            <svg width="16" height="16" viewBox="0 0 22 22" fill="none" style="vertical-align:-3px;margin-right:6px;"><path d="M3 11h16M7 4v7M11 4v7M15 4v7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><rect x="3" y="11" width="16" height="7" rx="1.5" stroke="currentColor" stroke-width="1.6"/></svg>
+            <svg width="16" height="16" viewBox="0 0 22 22" fill="none"><path d="M3 11h16M7 4v7M11 4v7M15 4v7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><rect x="3" y="11" width="16" height="7" rx="1.5" stroke="currentColor" stroke-width="1.6"/></svg>
             Browse public library
         </a>
     </section>
@@ -33,7 +33,7 @@
             <p>Paste text or upload a TXT or EPUB file. LingoRise will prepare it for focused reading.</p>
             <a href="{{ route('library.create') }}">
                 Add your first book
-                <svg width="16" height="16" viewBox="0 0 22 22" fill="none" style="vertical-align:-3px;margin-left:6px;"><path d="M5 11h12M11 5v12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+                <svg width="16" height="16" viewBox="0 0 22 22" fill="none"><path d="M5 11h12M11 5v12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
             </a>
         </section>
     @else

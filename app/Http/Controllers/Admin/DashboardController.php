@@ -14,8 +14,10 @@ class DashboardController extends Controller
         return view('admin.dashboard', [
             'totalUsers' => User::count(),
             'newUsers' => User::where('created_at', '>=', now()->subDays(7))->count(),
+            'newUsers30d' => User::where('created_at', '>=', now()->subDays(30))->count(),
             'adminUsers' => User::where('is_admin', true)->count(),
             'booksCount' => Book::count(),
+            'publicBooksCount' => Book::where('visibility', 'public')->count(),
             'lastRegistration' => User::latest('created_at')->first(['created_at'])?->created_at,
             'latestUsers' => User::query()
                 ->select(['id', 'name', 'email', 'is_admin', 'created_at'])

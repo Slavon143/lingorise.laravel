@@ -61,7 +61,7 @@ class AiCacheTest extends TestCase
                 'pronunciation' => '/ˈwʌndəfəl/',
             ]);
 
-        Http::assertSentCount(1);
+        Http::assertSentCount(2);
 
         $this->assertDatabaseHas('translation_cache', [
             'source_text' => 'wonderful',
@@ -83,7 +83,7 @@ class AiCacheTest extends TestCase
             'user_id' => $user->id,
             'type' => 'translation',
             'cache_hit' => true,
-            'status' => 'ok',
+            'status' => 'success',
         ]);
     }
 
@@ -108,8 +108,15 @@ class AiCacheTest extends TestCase
                     'output' => [[
                         'content' => [[
                             'text' => json_encode([
-                                'translation' => 'Ufer',
-                                'pronunciation' => '/bæŋk/',
+                                'explanation' => 'Ein Finanzinstitut.',
+                            ]),
+                        ]],
+                    ]],
+                ])
+                ->push([
+                    'output' => [[
+                        'content' => [[
+                            'text' => json_encode([
                                 'explanation' => 'Der Rand eines Flusses.',
                             ]),
                         ]],
@@ -140,7 +147,7 @@ class AiCacheTest extends TestCase
             ->assertOk()
             ->assertJsonPath('explanation', 'Der Rand eines Flusses.');
 
-        Http::assertSentCount(2);
+        Http::assertSentCount(3);
         $this->assertDatabaseCount('explanation_cache', 2);
     }
 
@@ -223,7 +230,8 @@ class AiCacheTest extends TestCase
             ->post(route('speech.create'), ['text' => 'Silent', 'locale' => 'en'])
             ->assertStatus(503);
 
-        $this->assertDatabaseCount('tts_cache', 0);
+        $this->assertDatabaseCount('tts_cache', 1);
+        $this->assertDatabaseHas('tts_cache', ['status' => 'failed']);
         Storage::disk('local')->assertMissing('private/tts');
     }
 }

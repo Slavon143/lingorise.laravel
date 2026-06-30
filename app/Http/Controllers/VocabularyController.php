@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Book;
 use App\Models\DictionaryEntry;
+use App\Services\Intelligence\Subscription\EffectiveAiLimitsResolver;
 use App\Services\ReaderTextFormatter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -12,6 +13,10 @@ use Illuminate\View\View;
 
 class VocabularyController extends Controller
 {
+    public function __construct(
+        private readonly EffectiveAiLimitsResolver $limitsResolver,
+    ) {}
+
     public function index(Request $request, ReaderTextFormatter $formatter): View
     {
         $search = trim((string) $request->query('q'));
@@ -50,15 +55,17 @@ class VocabularyController extends Controller
     {
         abort_unless($book->owner_id === $request->user()->id || $book->isPublic(), 403);
 
-        if (! $request->user()->isPro()) {
-            $entryCount = $request->user()->dictionaryEntries()->count();
-            if ($entryCount >= 15) {
-                return response()->json([
-                    'saved' => false,
-                    'error' => 'You\'ve reached the free limit of 15 saved words. Upgrade to Pro for unlimited vocabulary.',
-                    'upgrade_url' => route('pricing.index'),
-                ], 403);
-            }
+        $limits = $this->limitsResolver->resolve($request->user());
+
+        $entryCount = $request->user()->dictionaryEntries()->count();
+        $vocabLimit = $limits->privateBooksLimit();
+
+        if ($vocabLimit !== null && $entryCount >= $vocabLimit) {
+            return response()->json([
+                'saved' => false,
+                'error' => "You've reached the limit of {$vocabLimit} saved words. Upgrade to Pro for unlimited vocabulary.",
+                'upgrade_url' => route('pricing.index'),
+            ], 403);
         }
 
         $validated = $request->validate([

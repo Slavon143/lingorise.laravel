@@ -2,8 +2,12 @@
 
 use App\Http\Controllers\Admin\AiController as AdminAiController;
 use App\Http\Controllers\Admin\AuditLogController as AdminAuditLogController;
+use App\Http\Controllers\Admin\AuthorController as AdminAuthorController;
 use App\Http\Controllers\Admin\BookController as AdminBookController;
+use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
+use App\Http\Controllers\Admin\LanguageController as AdminLanguageController;
+use App\Http\Controllers\Admin\PlanController as AdminPlanController;
 use App\Http\Controllers\Admin\SettingsController as AdminSettingsController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\AuthController;
@@ -71,7 +75,47 @@ Route::middleware(['auth', 'admin'])
         Route::post('/users/{user}/demote', [AdminUserController::class, 'demote'])->name('users.demote');
 
         Route::get('/audit-logs', [AdminAuditLogController::class, 'index'])->name('audit-logs.index');
-        Route::get('/books', AdminBookController::class)->name('books.index');
-        Route::get('/ai', AdminAiController::class)->name('ai.index');
+        Route::get('/books', [AdminBookController::class, 'index'])->name('books.index');
+        Route::get('/books/create', [AdminBookController::class, 'create'])->name('books.create');
+        Route::post('/books', [AdminBookController::class, 'store'])->name('books.store');
+        Route::get('/books/{book}', [AdminBookController::class, 'show'])->name('books.show');
+        Route::get('/books/{book}/edit', [AdminBookController::class, 'edit'])->name('books.edit');
+        Route::patch('/books/{book}', [AdminBookController::class, 'update'])->name('books.update');
+        Route::post('/books/{book}/publish', [AdminBookController::class, 'publish'])->name('books.publish');
+        Route::post('/books/{book}/unpublish', [AdminBookController::class, 'unpublish'])->name('books.unpublish');
+        Route::post('/books/{book}/archive', [AdminBookController::class, 'archive'])->name('books.archive');
+        Route::post('/books/{book}/restore', [AdminBookController::class, 'restore'])->name('books.restore');
+        Route::delete('/books/{book}', [AdminBookController::class, 'destroy'])->name('books.destroy');
+        Route::resource('authors', AdminAuthorController::class)->except('show')->parameters(['authors' => 'author']);
+        Route::resource('categories', AdminCategoryController::class)->except('show')->parameters(['categories' => 'category']);
+        Route::resource('languages', AdminLanguageController::class)->except('show')->parameters(['languages' => 'language']);
+        Route::post('/languages/{language}/toggle-active', [AdminLanguageController::class, 'toggleActive'])->name('languages.toggle-active');
+        Route::prefix('ai')->name('ai.')->group(function () {
+            Route::get('/', [AdminAiController::class, 'index'])->name('overview');
+            Route::get('/usage', [AdminAiController::class, 'usage'])->name('usage.index');
+            Route::get('/usage/{event}', [AdminAiController::class, 'usageShow'])->name('usage.show');
+            Route::get('/users', [AdminAiController::class, 'users'])->name('users');
+            Route::get('/books', [AdminAiController::class, 'books'])->name('books');
+            Route::get('/cache/translations', [AdminAiController::class, 'cacheTranslations'])->name('cache.translations.index');
+            Route::get('/cache/translations/{translationCache}', [AdminAiController::class, 'cacheTranslationShow'])->name('cache.translations.show');
+            Route::delete('/cache/translations/{translationCache}', [AdminAiController::class, 'cacheTranslationDestroy'])->name('cache.translations.destroy');
+            Route::get('/cache/explanations', [AdminAiController::class, 'cacheExplanations'])->name('cache.explanations.index');
+            Route::get('/cache/explanations/{explanationCache}', [AdminAiController::class, 'cacheExplanationShow'])->name('cache.explanations.show');
+            Route::delete('/cache/explanations/{explanationCache}', [AdminAiController::class, 'cacheExplanationDestroy'])->name('cache.explanations.destroy');
+            Route::get('/cache/tts', [AdminAiController::class, 'cacheTts'])->name('cache.tts.index');
+            Route::get('/cache/tts/{ttsCache}', [AdminAiController::class, 'cacheTtsShow'])->name('cache.tts.show');
+            Route::delete('/cache/tts/{ttsCache}', [AdminAiController::class, 'cacheTtsDestroy'])->name('cache.tts.destroy');
+            Route::get('/errors', [AdminAiController::class, 'errors'])->name('errors');
+            Route::get('/pricing', [AdminAiController::class, 'pricing'])->name('pricing');
+        });
+        Route::get('/plans', [AdminPlanController::class, 'index'])->name('plans.index');
+        Route::get('/plans/{plan}', [AdminPlanController::class, 'edit'])->name('plans.edit');
+        Route::patch('/plans/{plan}', [AdminPlanController::class, 'update'])->name('plans.update');
+
+        Route::post('/users/{user}/change-plan', [AdminUserController::class, 'changePlan'])->name('users.change-plan');
+        Route::post('/users/{user}/cancel-subscription', [AdminUserController::class, 'cancelSubscription'])->name('users.cancel-subscription');
+        Route::post('/users/{user}/store-override', [AdminUserController::class, 'storeOverride'])->name('users.store-override');
+        Route::post('/users/{user}/remove-override/{override}', [AdminUserController::class, 'removeOverride'])->name('users.remove-override');
+
         Route::get('/settings', AdminSettingsController::class)->name('settings.index');
     });

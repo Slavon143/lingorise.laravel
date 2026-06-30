@@ -3,12 +3,17 @@
 namespace App\Http\Controllers;
 
 use App\Models\Book;
+use App\Services\Intelligence\Subscription\BookAccessService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class PublicLibraryController extends Controller
 {
+    public function __construct(
+        private readonly BookAccessService $bookAccess,
+    ) {}
+
     public function index(Request $request): View
     {
         $query = Book::public()
@@ -50,12 +55,9 @@ class PublicLibraryController extends Controller
                 ->with('status', 'This book is already in your library.');
         }
 
-        if (! $request->user()->isPro()) {
-            $publicBookCount = $request->user()->books()->whereNotNull('original_book_id')->count();
-            if ($publicBookCount >= 2) {
-                return redirect()->route('pricing.index')
-                    ->with('status', 'Free plan allows up to 2 books from the public library. Upgrade to Pro for unlimited access.');
-            }
+        if (! $this->bookAccess->userCanAddFromLibrary($request->user(), $book)) {
+            return redirect()->route('pricing.index')
+                ->with('status', 'Your plan limits how many books you can add from the library. Upgrade to Pro for unlimited access.');
         }
 
         $request->user()->books()->create([

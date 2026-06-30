@@ -3,7 +3,11 @@
         ['label' => 'Dashboard', 'route' => 'admin.dashboard', 'match' => 'admin.dashboard*', 'icon' => '⌘'],
         ['label' => 'Users', 'route' => 'admin.users.index', 'match' => 'admin.users.*', 'icon' => '◎'],
         ['label' => 'Books', 'route' => 'admin.books.index', 'match' => 'admin.books.*', 'icon' => '▤'],
-        ['label' => 'AI & TTS', 'route' => 'admin.ai.index', 'match' => 'admin.ai.*', 'icon' => '✦'],
+        ['label' => 'Authors', 'route' => 'admin.authors.index', 'match' => 'admin.authors.*', 'icon' => '✎'],
+        ['label' => 'Categories', 'route' => 'admin.categories.index', 'match' => 'admin.categories.*', 'icon' => '⊞'],
+        ['label' => 'Languages', 'route' => 'admin.languages.index', 'match' => 'admin.languages.*', 'icon' => '🌐'],
+        ['label' => 'Plans', 'route' => 'admin.plans.index', 'match' => 'admin.plans.*', 'icon' => '◈'],
+        ['label' => 'AI & TTS', 'route' => 'admin.ai.overview', 'match' => 'admin.ai.*', 'icon' => '✦'],
         ['label' => 'Settings', 'route' => 'admin.settings.index', 'match' => 'admin.settings.*', 'icon' => '⚙'],
         ['label' => 'Audit logs', 'route' => 'admin.audit-logs.index', 'match' => 'admin.audit-logs.*', 'icon' => '◷'],
     ];

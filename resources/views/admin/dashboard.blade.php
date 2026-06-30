@@ -21,9 +21,19 @@
             <small>Accounts with admin access</small>
         </article>
         <article class="admin-stat-card">
+            <span>New users</span>
+            <strong>{{ number_format($newUsers30d) }}</strong>
+            <small>Last 30 days</small>
+        </article>
+        <article class="admin-stat-card">
             <span>Books</span>
             <strong>{{ number_format($booksCount) }}</strong>
-            <small>Existing books table</small>
+            <small>Total in database</small>
+        </article>
+        <article class="admin-stat-card">
+            <span>Public books</span>
+            <strong>{{ number_format($publicBooksCount) }}</strong>
+            <small>Visible in public library</small>
         </article>
         <article class="admin-stat-card admin-stat-card-wide">
             <span>Last registration</span>

@@ -3,18 +3,21 @@
 namespace App\Http\Controllers;
 
 use App\Models\Book;
+use App\Services\Intelligence\Subscription\AiQuotaGuard;
+use App\Services\Intelligence\Subscription\AiQuotaExceededException;
 use App\Services\WordTranslationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
 use Throwable;
 
 class WordTranslationController extends Controller
 {
-    protected int $dailyFreeLimit = 10;
-
-    public function __invoke(Request $request, Book $book, WordTranslationService $translator): JsonResponse
-    {
+    public function __invoke(
+        Request $request,
+        Book $book,
+        WordTranslationService $translator,
+        AiQuotaGuard $quotaGuard,
+    ): JsonResponse {
         abort_unless($book->owner_id === $request->user()->id || $book->isPublic(), 403);
 
         $validated = $request->validate([
@@ -24,17 +27,15 @@ class WordTranslationController extends Controller
 
         $user = $request->user();
 
-        if (! $user->isPro()) {
-            $cacheKey = 'daily-translations:'.$user->id.':'.now()->toDateString();
-            $count = (int) Cache::get($cacheKey, 0);
-
-            if ($count >= $this->dailyFreeLimit) {
-                return response()->json([
-                    'message' => 'Daily free limit of '.$this->dailyFreeLimit.' AI actions reached. Upgrade to Pro for unlimited practice.',
-                    'saved' => false,
-                    'upgrade_url' => route('pricing.index'),
-                ], 403);
-            }
+        try {
+            $quotaGuard->assertTranslationAllowed($user);
+        } catch (AiQuotaExceededException $e) {
+            return response()->json([
+                'message' => $e->getMessage(),
+                'saved' => false,
+                'upgrade_url' => route('pricing.index'),
+                'resets_at' => $e->resetsAt?->toIso8601String(),
+            ], 403);
         }
 
         if (count(preg_split('/\s+/u', trim($validated['word']), -1, PREG_SPLIT_NO_EMPTY) ?: []) > 10) {
@@ -56,11 +57,6 @@ class WordTranslationController extends Controller
                 $book->isPublic() ? 'public' : 'book',
                 $book->isPublic() ? null : $book->id,
             );
-
-            if (! $user->isPro()) {
-                Cache::add($cacheKey, 0, now()->endOfDay());
-                Cache::increment($cacheKey);
-            }
 
             return response()->json($result);
         } catch (Throwable $exception) {
