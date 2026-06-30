@@ -2,7 +2,11 @@
 
 namespace Database\Factories;
 
+use App\Enums\PlanCode;
+use App\Enums\SubscriptionStatus;
+use App\Models\Plan;
 use App\Models\User;
+use App\Models\UserSubscription;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -41,5 +45,18 @@ class UserFactory extends Factory
         return $this->state(fn (array $attributes) => [
             'email_verified_at' => null,
         ]);
+    }
+
+    public function withPremiumSubscription(): static
+    {
+        return $this->afterCreating(function (User $user): void {
+            $plan = Plan::where('code', PlanCode::Premium->value)->firstOrFail();
+            UserSubscription::create([
+                'user_id' => $user->id,
+                'plan_id' => $plan->id,
+                'status' => SubscriptionStatus::Active->value,
+                'starts_at' => now(),
+            ]);
+        });
     }
 }

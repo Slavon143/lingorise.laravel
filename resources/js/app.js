@@ -1,3 +1,10 @@
+import './reader-ui.js';
+import './reader-ai-translation-enhanced.js';
+import './reader-context-explain.js';
+import './reader-grammar-explain.js';
+import './reader-simplify.js';
+import './reader-shadowing.js';
+
 let activeNaturalAudio = null;
 
 const playBrowserVoice = (text, locale = 'en') => {
@@ -437,6 +444,8 @@ if (readerPage && readingText && wordCard) {
             : '';
         const phrase = selectedTokens.map((token) => token.dataset.readerWord).join(' ');
 
+        const aiTools = wordCard.querySelector('[data-ai-tools]');
+        const aiOutput = wordCard.querySelector('[data-ai-output]');
         selectionLabel.textContent = selectedTokens.length > 1 ? 'Selected phrase' : 'Selected word';
         selectedWord.textContent = phrase;
         contextNode.textContent = context;
@@ -446,6 +455,9 @@ if (readerPage && readingText && wordCard) {
         statusNode.textContent = 'Translating…';
         setSaveButtonState(false, 'Waiting for translation');
         if (upgradeBtn) upgradeBtn.hidden = true;
+        if (aiTools) aiTools.hidden = true;
+        if (aiOutput) { aiOutput.innerHTML = ''; aiOutput.hidden = true; }
+        wordCard.querySelectorAll('[data-ai-tool]').forEach((btn) => { btn.disabled = true; });
         wordCard.hidden = false;
         positionWordCard();
 
@@ -485,10 +497,14 @@ if (readerPage && readingText && wordCard) {
                 translationInput.textContent = result.translation;
                 pronunciationNode.textContent = result.pronunciation;
                 pronunciationNode.hidden = !result.pronunciation;
-                explanationNode.querySelector('p').textContent = result.explanation;
+                const explanationP = explanationNode.querySelector('p');
+                if (explanationP) explanationP.textContent = result.explanation;
                 explanationNode.hidden = !result.explanation;
                 statusNode.textContent = '';
                 setSaveButtonState(Boolean(result.translation), 'Add to vocabulary');
+                const aiTools = wordCard.querySelector('[data-ai-tools]');
+                if (aiTools) aiTools.hidden = false;
+                wordCard.querySelectorAll('[data-ai-tool]').forEach((btn) => { btn.disabled = false; });
                 positionWordCard();
             })
             .catch((error) => {

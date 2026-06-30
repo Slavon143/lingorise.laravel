@@ -29,6 +29,12 @@ class EffectiveLimits
     public function translationsPerMonth(): ?int { return $this->value('translations_per_month'); }
     public function explanationsPerDay(): ?int { return $this->value('explanations_per_day'); }
     public function explanationsPerMonth(): ?int { return $this->value('explanations_per_month'); }
+    public function contextExplanationsPerDay(): ?int { return $this->value('context_explanations_per_day'); }
+    public function contextExplanationsPerMonth(): ?int { return $this->value('context_explanations_per_month'); }
+    public function grammarExplanationsPerDay(): ?int { return $this->value('grammar_explanations_per_day'); }
+    public function grammarExplanationsPerMonth(): ?int { return $this->value('grammar_explanations_per_month'); }
+    public function simplificationsPerDay(): ?int { return $this->value('simplifications_per_day'); }
+    public function simplificationsPerMonth(): ?int { return $this->value('simplifications_per_month'); }
     public function ttsMinutesPerDay(): ?int { return $this->value('tts_minutes_per_day'); }
     public function ttsMinutesPerMonth(): ?int { return $this->value('tts_minutes_per_month'); }
     public function maxTranslationCharacters(): int { return (int) $this->value('max_translation_characters'); }
@@ -76,4 +82,36 @@ class EffectiveLimits
     }
 
     public function privateBooksLimit(): ?int { return $this->value('private_books_limit'); }
+
+    public function contextExplanationEnabled(): bool
+    {
+        if (! config('intelligence.context_explanation_enabled', true)) return false;
+        $enabled = $this->value('ai_context_explanation_enabled');
+        if ($enabled === null) return true;
+        return (bool) $enabled;
+    }
+
+    public function grammarExplanationEnabled(): bool
+    {
+        if (! config('intelligence.grammar_explanation_enabled', true)) return false;
+        $enabled = $this->value('ai_grammar_explanation_enabled');
+        if ($enabled === null) return true;
+        return (bool) $enabled;
+    }
+
+    public function simplificationEnabled(): bool
+    {
+        if (! config('intelligence.simplification_enabled', true)) return false;
+        $enabled = $this->value('ai_simplification_enabled');
+        if ($enabled === null) return true;
+        return (bool) $enabled;
+    }
+
+    public function shadowingEnabled(): bool
+    {
+        if (! config('intelligence.shadowing_enabled', true)) return false;
+        $enabled = $this->value('shadowing_enabled');
+        if ($enabled === null) return true;
+        return (bool) $enabled;
+    }
 }

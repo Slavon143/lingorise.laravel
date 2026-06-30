@@ -7,7 +7,7 @@
     <title>{{ $pageTitle }} · LingoRise Reader</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="reader-page" data-vocabulary-url="{{ route('vocabulary.store', $book) }}" data-translation-url="{{ route('reader.translate', $book) }}" data-speech-url="{{ route('speech.create') }}" data-native-language="{{ $nativeLanguage }}" data-focus-phrase="{{ $focusPhrase }}">
+<body class="reader-page" data-vocabulary-url="{{ route('vocabulary.store', $book) }}" data-translation-url="{{ route('reader.translate', $book) }}" data-context-explain-url="{{ route('reader.context-explain', $book) }}" data-grammar-explain-url="{{ route('reader.grammar-explain', $book) }}" data-simplify-url="{{ route('reader.simplify', $book) }}" data-shadowing-url="{{ route('reader.shadowing', $book) }}" data-speech-url="{{ route('speech.create') }}" data-native-language="{{ $nativeLanguage }}" data-page-number="{{ $page }}" data-focus-phrase="{{ $focusPhrase }}">
     <header class="reader-app-header">
         <a href="{{ route('library.index') }}" class="reader-back">
             <span aria-hidden="true">←</span>
@@ -181,6 +181,16 @@
             <span>＋</span> Add to vocabulary
         </button>
         <small class="word-card-status" data-word-status></small>
+        <div class="word-card-ai-tools" data-ai-tools hidden>
+            <span class="word-card-ai-tools-label">AI tools</span>
+            <div class="word-card-ai-toolbar">
+                <button type="button" class="word-card-ai-btn" data-ai-tool="context-explain" disabled title="Explain in context">⊡ Context</button>
+                <button type="button" class="word-card-ai-btn" data-ai-tool="grammar-explain" disabled title="Explain grammar">◈ Grammar</button>
+                <button type="button" class="word-card-ai-btn" data-ai-tool="simplify" disabled title="Simplify text">▽ Simplify</button>
+                <button type="button" class="word-card-ai-btn" data-ai-tool="shadowing" disabled title="Shadowing practice">◉ Shadow</button>
+            </div>
+            <div class="word-card-ai-output" data-ai-output hidden></div>
+        </div>
         @if(!auth()->user()->isPro())
             <a href="{{ route('pricing.index') }}" class="word-card-upgrade" data-upgrade-btn hidden>
                 <span>✦</span> Upgrade to Pro

@@ -6,6 +6,7 @@ use App\Models\Book;
 use App\Models\TtsCache;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Routing\Middleware\ThrottleRequests;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
@@ -13,6 +14,13 @@ use Tests\TestCase;
 class AiCacheTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->withoutMiddleware(ThrottleRequests::class);
+    }
 
     public function test_reader_translation_and_explanation_are_cached(): void
     {
@@ -50,7 +58,7 @@ class AiCacheTest extends TestCase
             ->assertJson([
                 'translation' => 'wunderbar',
                 'pronunciation' => '/ˈwʌndəfəl/',
-                'explanation' => 'Etwas, das große Freude oder Bewunderung hervorruft.',
+                'explanation' => null,
             ]);
 
         $this->actingAs($user)
@@ -59,23 +67,16 @@ class AiCacheTest extends TestCase
             ->assertJson([
                 'translation' => 'wunderbar',
                 'pronunciation' => '/ˈwʌndəfəl/',
+                'explanation' => null,
             ]);
 
-        Http::assertSentCount(2);
+        Http::assertSentCount(1);
 
         $this->assertDatabaseHas('translation_cache', [
             'source_text' => 'wonderful',
             'source_language' => 'en',
             'target_language' => 'de',
             'translated_text' => 'wunderbar',
-            'hits' => 1,
-        ]);
-
-        $this->assertDatabaseHas('explanation_cache', [
-            'selected_text' => 'wonderful',
-            'context_text' => 'The garden was full of wonderful secrets.',
-            'source_language' => 'en',
-            'target_language' => 'de',
             'hits' => 1,
         ]);
 
@@ -87,41 +88,22 @@ class AiCacheTest extends TestCase
         ]);
     }
 
-    public function test_translation_cache_is_context_sensitive_for_explanations(): void
+    public function test_translation_returns_null_explanation(): void
     {
         config(['services.openai.key' => 'test-key']);
 
         Http::fake([
-            'api.openai.com/*' => Http::sequence()
-                ->push([
-                    'output' => [[
-                        'content' => [[
-                            'text' => json_encode([
-                                'translation' => 'Bank',
-                                'pronunciation' => '/bæŋk/',
-                                'explanation' => 'Ein Finanzinstitut.',
-                            ]),
-                        ]],
+            'api.openai.com/*' => Http::response([
+                'output' => [[
+                    'content' => [[
+                        'text' => json_encode([
+                            'translation' => 'Bank',
+                            'pronunciation' => '/bæŋk/',
+                            'explanation' => null,
+                        ]),
                     ]],
-                ])
-                ->push([
-                    'output' => [[
-                        'content' => [[
-                            'text' => json_encode([
-                                'explanation' => 'Ein Finanzinstitut.',
-                            ]),
-                        ]],
-                    ]],
-                ])
-                ->push([
-                    'output' => [[
-                        'content' => [[
-                            'text' => json_encode([
-                                'explanation' => 'Der Rand eines Flusses.',
-                            ]),
-                        ]],
-                    ]],
-                ]),
+                ]],
+            ]),
         ]);
 
         $user = User::factory()->create();
@@ -137,7 +119,7 @@ class AiCacheTest extends TestCase
                 'context' => 'She opened an account at the bank.',
             ])
             ->assertOk()
-            ->assertJsonPath('explanation', 'Ein Finanzinstitut.');
+            ->assertJsonPath('explanation', null);
 
         $this->actingAs($user)
             ->postJson(route('reader.translate', $book), [
@@ -145,10 +127,9 @@ class AiCacheTest extends TestCase
                 'context' => 'They sat on the river bank.',
             ])
             ->assertOk()
-            ->assertJsonPath('explanation', 'Der Rand eines Flusses.');
+            ->assertJsonPath('explanation', null);
 
-        Http::assertSentCount(3);
-        $this->assertDatabaseCount('explanation_cache', 2);
+        Http::assertSentCount(1);
     }
 
     public function test_tts_audio_is_cached_on_disk(): void
@@ -159,7 +140,7 @@ class AiCacheTest extends TestCase
             'api.openai.com/*' => Http::response('audio-one', 200, ['Content-Type' => 'audio/mpeg']),
         ]);
 
-        $user = User::factory()->create();
+        $user = User::factory()->withPremiumSubscription()->create();
 
         $this->actingAs($user)
             ->post(route('speech.create'), ['text' => 'Hello there', 'locale' => 'en'])
@@ -195,7 +176,7 @@ class AiCacheTest extends TestCase
                 ->push('audio-two', 200, ['Content-Type' => 'audio/mpeg']),
         ]);
 
-        $user = User::factory()->create();
+        $user = User::factory()->withPremiumSubscription()->create();
 
         $this->actingAs($user)
             ->post(route('speech.create'), ['text' => 'Listen again', 'locale' => 'en'])
@@ -224,7 +205,7 @@ class AiCacheTest extends TestCase
             'api.openai.com/*' => Http::response('', 200, ['Content-Type' => 'audio/mpeg']),
         ]);
 
-        $user = User::factory()->create();
+        $user = User::factory()->withPremiumSubscription()->create();
 
         $this->actingAs($user)
             ->post(route('speech.create'), ['text' => 'Silent', 'locale' => 'en'])

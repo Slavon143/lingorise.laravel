@@ -18,6 +18,10 @@ class AiBudgetGuard
             AiOperationType::Translation => $this->isTranslationEnabled(),
             AiOperationType::Explanation => $this->isExplanationEnabled(),
             AiOperationType::Tts => $this->isTtsEnabled(),
+            AiOperationType::ContextExplanation => $this->isExplanationEnabled(),
+            AiOperationType::GrammarExplanation => $this->isExplanationEnabled(),
+            AiOperationType::Simplification => $this->isExplanationEnabled(),
+            default => $this->isAiEnabled(),
         }) {
             return false;
         }
@@ -39,6 +43,10 @@ class AiBudgetGuard
             AiOperationType::Translation => $this->isTranslationEnabled(),
             AiOperationType::Explanation => $this->isExplanationEnabled(),
             AiOperationType::Tts => $this->isTtsEnabled(),
+            AiOperationType::ContextExplanation => $this->isExplanationEnabled(),
+            AiOperationType::GrammarExplanation => $this->isExplanationEnabled(),
+            AiOperationType::Simplification => $this->isExplanationEnabled(),
+            default => $this->isAiEnabled(),
         };
     }
 

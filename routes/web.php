@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\BookController as AdminBookController;
 use App\Http\Controllers\Admin\CategoryController as AdminCategoryController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\LanguageController as AdminLanguageController;
+use App\Http\Controllers\Admin\LearningController as AdminLearningController;
 use App\Http\Controllers\Admin\PlanController as AdminPlanController;
 use App\Http\Controllers\Admin\SettingsController as AdminSettingsController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
@@ -19,6 +20,10 @@ use App\Http\Controllers\PublicLibraryController;
 use App\Http\Controllers\ReaderController;
 use App\Http\Controllers\SpeakingController;
 use App\Http\Controllers\SpeechController;
+use App\Http\Controllers\ContextExplanationController;
+use App\Http\Controllers\GrammarExplanationController;
+use App\Http\Controllers\ShadowingAttemptController;
+use App\Http\Controllers\SimplificationController;
 use App\Http\Controllers\VocabularyController;
 use App\Http\Controllers\WordTranslationController;
 use Illuminate\Support\Facades\Route;
@@ -47,6 +52,10 @@ Route::middleware('auth')->group(function () {
     Route::post('/library/public/{book}/add', [PublicLibraryController::class, 'addToMyLibrary'])->name('library.public.add');
     Route::get('/read/{book}', [ReaderController::class, 'show'])->name('reader.show');
     Route::post('/read/{book}/translate', WordTranslationController::class)->middleware('throttle:ai-translation')->name('reader.translate');
+    Route::post('/read/{book}/context-explain', ContextExplanationController::class)->middleware('throttle:ai-translation')->name('reader.context-explain');
+    Route::post('/read/{book}/grammar-explain', GrammarExplanationController::class)->middleware('throttle:ai-translation')->name('reader.grammar-explain');
+    Route::post('/read/{book}/simplify', SimplificationController::class)->middleware('throttle:ai-translation')->name('reader.simplify');
+    Route::post('/read/{book}/shadowing', [ShadowingAttemptController::class, 'store'])->name('reader.shadowing');
     Route::post('/read/{book}/vocabulary', [VocabularyController::class, 'store'])->name('vocabulary.store');
     Route::get('/vocabulary', [VocabularyController::class, 'index'])->name('vocabulary.index');
     Route::delete('/vocabulary/{entry}', [VocabularyController::class, 'destroy'])->name('vocabulary.destroy');
@@ -90,6 +99,14 @@ Route::middleware(['auth', 'admin'])
         Route::resource('categories', AdminCategoryController::class)->except('show')->parameters(['categories' => 'category']);
         Route::resource('languages', AdminLanguageController::class)->except('show')->parameters(['languages' => 'language']);
         Route::post('/languages/{language}/toggle-active', [AdminLanguageController::class, 'toggleActive'])->name('languages.toggle-active');
+        Route::prefix('learning')->name('learning.')->group(function () {
+            Route::get('/', [AdminLearningController::class, 'index'])->name('index');
+            Route::get('/words', [AdminLearningController::class, 'words'])->name('words');
+            Route::get('/shadowing', [AdminLearningController::class, 'shadowing'])->name('shadowing');
+            Route::get('/cache', [AdminLearningController::class, 'cache'])->name('cache');
+            Route::get('/events', [AdminLearningController::class, 'events'])->name('events');
+        });
+
         Route::prefix('ai')->name('ai.')->group(function () {
             Route::get('/', [AdminAiController::class, 'index'])->name('overview');
             Route::get('/usage', [AdminAiController::class, 'usage'])->name('usage.index');
