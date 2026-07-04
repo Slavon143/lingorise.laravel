@@ -51,6 +51,7 @@
                     </div>
                     <div class="reader-autoread-actions">
                         <button type="button" data-autoread-play>Read page</button>
+                        <button type="button" data-autoread-from-selection disabled>From selected</button>
                         <button type="button" data-autoread-pause disabled>Pause</button>
                         <button type="button" data-autoread-stop disabled>Stop</button>
                     </div>
@@ -263,6 +264,7 @@
         <div class="word-card-explanation" data-word-explanation hidden><p></p></div>
         <span data-word-context hidden></span>
         <button class="word-card-save" type="button" data-save-word>{{ __('reader.save_to_vocabulary') }}</button>
+        <button class="word-card-autoread" type="button" data-word-autoread>Read from here</button>
         <small class="word-card-status" data-word-status></small>
         <div class="word-card-study-tools" data-study-tools hidden>
             <span class="word-card-study-tools-label">{{ __('reader.study_tools') }}</span>

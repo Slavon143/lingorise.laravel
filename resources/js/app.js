@@ -314,6 +314,7 @@ if (readerPage && readingText && wordCard) {
     const contextNode = wordCard.querySelector('[data-word-context]');
     const statusNode = wordCard.querySelector('[data-word-status]');
     const saveButton = wordCard.querySelector('[data-save-word]');
+    const wordAutoReadButton = wordCard.querySelector('[data-word-autoread]');
     const speakButton = wordCard.querySelector('[data-speak-word]');
     const nativeLabel = wordCard.querySelector('[data-native-label]');
     const pronunciationNode = wordCard.querySelector('[data-word-pronunciation]');
@@ -408,6 +409,7 @@ if (readerPage && readingText && wordCard) {
         selectionAnchor = null;
         clearPanelState('close');
         stopAudio();
+        updateAutoReadControls?.();
     };
 
     const positionWordCard = (force = false) => {
@@ -508,6 +510,7 @@ if (readerPage && readingText && wordCard) {
         selectionAnchor = null;
         clearPanelState('ajax_navigation');
         stopAudio();
+        updateAutoReadControls?.();
     };
 
     const navigateReaderPage = async (url, { replace = false } = {}) => {
@@ -618,6 +621,7 @@ if (readerPage && readingText && wordCard) {
         activeTokens = selectedTokens;
         activeToken = selectedTokens[0];
         activeTokens.forEach((token) => token.classList.add('is-selected'));
+        updateAutoReadControls?.();
 
         const firstIndex = allTokens.indexOf(selectedTokens[0]);
         const lastIndex = allTokens.indexOf(selectedTokens.at(-1));
@@ -1006,6 +1010,7 @@ if (readerPage && readingText && wordCard) {
 
     const autoReadRoot = document.querySelector('[data-autoread]');
     const autoReadPlay = document.querySelector('[data-autoread-play]');
+    const autoReadFromSelection = document.querySelector('[data-autoread-from-selection]');
     const autoReadPause = document.querySelector('[data-autoread-pause]');
     const autoReadStop = document.querySelector('[data-autoread-stop]');
     const autoReadStatus = document.querySelector('[data-autoread-status]');
@@ -1032,14 +1037,22 @@ if (readerPage && readingText && wordCard) {
     };
 
     const updateAutoReadControls = () => {
-        if (!autoReadRoot) return;
+        autoReadRoot?.classList.toggle('is-active', autoReadState.active);
+        autoReadRoot?.classList.toggle('is-paused', autoReadState.paused);
 
-        autoReadRoot.classList.toggle('is-active', autoReadState.active);
-        autoReadRoot.classList.toggle('is-paused', autoReadState.paused);
+        if (wordAutoReadButton) {
+            wordAutoReadButton.textContent = autoReadState.active ? 'Stop reading' : 'Read from here';
+            wordAutoReadButton.classList.toggle('is-stop', autoReadState.active);
+            wordAutoReadButton.disabled = !autoReadState.active && !activeTokens.length;
+        }
 
         if (autoReadPlay) {
             autoReadPlay.textContent = autoReadState.active && autoReadState.paused ? 'Resume' : 'Read page';
             autoReadPlay.disabled = autoReadState.active && !autoReadState.paused;
+        }
+
+        if (autoReadFromSelection) {
+            autoReadFromSelection.disabled = autoReadState.active || !activeTokens.length;
         }
 
         if (autoReadPause) {
@@ -1052,14 +1065,34 @@ if (readerPage && readingText && wordCard) {
         }
     };
 
-    const collectAutoReadBlocks = () => [...readingText.querySelectorAll('.reading-section-title, p')]
+    const collectAutoReadBlocks = (startToken = null) => {
+        let hasReachedStart = !startToken;
+
+        return [...readingText.querySelectorAll('.reading-section-title, p')]
         .map((element) => {
             const tokens = [...element.querySelectorAll('.reader-token')];
+            let readableTokens = tokens;
+
+            if (startToken && tokens.length) {
+                const tokenIndex = tokens.indexOf(startToken);
+
+                if (!hasReachedStart && tokenIndex === -1) {
+                    return null;
+                }
+
+                if (!hasReachedStart && tokenIndex >= 0) {
+                    hasReachedStart = true;
+                    readableTokens = tokens.slice(tokenIndex);
+                }
+            } else if (!hasReachedStart) {
+                return null;
+            }
+
             const ranges = [];
             let text = '';
 
-            if (tokens.length) {
-                tokens.forEach((token) => {
+            if (readableTokens.length) {
+                readableTokens.forEach((token) => {
                     const word = token.textContent.replace(/\s+/gu, ' ').trim();
                     if (!word) return;
 
@@ -1074,7 +1107,8 @@ if (readerPage && readingText && wordCard) {
 
             return { element, text, ranges };
         })
-        .filter((block) => block.text.length > 0);
+        .filter((block) => block?.text.length > 0);
+    };
 
     const resetAutoRead = ({ keepStatus = false } = {}) => {
         if (browserSpeechAvailable()) {
@@ -1164,7 +1198,7 @@ if (readerPage && readingText && wordCard) {
         window.speechSynthesis.speak(utterance);
     };
 
-    const startAutoRead = () => {
+    const startAutoRead = ({ fromSelection = false, startToken = null } = {}) => {
         if (!browserSpeechAvailable()) {
             setAutoReadStatus('Browser voice unavailable');
             return;
@@ -1180,7 +1214,8 @@ if (readerPage && readingText && wordCard) {
             return;
         }
 
-        autoReadState.blocks = collectAutoReadBlocks();
+        const selectedStartToken = startToken || (fromSelection ? activeTokens[0] : null);
+        autoReadState.blocks = collectAutoReadBlocks(selectedStartToken);
         autoReadState.index = 0;
         autoReadState.active = autoReadState.blocks.length > 0;
         autoReadState.paused = false;
@@ -1197,6 +1232,20 @@ if (readerPage && readingText && wordCard) {
     };
 
     autoReadPlay?.addEventListener('click', startAutoRead);
+    autoReadFromSelection?.addEventListener('click', () => startAutoRead({ fromSelection: true }));
+    wordAutoReadButton?.addEventListener('click', () => {
+        if (autoReadState.active) {
+            resetAutoRead({ keepStatus: true });
+            setAutoReadStatus('Stopped');
+            return;
+        }
+
+        const startToken = activeTokens[0] || null;
+        if (!startToken) return;
+
+        closeWordCard();
+        startAutoRead({ startToken });
+    });
 
     autoReadPause?.addEventListener('click', () => {
         if (!autoReadState.active || !browserSpeechAvailable()) return;
