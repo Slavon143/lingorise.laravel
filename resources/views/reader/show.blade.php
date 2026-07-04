@@ -1,14 +1,24 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{{ $pageTitle }} · LingoRise Reader</title>
+    <script>
+        (() => {
+            const key = 'lingorise-reader-theme';
+            const preference = localStorage.getItem(key) || 'system';
+            const systemDark = window.matchMedia?.('(prefers-color-scheme: dark)').matches;
+            const theme = preference === 'system' ? (systemDark ? 'dark' : 'light') : preference;
+            document.documentElement.dataset.theme = theme;
+            document.documentElement.dataset.themePreference = preference;
+        })();
+    </script>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="reader-page" data-vocabulary-url="{{ route('vocabulary.store', $book) }}" data-translation-url="{{ route('reader.translate', $book) }}" data-context-explain-url="{{ route('reader.context-explain', $book) }}" data-grammar-explain-url="{{ route('reader.grammar-explain', $book) }}" data-simplify-url="{{ route('reader.simplify', $book) }}" data-shadowing-url="{{ route('reader.shadowing', $book) }}" data-speech-url="{{ route('speech.create') }}" data-native-language="{{ $nativeLanguage }}" data-book-language="{{ $book->language_locale }}" data-page-number="{{ $page }}" data-focus-phrase="{{ $focusPhrase }}" data-reader-capabilities='@json($readerCapabilities)'>
-    <header class="reader-app-header">
+<body class="reader-page reader-app" data-vocabulary-url="{{ route('vocabulary.store', $book) }}" data-translation-url="{{ route('reader.translate', $book) }}" data-context-explain-url="{{ route('reader.context-explain', $book) }}" data-grammar-explain-url="{{ route('reader.grammar-explain', $book) }}" data-simplify-url="{{ route('reader.simplify', $book) }}" data-shadowing-url="{{ route('reader.shadowing', $book) }}" data-speech-url="{{ route('speech.create') }}" data-native-language="{{ $nativeLanguage }}" data-book-language="{{ $book->language_locale }}" data-page-number="{{ $page }}" data-focus-phrase="{{ $focusPhrase }}" data-reader-capabilities='@json($readerCapabilities)'>
+    <header class="reader-app-header reader-header">
         <a href="{{ route('library.index') }}" class="reader-back">
             <span aria-hidden="true">←</span>
             <strong>Library</strong>
@@ -17,32 +27,46 @@
             <strong>{{ $book->title }}</strong>
             <span>{{ $book->author ?: 'Personal text' }}</span>
         </div>
-        <button class="reader-panels-button" type="button" data-reader-panels aria-label="Open reading panel" title="Open reading panel">
-            <svg viewBox="0 0 20 20" aria-hidden="true">
-                <rect x="2.5" y="3" width="15" height="14" rx="2"></rect>
-                <path d="M7 3v14M13 3v14"></path>
-            </svg>
-            <span data-reader-panels-label>Panel</span>
-        </button>
+        <div class="reader-header-controls" aria-label="Reader controls">
+            <div class="reader-mode-toggle" role="group" aria-label="Reader mode">
+                <button type="button" data-reader-mode="reading">Reading</button>
+                <button type="button" data-reader-mode="learning">Learning</button>
+            </div>
+            <button class="reader-panels-button reader-settings-toggle" type="button" data-reader-settings-toggle aria-label="Open reading settings" title="Open reading settings">
+                <svg viewBox="0 0 20 20" aria-hidden="true">
+                    <rect x="2.5" y="3" width="15" height="14" rx="2"></rect>
+                    <path d="M7 3v14M13 3v14"></path>
+                </svg>
+                <span>Settings</span>
+            </button>
+            <button class="reader-panels-button reader-vocab-toggle" type="button" data-reader-vocab-toggle aria-label="Open vocabulary panel" title="Open vocabulary panel">
+                <svg viewBox="0 0 20 20" aria-hidden="true">
+                    <path d="M4 4.5h8.5A2.5 2.5 0 0 1 15 7v8.5H6.5A2.5 2.5 0 0 0 4 18V4.5Z"></path>
+                    <path d="M7 8h5M7 11h4"></path>
+                </svg>
+                <span>Vocabulary</span>
+            </button>
+        </div>
     </header>
 
     <main class="reader-workspace">
-        <aside class="reader-info-panel">
+        <aside class="reader-info-panel reader-sidebar" data-reader-settings-panel aria-label="Reading settings">
             <div class="reader-panel-controls">
-                <span class="reader-panel-control-label">Reading settings</span>
-                <label class="reader-font-select">
-                    <span class="sr-only">Reading font</span>
-                    <select data-reader-font aria-label="Reading font">
-                        <option value="kindle">Kindle style</option>
-                        <option value="apple">Apple Books style</option>
-                        <option value="google">Google Play Books</option>
-                        <option value="readera" selected>ReadEra style</option>
+                <div class="reader-panel-title">
+                    <span class="reader-panel-control-label">Reading settings</span>
+                    <button type="button" class="reader-panel-close" data-reader-settings-close aria-label="Close settings">×</button>
+                </div>
+                <label class="reader-setting-field">
+                    <span>Theme</span>
+                    <select data-reader-theme-select aria-label="Reader theme">
+                        <option value="dark">Dark</option>
+                        <option value="light">Light</option>
+                        <option value="system">System</option>
                     </select>
                 </label>
                 <div class="reader-panel-control-grid">
                     <button type="button" data-reader-decrease aria-label="Decrease text size">A−</button>
                     <button type="button" data-reader-increase aria-label="Increase text size">A＋</button>
-                    <button type="button" data-reader-theme aria-label="Toggle reading theme">◐</button>
                 </div>
                 <div class="reader-autoread" data-autoread>
                     <div class="reader-autoread-head">
@@ -51,7 +75,6 @@
                     </div>
                     <div class="reader-autoread-actions">
                         <button type="button" data-autoread-play>Read page</button>
-                        <button type="button" data-autoread-from-selection disabled>From selected</button>
                         <button type="button" data-autoread-pause disabled>Pause</button>
                         <button type="button" data-autoread-stop disabled>Stop</button>
                     </div>
@@ -60,6 +83,18 @@
                         <span>Continue to next page</span>
                     </label>
                 </div>
+                <details class="reader-advanced-settings">
+                    <summary>Advanced settings</summary>
+                    <label class="reader-font-select reader-setting-field">
+                        <span>Reading font</span>
+                        <select data-reader-font aria-label="Reading font">
+                            <option value="kindle">Kindle style</option>
+                            <option value="apple">Apple Books style</option>
+                            <option value="google">Google Play Books</option>
+                            <option value="readera" selected>ReadEra style</option>
+                        </select>
+                    </label>
+                </details>
             </div>
 
             <span class="section-kicker">Reading now</span>
@@ -88,38 +123,70 @@
             </div>
         </aside>
 
-        <article class="reading-paper" data-reading-paper>
-            <div class="reading-paper-head">
-                <span>Page {{ $page }}</span>
-                <span>{{ $percentage }}% complete</span>
-            </div>
-            <div class="reading-text" data-reading-text>
-                @php($wordIndex = 0)
-                @foreach($pageBlocks as $block)
-                    @if($block['type'] === 'heading')
-                        <h2 class="reading-section-title">{{ $block['text'] }}</h2>
-                    @else
-                        <p>
-                        @foreach(preg_split('/\s+/u', $block['text'], -1, PREG_SPLIT_NO_EMPTY) as $word)
-                            <span
-                                class="reader-token"
-                                role="button"
-                                tabindex="0"
-                                data-reader-word="{{ trim($word, ".,!?;:()[]{}\"'“”‘’—–") }}"
-                                data-word-index="{{ $wordIndex }}"
-                            >{{ $word }}</span>
-                            @php($wordIndex++)
-                        @endforeach
-                        </p>
-                    @endif
-                @endforeach
-            </div>
-        </article>
+        <section class="reader-main" aria-label="Book page">
+            <article class="reading-paper" data-reading-paper>
+                <div class="reading-paper-head">
+                    <span>Page {{ $page }}</span>
+                    <span>{{ $percentage }}% complete</span>
+                </div>
+                <div class="reading-text" data-reading-text>
+                    @php($wordIndex = 0)
+                    @foreach($pageBlocks as $block)
+                        @if($block['type'] === 'heading')
+                            <h2 class="reading-section-title">{{ $block['text'] }}</h2>
+                        @else
+                            <p>
+                            @foreach(preg_split('/\s+/u', $block['text'], -1, PREG_SPLIT_NO_EMPTY) as $word)
+                                <span
+                                    class="reader-token"
+                                    role="button"
+                                    tabindex="0"
+                                    data-reader-word="{{ trim($word, ".,!?;:()[]{}\"'“”‘’—–") }}"
+                                    data-word-index="{{ $wordIndex }}"
+                                >{{ $word }}</span>
+                                @php($wordIndex++)
+                            @endforeach
+                            </p>
+                        @endif
+                    @endforeach
+                </div>
+            </article>
 
-        <aside class="reader-side-panel">
+            <nav class="reader-pagination reader-navigation" aria-label="Reader page navigation">
+                <div class="reader-navigation__inner">
+                    @if($page > 1)
+                        <a class="reader-page-nav reader-page-nav-prev reader-navigation__prev" href="{{ route('reader.show', ['book' => $book, 'page' => $page - 1]) }}"><span>←</span> Previous</a>
+                    @else
+                        <span class="reader-page-nav reader-page-nav-prev reader-navigation__prev is-disabled"><span>←</span> Previous</span>
+                    @endif
+                    <div class="reader-progress-panel reader-navigation__progress">
+                        <div class="reader-progress-meta">
+                            <span>Page {{ $page }} of {{ $totalPages }}</span>
+                            <strong>{{ $percentage }}%</strong>
+                        </div>
+                        <div class="reader-progress-track" aria-label="{{ $percentage }}% complete"><i style="width: {{ $percentage }}%"></i></div>
+                        <form class="page-jump" action="{{ route('reader.show', $book) }}" method="GET" onsubmit="return jumpToPage(this)">
+                            <label for="jump-input" class="sr-only">Jump to page</label>
+                            <input id="jump-input" type="number" min="1" max="{{ $totalPages }}" placeholder="{{ $page }}/{{ $totalPages }}" required>
+                            <button type="submit">Go</button>
+                        </form>
+                    </div>
+                    @if($page < $totalPages)
+                        <a class="reader-page-nav reader-page-nav-next reader-navigation__next" href="{{ route('reader.show', ['book' => $book, 'page' => $page + 1]) }}">Next <span>→</span></a>
+                    @else
+                        <a class="reader-page-nav reader-page-nav-next reader-navigation__next" href="{{ route('library.index') }}">Finish <span>✓</span></a>
+                    @endif
+                </div>
+            </nav>
+        </section>
+
+        <aside class="reader-side-panel reader-sidebar" data-reader-vocab-panel aria-label="Vocabulary">
             <div class="reader-side-heading">
-                <span>Vocabulary <i data-vocabulary-count>{{ $savedEntries->count() }}</i></span>
-                <strong>Save words as you read</strong>
+                <div>
+                    <span>Vocabulary <i data-vocabulary-count>{{ $savedEntries->count() }}</i></span>
+                    <strong>Save words as you read</strong>
+                </div>
+                <button type="button" class="reader-panel-close" data-reader-vocab-close aria-label="Close vocabulary">×</button>
             </div>
             <div class="reader-side-empty" data-vocabulary-empty @if($savedEntries->isNotEmpty()) hidden @endif>
                 <span>Aa</span>
@@ -127,9 +194,10 @@
             </div>
             <div class="reader-vocabulary-list" data-vocabulary-list>
                 @foreach($savedEntries as $entry)
-                    <button type="button" class="reader-vocabulary-item" data-vocabulary-original="{{ $entry->original_text }}">
+                    <button type="button" class="reader-vocabulary-item" data-vocabulary-original="{{ $entry->original_text }}" aria-expanded="false">
                         <strong>{{ $entry->original_text }}</strong>
                         <span>{{ $entry->translated_text }}</span>
+                        <em>Expand</em>
                     </button>
                 @endforeach
             </div>
@@ -137,31 +205,6 @@
     </main>
 
     <button class="reader-panel-backdrop" type="button" data-reader-panel-backdrop aria-label="Close reading sidebar" hidden></button>
-
-    <footer class="reader-pagination">
-        @if($page > 1)
-            <a class="reader-page-nav reader-page-nav-prev" href="{{ route('reader.show', ['book' => $book, 'page' => $page - 1]) }}"><span>←</span> Previous</a>
-        @else
-            <span class="reader-page-nav reader-page-nav-prev is-disabled"><span>←</span> Previous</span>
-        @endif
-        <div class="reader-progress-panel">
-            <div class="reader-progress-meta">
-                <span>Page {{ $page }} of {{ $totalPages }}</span>
-                <strong>{{ $percentage }}%</strong>
-            </div>
-            <div class="reader-progress-track" aria-label="{{ $percentage }}% complete"><i style="width: {{ $percentage }}%"></i></div>
-            <form class="page-jump" action="{{ route('reader.show', $book) }}" method="GET" onsubmit="return jumpToPage(this)">
-                <label for="jump-input" class="sr-only">Jump to page</label>
-                <input id="jump-input" type="number" min="1" max="{{ $totalPages }}" placeholder="{{ $page }}/{{ $totalPages }}" required>
-                <button type="submit">Go</button>
-            </form>
-        </div>
-        @if($page < $totalPages)
-            <a class="reader-page-nav reader-page-nav-next" href="{{ route('reader.show', ['book' => $book, 'page' => $page + 1]) }}">Next <span>→</span></a>
-        @else
-            <a class="reader-page-nav reader-page-nav-next" href="{{ route('library.index') }}">Finish <span>✓</span></a>
-        @endif
-    </footer>
 
     <?php
         $_i18n = [

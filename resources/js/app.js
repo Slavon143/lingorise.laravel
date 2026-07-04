@@ -331,6 +331,13 @@ if (readerPage && readingText && wordCard) {
     let isProgrammaticScroll = false;
     let programmaticScrollTimer = null;
     const fontSelect = document.querySelector('[data-reader-font]');
+    const themeSelect = document.querySelector('[data-reader-theme-select]');
+    const modeButtons = [...document.querySelectorAll('[data-reader-mode]')];
+    const settingsToggle = document.querySelector('[data-reader-settings-toggle]');
+    const vocabularyToggle = document.querySelector('[data-reader-vocab-toggle]');
+    const settingsClose = document.querySelector('[data-reader-settings-close]');
+    const vocabularyClose = document.querySelector('[data-reader-vocab-close]');
+    const readerPanelBackdrop = document.querySelector('[data-reader-panel-backdrop]');
     const fontAliases = {
         literata: 'kindle',
         merriweather: 'readera',
@@ -349,6 +356,151 @@ if (readerPage && readingText && wordCard) {
     const translationMaxWords = Number(readerCapabilities?.limits?.translation_max_words || 10);
 
     readingText.dataset.font = savedFont;
+
+    const readerStorage = {
+        theme: 'lingorise-reader-theme',
+        mode: 'lingorise-reader-mode',
+        textSize: 'lingorise-reader-text-size',
+        settingsCollapsed: 'lingorise-reader-settings-collapsed',
+        vocabularyCollapsed: 'lingorise-reader-vocabulary-collapsed',
+    };
+
+    const readerDesktopQuery = window.matchMedia('(min-width: 1181px)');
+    const systemTheme = () => (window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+
+    const applyReaderTheme = (preference = 'system') => {
+        const normalized = ['dark', 'light', 'system'].includes(preference) ? preference : 'system';
+        const theme = normalized === 'system' ? systemTheme() : normalized;
+        document.documentElement.dataset.theme = theme;
+        document.documentElement.dataset.themePreference = normalized;
+        readerPage.classList.toggle('is-dark', theme === 'dark');
+        if (themeSelect) themeSelect.value = normalized;
+    };
+
+    const syncReaderBackdrop = () => {
+        if (!readerPanelBackdrop) return;
+        readerPanelBackdrop.hidden = !(
+            readerPage.classList.contains('is-settings-open')
+            || readerPage.classList.contains('is-vocab-open')
+        );
+    };
+
+    const closeReaderDrawers = () => {
+        readerPage.classList.remove('is-settings-open', 'is-vocab-open');
+        settingsToggle?.setAttribute('aria-expanded', 'false');
+        vocabularyToggle?.setAttribute('aria-expanded', 'false');
+        syncReaderBackdrop();
+    };
+
+    const applyReaderPanels = () => {
+        const readingMode = readerPage.dataset.readerMode === 'reading';
+        const settingsCollapsed = localStorage.getItem(readerStorage.settingsCollapsed) === 'true';
+        const vocabularyCollapsed = localStorage.getItem(readerStorage.vocabularyCollapsed) === 'true';
+
+        readerPage.classList.toggle('is-settings-collapsed', readingMode || settingsCollapsed);
+        readerPage.classList.toggle('is-vocabulary-collapsed', readingMode || vocabularyCollapsed);
+        settingsToggle?.setAttribute('aria-pressed', String(!readingMode && !settingsCollapsed));
+        vocabularyToggle?.setAttribute('aria-pressed', String(!readingMode && !vocabularyCollapsed));
+    };
+
+    const applyReaderMode = (mode = 'learning', revealLearningPanels = false) => {
+        const normalized = mode === 'reading' ? 'reading' : 'learning';
+        if (revealLearningPanels && normalized === 'learning' && readerDesktopQuery.matches) {
+            localStorage.setItem(readerStorage.settingsCollapsed, 'false');
+            localStorage.setItem(readerStorage.vocabularyCollapsed, 'false');
+        }
+        readerPage.dataset.readerMode = normalized;
+        readerPage.classList.toggle('is-reading-mode', normalized === 'reading');
+        readerPage.classList.toggle('is-learning-mode', normalized === 'learning');
+
+        modeButtons.forEach((button) => {
+            const active = button.dataset.readerMode === normalized;
+            button.classList.toggle('is-active', active);
+            button.setAttribute('aria-pressed', String(active));
+        });
+
+        closeReaderDrawers();
+        applyReaderPanels();
+    };
+
+    const openReaderDrawer = (panel) => {
+        const settingsOpen = panel === 'settings' && !readerPage.classList.contains('is-settings-open');
+        const vocabOpen = panel === 'vocabulary' && !readerPage.classList.contains('is-vocab-open');
+        readerPage.classList.toggle('is-settings-open', settingsOpen);
+        readerPage.classList.toggle('is-vocab-open', vocabOpen);
+        settingsToggle?.setAttribute('aria-expanded', String(settingsOpen));
+        vocabularyToggle?.setAttribute('aria-expanded', String(vocabOpen));
+        syncReaderBackdrop();
+    };
+
+    const toggleReaderPanel = (panel) => {
+        const readingMode = readerPage.dataset.readerMode === 'reading';
+        const isDesktop = readerDesktopQuery.matches;
+
+        if (!isDesktop || readingMode) {
+            openReaderDrawer(panel);
+            return;
+        }
+
+        const key = panel === 'settings'
+            ? readerStorage.settingsCollapsed
+            : readerStorage.vocabularyCollapsed;
+        const collapsed = localStorage.getItem(key) !== 'true';
+        localStorage.setItem(key, String(collapsed));
+        closeReaderDrawers();
+        applyReaderPanels();
+    };
+
+    applyReaderTheme(localStorage.getItem(readerStorage.theme) || document.documentElement.dataset.themePreference || 'system');
+    applyReaderMode(localStorage.getItem(readerStorage.mode) || 'learning');
+
+    themeSelect?.addEventListener('change', () => {
+        localStorage.setItem(readerStorage.theme, themeSelect.value);
+        applyReaderTheme(themeSelect.value);
+    });
+
+    window.matchMedia?.('(prefers-color-scheme: dark)').addEventListener?.('change', () => {
+        if ((localStorage.getItem(readerStorage.theme) || 'system') === 'system') {
+            applyReaderTheme('system');
+        }
+    });
+
+    modeButtons.forEach((button) => {
+        button.addEventListener('click', () => {
+            localStorage.setItem(readerStorage.mode, button.dataset.readerMode);
+            applyReaderMode(button.dataset.readerMode, button.dataset.readerMode === 'learning');
+        });
+    });
+
+    settingsToggle?.addEventListener('click', () => toggleReaderPanel('settings'));
+    vocabularyToggle?.addEventListener('click', () => toggleReaderPanel('vocabulary'));
+    settingsClose?.addEventListener('click', () => {
+        if (readerDesktopQuery.matches && readerPage.dataset.readerMode !== 'reading') {
+            localStorage.setItem(readerStorage.settingsCollapsed, 'true');
+            applyReaderPanels();
+        }
+        closeReaderDrawers();
+    });
+    vocabularyClose?.addEventListener('click', () => {
+        if (readerDesktopQuery.matches && readerPage.dataset.readerMode !== 'reading') {
+            localStorage.setItem(readerStorage.vocabularyCollapsed, 'true');
+            applyReaderPanels();
+        }
+        closeReaderDrawers();
+    });
+    readerPanelBackdrop?.addEventListener('click', closeReaderDrawers);
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') closeReaderDrawers();
+    });
+    readerDesktopQuery.addEventListener?.('change', () => {
+        closeReaderDrawers();
+        applyReaderPanels();
+    });
+
+    const storedTextSize = Number(localStorage.getItem(readerStorage.textSize));
+    if (Number.isFinite(storedTextSize) && storedTextSize >= 16 && storedTextSize <= 28) {
+        readingText.style.fontSize = `${storedTextSize}px`;
+    }
 
     const setSaveButtonState = (enabled, label = 'Add to vocabulary') => {
         if (!saveButton) return;
@@ -861,6 +1013,15 @@ if (readerPage && readingText && wordCard) {
         const item = event.target.closest('[data-vocabulary-original]');
         if (!item) return;
 
+        if (event.target.closest('em')) {
+            const expanded = !item.classList.contains('is-expanded');
+            item.classList.toggle('is-expanded', expanded);
+            item.setAttribute('aria-expanded', String(expanded));
+            const toggle = item.querySelector('em');
+            if (toggle) toggle.textContent = expanded ? 'Collapse' : 'Expand';
+            return;
+        }
+
         const tokens = findPhraseTokens(item.dataset.vocabularyOriginal);
         if (tokens.length) {
             selectionAnchor = tokens[0];
@@ -973,7 +1134,8 @@ if (readerPage && readingText && wordCard) {
                     item.type = 'button';
                     item.className = 'reader-vocabulary-item';
                     item.dataset.vocabularyOriginal = result.entry.original_text;
-                    item.innerHTML = '<strong></strong><span></span>';
+                    item.setAttribute('aria-expanded', 'false');
+                    item.innerHTML = '<strong></strong><span></span><em>Expand</em>';
                     vocabularyList.prepend(item);
                 }
 
@@ -996,16 +1158,16 @@ if (readerPage && readingText && wordCard) {
 
     document.querySelector('[data-reader-increase]')?.addEventListener('click', () => {
         const current = parseFloat(getComputedStyle(readingText).fontSize);
-        readingText.style.fontSize = `${Math.min(25, current + 1)}px`;
+        const nextSize = Math.min(28, current + 1);
+        readingText.style.fontSize = `${nextSize}px`;
+        localStorage.setItem(readerStorage.textSize, String(nextSize));
     });
 
     document.querySelector('[data-reader-decrease]')?.addEventListener('click', () => {
         const current = parseFloat(getComputedStyle(readingText).fontSize);
-        readingText.style.fontSize = `${Math.max(15, current - 1)}px`;
-    });
-
-    document.querySelector('[data-reader-theme]')?.addEventListener('click', () => {
-        readerPage.classList.toggle('is-dark');
+        const nextSize = Math.max(16, current - 1);
+        readingText.style.fontSize = `${nextSize}px`;
+        localStorage.setItem(readerStorage.textSize, String(nextSize));
     });
 
     const autoReadRoot = document.querySelector('[data-autoread]');
@@ -1278,43 +1440,6 @@ if (readerPage && readingText && wordCard) {
         if (autoReadStop) autoReadStop.disabled = true;
     } else {
         updateAutoReadControls();
-    }
-
-    const readerPanelsButton = document.querySelector('[data-reader-panels]');
-    const readerPanelsLabel = document.querySelector('[data-reader-panels-label]');
-    const readerPanelBackdrop = document.querySelector('[data-reader-panel-backdrop]');
-
-    readerPanelsButton?.addEventListener('click', () => {
-        if (window.matchMedia('(max-width: 820px)').matches) {
-            readerPage.classList.add('is-reader-panel-open');
-
-            if (readerPanelBackdrop) {
-                readerPanelBackdrop.hidden = false;
-            }
-
-            return;
-        }
-
-        const hidden = readerPage.classList.toggle('is-panels-hidden');
-        localStorage.setItem('lingorise-reader-panels-hidden', String(hidden));
-        readerPanelsButton.setAttribute('aria-label', hidden ? 'Show reading panels' : 'Hide reading panels');
-        if (readerPanelsLabel) readerPanelsLabel.textContent = hidden ? 'Show panels' : 'Panels';
-    });
-
-    const closeReaderPanel = () => {
-        readerPage.classList.remove('is-reader-panel-open');
-
-        if (readerPanelBackdrop) {
-            readerPanelBackdrop.hidden = true;
-        }
-    };
-
-    readerPanelBackdrop?.addEventListener('click', closeReaderPanel);
-
-    if (localStorage.getItem('lingorise-reader-panels-hidden') === 'true') {
-        readerPage.classList.add('is-panels-hidden');
-        readerPanelsButton?.setAttribute('aria-label', 'Show reading panels');
-        if (readerPanelsLabel) readerPanelsLabel.textContent = 'Show panels';
     }
 
     readingText.addEventListener('contextmenu', (event) => {
