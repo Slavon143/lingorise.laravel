@@ -3449,7 +3449,7 @@ h1 em::after {
     .reader-panels-button span { display: none; }
     .reader-header-actions .reader-panels-button { padding-inline: 8px; }
     .reader-font-select select { width: 105px; }
-    .reading-paper { min-height: 70vh; padding: 33px 24px 50px; }
+.reading-paper { min-height: 70vh; padding: 33px 24px 50px; }
     .reading-paper h1 { font-size: 37px; }
     .reading-text { font-size: 18px; line-height: 1.9; }
     .reader-pagination { padding: 8px 10px 8px 14px; gap: 10px; }
@@ -8626,6 +8626,12 @@ button:hover,
     color: #c8cfe0;
     background: rgba(23, 32, 59, .72);
     border-color: rgba(255, 255, 255, .12);
+}
+
+.reading-paper.is-loading-page {
+    opacity: .72;
+    pointer-events: none;
+    transition: opacity .18s ease;
 }
 
 /* Dashboard lower polish: calm, compact, no lifting cards */

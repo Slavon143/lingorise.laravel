@@ -474,7 +474,7 @@ if (readerPage && readingText && wordCard) {
         if (wasHidden) wordCard.hidden = true;
     };
 
-    const allTokens = [...readingText.querySelectorAll('.reader-token')];
+    let allTokens = [...readingText.querySelectorAll('.reader-token')];
 
     const normalizeReaderWord = (word) => word
         .toLocaleLowerCase()
@@ -498,6 +498,94 @@ if (readerPage && readingText && wordCard) {
 
         return [];
     };
+
+    const hideReaderPopupState = () => {
+        wordCard.hidden = true;
+        if (wordCardOverlay) wordCardOverlay.hidden = true;
+        activeTokens.forEach((token) => token.classList.remove('is-selected'));
+        activeToken = null;
+        activeTokens = [];
+        selectionAnchor = null;
+        clearPanelState('ajax_navigation');
+        stopAudio();
+    };
+
+    const navigateReaderPage = async (url, { replace = false } = {}) => {
+        if (!url) return;
+
+        const paper = document.querySelector('[data-reading-paper]');
+        const pagination = document.querySelector('.reader-pagination');
+        const stats = document.querySelector('.reader-book-stats');
+
+        paper?.classList.add('is-loading-page');
+        hideReaderPopupState();
+
+        try {
+            const response = await fetch(url, {
+                headers: {
+                    'Accept': 'text/html',
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+            });
+
+            if (!response.ok) throw new Error('Reader page failed');
+
+            const html = await response.text();
+            const nextDocument = new DOMParser().parseFromString(html, 'text/html');
+            const nextPaper = nextDocument.querySelector('[data-reading-paper]');
+            const nextReadingText = nextDocument.querySelector('[data-reading-text]');
+            const nextPaperHead = nextDocument.querySelector('.reading-paper-head');
+            const nextPagination = nextDocument.querySelector('.reader-pagination');
+            const nextStats = nextDocument.querySelector('.reader-book-stats');
+            const nextBody = nextDocument.querySelector('.reader-page');
+
+            if (!nextPaper || !nextReadingText || !nextPagination) {
+                window.location.href = url;
+                return;
+            }
+
+            const currentPaperHead = paper?.querySelector('.reading-paper-head');
+            if (currentPaperHead && nextPaperHead) currentPaperHead.innerHTML = nextPaperHead.innerHTML;
+            readingText.innerHTML = nextReadingText.innerHTML;
+            if (pagination) pagination.innerHTML = nextPagination.innerHTML;
+            if (stats && nextStats) stats.innerHTML = nextStats.innerHTML;
+            if (nextBody) {
+                readerPage.dataset.pageNumber = nextBody.dataset.pageNumber || readerPage.dataset.pageNumber;
+                readerPage.dataset.focusPhrase = nextBody.dataset.focusPhrase || '';
+            }
+            document.title = nextDocument.title || document.title;
+            allTokens = [...readingText.querySelectorAll('.reader-token')];
+
+            const targetUrl = new URL(url, window.location.href);
+            if (replace) {
+                history.replaceState({ readerUrl: targetUrl.href }, '', targetUrl.href);
+            } else {
+                history.pushState({ readerUrl: targetUrl.href }, '', targetUrl.href);
+            }
+
+            readingText.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
+            window.dispatchEvent(new CustomEvent('lingorise:reader-page-loaded', { detail: { url: targetUrl.href } }));
+        } catch {
+            window.location.href = url;
+        } finally {
+            paper?.classList.remove('is-loading-page');
+        }
+    };
+
+    window.LingoRiseReaderNavigate = navigateReaderPage;
+
+    document.addEventListener('click', (event) => {
+        const link = event.target.closest('.reader-pagination a.reader-page-nav');
+        if (!link || link.classList.contains('is-disabled')) return;
+        if (!link.href || !link.href.includes('/read/')) return;
+
+        event.preventDefault();
+        navigateReaderPage(link.href);
+    });
+
+    window.addEventListener('popstate', () => {
+        navigateReaderPage(window.location.href, { replace: true });
+    });
 
     const simpleHash = (str) => {
         let hash = 0;

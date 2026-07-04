@@ -317,7 +317,12 @@
         const input = form.querySelector('#jump-input');
         const page = parseInt(input.value, 10);
         if (page < 1 || page > {{ $totalPages }}) return false;
-        window.location.href = form.action + '?page=' + page;
+        const url = form.action + '?page=' + page;
+        if (window.LingoRiseReaderNavigate) {
+            window.LingoRiseReaderNavigate(url);
+        } else {
+            window.location.href = url;
+        }
         return false;
     }
     </script>
