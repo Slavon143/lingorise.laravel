@@ -313,6 +313,60 @@
         @endif
     </div>
     <script>
+    (() => {
+        const page = document.querySelector('.reader-page');
+        const panelButton = document.querySelector('[data-reader-panels]');
+        const panelLabel = document.querySelector('[data-reader-panels-label]');
+        const backdrop = document.querySelector('[data-reader-panel-backdrop]');
+
+        if (!page || !panelButton) {
+            return;
+        }
+
+        const isMobilePanel = () => window.matchMedia('(max-width: 820px)').matches;
+
+        const openPanel = () => {
+            page.classList.add('is-reader-panel-open');
+            panelButton.setAttribute('aria-expanded', 'true');
+
+            if (backdrop) {
+                backdrop.hidden = false;
+            }
+        };
+
+        const closePanel = () => {
+            page.classList.remove('is-reader-panel-open');
+            panelButton.setAttribute('aria-expanded', 'false');
+
+            if (backdrop) {
+                backdrop.hidden = true;
+            }
+        };
+
+        panelButton.setAttribute('aria-expanded', page.classList.contains('is-reader-panel-open') ? 'true' : 'false');
+        panelButton.addEventListener('click', (event) => {
+            event.stopImmediatePropagation();
+
+            if (isMobilePanel()) {
+                page.classList.contains('is-reader-panel-open') ? closePanel() : openPanel();
+                return;
+            }
+
+            const hidden = page.classList.toggle('is-panels-hidden');
+            localStorage.setItem('lingorise-reader-panels-hidden', String(hidden));
+            panelButton.setAttribute('aria-label', hidden ? 'Show reading panels' : 'Hide reading panels');
+            if (panelLabel) panelLabel.textContent = hidden ? 'Show panels' : 'Panels';
+        });
+
+        backdrop?.addEventListener('click', closePanel);
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') {
+                closePanel();
+            }
+        });
+    })();
+
     function jumpToPage(form) {
         const input = form.querySelector('#jump-input');
         const page = parseInt(input.value, 10);

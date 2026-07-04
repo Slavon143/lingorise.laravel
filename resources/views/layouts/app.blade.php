@@ -101,6 +101,79 @@
             </div>
         </main>
     </div>
+    <script>
+        (() => {
+            const sidebar = document.querySelector('.app-sidebar');
+            const shell = document.querySelector('.app-shell');
+            const menuButton = document.querySelector('.mobile-menu-button');
+            const collapseButton = document.querySelector('[data-sidebar-collapse]');
+            const backdrop = document.querySelector('[data-sidebar-backdrop]');
+
+            if (!sidebar || !menuButton) {
+                return;
+            }
+
+            const openSidebar = () => {
+                sidebar.classList.add('is-open');
+                menuButton.setAttribute('aria-expanded', 'true');
+
+                if (backdrop) {
+                    backdrop.hidden = false;
+                }
+            };
+
+            const closeSidebar = () => {
+                sidebar.classList.remove('is-open');
+                menuButton.setAttribute('aria-expanded', 'false');
+
+                if (backdrop) {
+                    backdrop.hidden = true;
+                }
+            };
+
+            menuButton.setAttribute('aria-expanded', sidebar.classList.contains('is-open') ? 'true' : 'false');
+            menuButton.addEventListener('click', (event) => {
+                event.stopImmediatePropagation();
+                openSidebar();
+            });
+            backdrop?.addEventListener('click', closeSidebar);
+
+            if (shell && collapseButton) {
+                const syncCollapseButton = () => {
+                    const collapsed = shell.classList.contains('is-sidebar-collapsed');
+                    collapseButton.setAttribute('aria-label', collapsed ? 'Expand sidebar' : 'Collapse sidebar');
+                    collapseButton.setAttribute('title', collapsed ? 'Expand sidebar' : 'Collapse sidebar');
+                    const label = collapseButton.querySelector('span');
+                    if (label) {
+                        label.textContent = collapsed ? 'Expand' : 'Collapse';
+                    }
+                };
+
+                if (localStorage.getItem('lingorise-sidebar-collapsed') === 'true') {
+                    shell.classList.add('is-sidebar-collapsed');
+                }
+
+                syncCollapseButton();
+
+                collapseButton.addEventListener('click', (event) => {
+                    event.stopImmediatePropagation();
+                    const collapsed = shell.classList.toggle('is-sidebar-collapsed');
+                    localStorage.setItem('lingorise-sidebar-collapsed', String(collapsed));
+                    syncCollapseButton();
+                });
+            }
+
+            sidebar.querySelectorAll('.app-nav a').forEach((link) => {
+                link.addEventListener('click', closeSidebar);
+            });
+
+            document.addEventListener('keydown', (event) => {
+                if (event.key === 'Escape') {
+                    closeSidebar();
+                }
+            });
+        })();
+    </script>
     @stack('modals')
     @stack('scripts')
 </body>

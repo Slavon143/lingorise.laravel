@@ -9327,3 +9327,311 @@ button:hover,
         width: 100%;
     }
 }
+
+/* Global calm UI pass: stable buttons, no hover zoom, fixed sidebars */
+button,
+.button,
+a[class*="button"],
+.topbar-add-book,
+.library-app-heading > a,
+.empty-library > a,
+.book-main-submit,
+.book-form-summary button,
+.pricing-action,
+.btn-read,
+.btn-vis,
+.btn-del,
+.btn-add,
+.public-library-filters > button,
+.vocabulary-toolbar button,
+.reader-back,
+.reader-panels-button,
+.reader-panel-control-grid button,
+.reader-page-nav,
+.page-jump button,
+.word-card-head-actions button,
+.word-card-save,
+.word-card-practice-btn,
+.word-card-upgrade,
+.word-card-study-btn,
+.simplify-level-btn,
+.shadowing-bar button,
+.shadowing-result-actions button,
+.shadowing-rating button,
+.shadowing-back-btn,
+.quick-actions a,
+.recommendation-action button,
+.language-summary,
+.sidebar-logout,
+.sidebar-collapse-button,
+.admin-sidebar-footer a,
+.admin-sidebar-footer button {
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    text-align: center;
+    text-decoration: none;
+    text-rendering: geometricPrecision;
+    -webkit-font-smoothing: antialiased;
+    transform: none !important;
+    transition: background-color .18s ease, background .18s ease, border-color .18s ease, color .18s ease, box-shadow .18s ease, opacity .18s ease, filter .18s ease !important;
+}
+
+button:hover,
+button:active,
+.button:hover,
+.button:active,
+a[class*="button"]:hover,
+a[class*="button"]:active,
+.topbar-add-book:hover,
+.topbar-add-book:active,
+.library-app-heading > a:hover,
+.library-app-heading > a:active,
+.empty-library > a:hover,
+.empty-library > a:active,
+.book-main-submit:hover,
+.book-main-submit:active,
+.book-form-summary button:hover,
+.book-form-summary button:active,
+.pricing-action:hover,
+.pricing-action:active,
+.btn-read:hover,
+.btn-read:active,
+.btn-vis:hover,
+.btn-vis:active,
+.btn-del:hover,
+.btn-del:active,
+.btn-add:hover,
+.btn-add:active,
+.public-library-filters > button:hover,
+.public-library-filters > button:active,
+.vocabulary-toolbar button:hover,
+.vocabulary-toolbar button:active,
+.reader-back:hover,
+.reader-back:active,
+.reader-panels-button:hover,
+.reader-panels-button:active,
+.reader-panel-control-grid button:hover,
+.reader-panel-control-grid button:active,
+.reader-page-nav:hover,
+.reader-page-nav:active,
+.page-jump button:hover,
+.page-jump button:active,
+.word-card-head-actions button:hover,
+.word-card-head-actions button:active,
+.word-card-save:hover,
+.word-card-save:active,
+.word-card-practice-btn:hover,
+.word-card-practice-btn:active,
+.word-card-upgrade:hover,
+.word-card-upgrade:active,
+.word-card-study-btn:hover,
+.word-card-study-btn:active,
+.simplify-level-btn:hover,
+.simplify-level-btn:active,
+.shadowing-bar button:hover,
+.shadowing-bar button:active,
+.shadowing-result-actions button:hover,
+.shadowing-result-actions button:active,
+.shadowing-rating button:hover,
+.shadowing-rating button:active,
+.shadowing-back-btn:hover,
+.shadowing-back-btn:active,
+.quick-actions a:hover,
+.quick-actions a:active,
+.recommendation-action button:hover,
+.recommendation-action button:active,
+.language-summary:hover,
+.language-summary:active,
+.sidebar-logout:hover,
+.sidebar-logout:active,
+.sidebar-collapse-button:hover,
+.sidebar-collapse-button:active {
+    transform: none !important;
+}
+
+.app-nav a:hover,
+.app-nav a:active,
+.app-nav a:hover svg,
+.app-nav a:active svg,
+.user-book-card:hover,
+.user-book-card:active,
+.user-books-grid .user-book-card:hover,
+.user-books-grid .user-book-card:active,
+.user-books-grid .user-book-card:hover .user-book-cover,
+.user-books-grid .user-book-card:hover .user-book-cover-image,
+.user-books-grid .user-book-card:hover .generated-book-cover,
+.public-book-card:hover,
+.vocabulary-card:hover,
+.stat-card:hover,
+.continue-card:hover,
+.daily-goal-card:hover,
+.recommended-card:hover,
+.quick-actions-card:hover,
+.pricing-card:hover,
+.step-card:hover,
+.book-card:hover,
+.book-card:hover .book-cover,
+.price-card:hover,
+.dashboard-card:hover,
+.filter-chip:hover,
+.language-option:hover {
+    transform: none !important;
+}
+
+.user-books-grid .user-book-card:hover .user-book-cover-image,
+.user-books-grid .user-book-card:hover .generated-book-cover,
+.user-books-grid .user-book-card:hover .generated-book-cover::after {
+    transform: none !important;
+}
+
+.app-nav a,
+.sidebar-logout,
+.language-summary,
+.quick-actions a {
+    text-align: left;
+    justify-content: flex-start;
+}
+
+.app-nav a small {
+    line-height: 1;
+}
+
+.reader-token:hover {
+    transform: none !important;
+}
+
+@media (min-width: 901px) {
+    .app-shell {
+        min-height: 100vh;
+        align-items: start;
+    }
+
+    .app-sidebar {
+        position: sticky !important;
+        top: 0;
+        height: 100vh;
+        max-height: 100vh;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        transform: none !important;
+    }
+
+    .admin-sidebar {
+        position: sticky !important;
+        top: 0;
+        height: 100vh;
+        max-height: 100vh;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        transform: none !important;
+    }
+
+    .app-main,
+    .admin-main {
+        min-height: 100vh;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        scroll-behavior: auto !important;
+        transition-duration: .01ms !important;
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+    }
+}
+
+/* Final layout correction: fixed desktop sidebar + centered topbar action */
+@media (min-width: 901px) {
+    .app-sidebar {
+        position: fixed !important;
+        inset: 0 auto 0 0 !important;
+        width: 268px;
+        height: 100vh;
+        max-height: 100vh;
+        overflow-y: auto;
+        overflow-x: hidden;
+        z-index: 30;
+        transform: none !important;
+        will-change: auto !important;
+    }
+
+    .app-shell.is-sidebar-collapsed .app-sidebar {
+        width: 88px;
+    }
+
+    .app-main {
+        min-width: 0;
+        grid-column: 2;
+    }
+}
+
+@media (min-width: 761px) {
+    .topbar-add-book {
+        min-height: 42px !important;
+        height: 42px;
+        padding: 0 18px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 7px;
+        line-height: 1 !important;
+        white-space: nowrap;
+        vertical-align: middle;
+    }
+
+    .topbar-add-book::after {
+        display: none !important;
+    }
+}
+
+@media (max-width: 900px) {
+    .app-sidebar {
+        position: fixed !important;
+        inset: 0 auto 0 0 !important;
+        width: min(286px, calc(100vw - 42px)) !important;
+        height: 100vh;
+        max-height: 100vh;
+        overflow-y: auto;
+        overflow-x: hidden;
+        z-index: 40;
+        transform: translateX(-105%) !important;
+        transition: transform .24s ease !important;
+    }
+
+    .app-sidebar.is-open {
+        transform: translateX(0) !important;
+    }
+
+    .app-shell.is-sidebar-collapsed .app-sidebar {
+        width: min(286px, calc(100vw - 42px)) !important;
+    }
+}
+
+@media (max-width: 820px) {
+    .reader-info-panel {
+        position: fixed !important;
+        inset: 68px auto 0 0 !important;
+        width: min(320px, 88vw) !important;
+        height: auto !important;
+        max-height: calc(100vh - 68px);
+        display: block !important;
+        overflow-y: auto;
+        overflow-x: hidden;
+        z-index: 41;
+        transform: translateX(-110%) !important;
+        transition: transform .24s ease !important;
+        will-change: transform;
+    }
+
+    .reader-page.is-reader-panel-open .reader-info-panel {
+        transform: translateX(0) !important;
+    }
+
+    .reader-panel-backdrop {
+        z-index: 40 !important;
+    }
+}
