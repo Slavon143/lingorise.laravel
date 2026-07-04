@@ -1004,6 +1004,233 @@ if (readerPage && readingText && wordCard) {
         readerPage.classList.toggle('is-dark');
     });
 
+    const autoReadRoot = document.querySelector('[data-autoread]');
+    const autoReadPlay = document.querySelector('[data-autoread-play]');
+    const autoReadPause = document.querySelector('[data-autoread-pause]');
+    const autoReadStop = document.querySelector('[data-autoread-stop]');
+    const autoReadStatus = document.querySelector('[data-autoread-status]');
+    const autoReadNext = document.querySelector('[data-autoread-next]');
+    const autoReadState = {
+        blocks: [],
+        index: 0,
+        active: false,
+        paused: false,
+        navigating: false,
+        utterance: null,
+    };
+
+    const browserSpeechAvailable = () => 'speechSynthesis' in window && 'SpeechSynthesisUtterance' in window;
+
+    const setAutoReadStatus = (text) => {
+        if (autoReadStatus) autoReadStatus.textContent = text;
+    };
+
+    const clearAutoReadHighlight = () => {
+        readingText.querySelectorAll('.is-auto-reading, .is-auto-reading-word').forEach((node) => {
+            node.classList.remove('is-auto-reading', 'is-auto-reading-word');
+        });
+    };
+
+    const updateAutoReadControls = () => {
+        if (!autoReadRoot) return;
+
+        autoReadRoot.classList.toggle('is-active', autoReadState.active);
+        autoReadRoot.classList.toggle('is-paused', autoReadState.paused);
+
+        if (autoReadPlay) {
+            autoReadPlay.textContent = autoReadState.active && autoReadState.paused ? 'Resume' : 'Read page';
+            autoReadPlay.disabled = autoReadState.active && !autoReadState.paused;
+        }
+
+        if (autoReadPause) {
+            autoReadPause.disabled = !autoReadState.active || autoReadState.paused;
+            autoReadPause.textContent = 'Pause';
+        }
+
+        if (autoReadStop) {
+            autoReadStop.disabled = !autoReadState.active;
+        }
+    };
+
+    const collectAutoReadBlocks = () => [...readingText.querySelectorAll('.reading-section-title, p')]
+        .map((element) => {
+            const tokens = [...element.querySelectorAll('.reader-token')];
+            const ranges = [];
+            let text = '';
+
+            if (tokens.length) {
+                tokens.forEach((token) => {
+                    const word = token.textContent.replace(/\s+/gu, ' ').trim();
+                    if (!word) return;
+
+                    if (text.length) text += ' ';
+                    const start = text.length;
+                    text += word;
+                    ranges.push({ start, end: text.length, token });
+                });
+            } else {
+                text = element.textContent.replace(/\s+/gu, ' ').trim();
+            }
+
+            return { element, text, ranges };
+        })
+        .filter((block) => block.text.length > 0);
+
+    const resetAutoRead = ({ keepStatus = false } = {}) => {
+        if (browserSpeechAvailable()) {
+            window.speechSynthesis.cancel();
+        }
+
+        autoReadState.blocks = [];
+        autoReadState.index = 0;
+        autoReadState.active = false;
+        autoReadState.paused = false;
+        autoReadState.navigating = false;
+        autoReadState.utterance = null;
+        clearAutoReadHighlight();
+        if (!keepStatus) setAutoReadStatus('Ready');
+        updateAutoReadControls();
+    };
+
+    const finishAutoRead = () => {
+        const nextLink = document.querySelector('.reader-page-nav-next[href*="/read/"]');
+
+        if (autoReadNext?.checked && nextLink && window.LingoRiseReaderNavigate) {
+            autoReadState.navigating = true;
+            clearAutoReadHighlight();
+            setAutoReadStatus('Loading next page…');
+            window.LingoRiseReaderNavigate(nextLink.href);
+            return;
+        }
+
+        resetAutoRead({ keepStatus: true });
+        setAutoReadStatus('Finished');
+    };
+
+    const speakAutoReadBlock = () => {
+        if (!browserSpeechAvailable() || !autoReadState.active || autoReadState.paused) {
+            return;
+        }
+
+        const block = autoReadState.blocks[autoReadState.index];
+        if (!block) {
+            finishAutoRead();
+            return;
+        }
+
+        clearAutoReadHighlight();
+        block.element.classList.add('is-auto-reading');
+        block.element.scrollIntoView({
+            behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
+            block: 'center',
+        });
+
+        const utterance = new SpeechSynthesisUtterance(block.text);
+        utterance.lang = readerPage.dataset.bookLanguage || 'en';
+        utterance.rate = 0.92;
+        utterance.pitch = 1;
+        utterance.onboundary = (event) => {
+            if (!autoReadState.active || autoReadState.paused || event.name !== 'word') return;
+            if (!block.ranges?.length) return;
+
+            const charIndex = typeof event.charIndex === 'number' ? event.charIndex : 0;
+            const activeRange = block.ranges.find((range) => charIndex >= range.start && charIndex < range.end)
+                || block.ranges.find((range) => range.start >= charIndex);
+
+            if (!activeRange?.token) return;
+
+            readingText.querySelectorAll('.is-auto-reading-word').forEach((node) => {
+                node.classList.remove('is-auto-reading-word');
+            });
+            activeRange.token.classList.add('is-auto-reading-word');
+        };
+        utterance.onend = () => {
+            if (!autoReadState.active || autoReadState.paused || autoReadState.navigating) return;
+            readingText.querySelectorAll('.is-auto-reading-word').forEach((node) => {
+                node.classList.remove('is-auto-reading-word');
+            });
+            autoReadState.index += 1;
+            setAutoReadStatus(`${Math.min(autoReadState.index + 1, autoReadState.blocks.length)} / ${autoReadState.blocks.length}`);
+            speakAutoReadBlock();
+        };
+        utterance.onerror = () => {
+            resetAutoRead({ keepStatus: true });
+            setAutoReadStatus('Voice unavailable');
+        };
+
+        autoReadState.utterance = utterance;
+        setAutoReadStatus(`${autoReadState.index + 1} / ${autoReadState.blocks.length}`);
+        window.speechSynthesis.cancel();
+        window.speechSynthesis.speak(utterance);
+    };
+
+    const startAutoRead = () => {
+        if (!browserSpeechAvailable()) {
+            setAutoReadStatus('Browser voice unavailable');
+            return;
+        }
+
+        stopAudio();
+
+        if (autoReadState.active && autoReadState.paused) {
+            autoReadState.paused = false;
+            window.speechSynthesis.resume();
+            updateAutoReadControls();
+            setAutoReadStatus(`${autoReadState.index + 1} / ${autoReadState.blocks.length}`);
+            return;
+        }
+
+        autoReadState.blocks = collectAutoReadBlocks();
+        autoReadState.index = 0;
+        autoReadState.active = autoReadState.blocks.length > 0;
+        autoReadState.paused = false;
+        autoReadState.navigating = false;
+
+        if (!autoReadState.active) {
+            setAutoReadStatus('No text on page');
+            updateAutoReadControls();
+            return;
+        }
+
+        updateAutoReadControls();
+        speakAutoReadBlock();
+    };
+
+    autoReadPlay?.addEventListener('click', startAutoRead);
+
+    autoReadPause?.addEventListener('click', () => {
+        if (!autoReadState.active || !browserSpeechAvailable()) return;
+        autoReadState.paused = true;
+        window.speechSynthesis.pause();
+        setAutoReadStatus('Paused');
+        updateAutoReadControls();
+    });
+
+    autoReadStop?.addEventListener('click', () => {
+        resetAutoRead({ keepStatus: true });
+        setAutoReadStatus('Stopped');
+    });
+
+    window.addEventListener('lingorise:reader-page-loaded', () => {
+        clearAutoReadHighlight();
+
+        if (!autoReadState.navigating) {
+            return;
+        }
+
+        autoReadState.navigating = false;
+        window.setTimeout(startAutoRead, 120);
+    });
+
+    if (autoReadRoot && !browserSpeechAvailable()) {
+        setAutoReadStatus('Voice unavailable');
+        if (autoReadPlay) autoReadPlay.disabled = true;
+        if (autoReadPause) autoReadPause.disabled = true;
+        if (autoReadStop) autoReadStop.disabled = true;
+    } else {
+        updateAutoReadControls();
+    }
+
     const readerPanelsButton = document.querySelector('[data-reader-panels]');
     const readerPanelsLabel = document.querySelector('[data-reader-panels-label]');
     const readerPanelBackdrop = document.querySelector('[data-reader-panel-backdrop]');

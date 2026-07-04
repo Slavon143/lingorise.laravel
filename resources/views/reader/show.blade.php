@@ -44,6 +44,21 @@
                     <button type="button" data-reader-increase aria-label="Increase text size">A＋</button>
                     <button type="button" data-reader-theme aria-label="Toggle reading theme">◐</button>
                 </div>
+                <div class="reader-autoread" data-autoread>
+                    <div class="reader-autoread-head">
+                        <span>Auto reading</span>
+                        <small data-autoread-status>Ready</small>
+                    </div>
+                    <div class="reader-autoread-actions">
+                        <button type="button" data-autoread-play>Read page</button>
+                        <button type="button" data-autoread-pause disabled>Pause</button>
+                        <button type="button" data-autoread-stop disabled>Stop</button>
+                    </div>
+                    <label class="reader-autoread-next">
+                        <input type="checkbox" data-autoread-next>
+                        <span>Continue to next page</span>
+                    </label>
+                </div>
             </div>
 
             <span class="section-kicker">Reading now</span>
