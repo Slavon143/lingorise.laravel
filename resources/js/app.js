@@ -1018,7 +1018,7 @@ if (readerPage && readingText && wordCard) {
             item.classList.toggle('is-expanded', expanded);
             item.setAttribute('aria-expanded', String(expanded));
             const toggle = item.querySelector('em');
-            if (toggle) toggle.textContent = expanded ? 'Collapse' : 'Expand';
+            if (toggle) toggle.textContent = expanded ? 'Less' : 'More';
             return;
         }
 
@@ -1135,12 +1135,16 @@ if (readerPage && readingText && wordCard) {
                     item.className = 'reader-vocabulary-item';
                     item.dataset.vocabularyOriginal = result.entry.original_text;
                     item.setAttribute('aria-expanded', 'false');
-                    item.innerHTML = '<strong></strong><span></span><em>Expand</em>';
+                    item.innerHTML = '<strong></strong><span></span><small class="reader-vocabulary-context"></small><em>More</em>';
                     vocabularyList.prepend(item);
                 }
 
                 item.querySelector('strong').textContent = result.entry.original_text;
                 item.querySelector('span').textContent = result.entry.translated_text;
+                const contextPreview = item.querySelector('.reader-vocabulary-context');
+                if (contextPreview) {
+                    contextPreview.textContent = result.entry.context || 'No saved context yet.';
+                }
                 vocabularyEmpty?.setAttribute('hidden', '');
                 if (vocabularyCount) vocabularyCount.textContent = vocabularyList.children.length;
             }

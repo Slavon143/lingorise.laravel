@@ -181,12 +181,19 @@
         </section>
 
         <aside class="reader-side-panel reader-sidebar" data-reader-vocab-panel aria-label="Vocabulary">
-            <div class="reader-side-heading">
-                <div>
-                    <span>Vocabulary <i data-vocabulary-count>{{ $savedEntries->count() }}</i></span>
-                    <strong>Save words as you read</strong>
+            <div class="reader-side-heading reader-vocabulary-heading">
+                <div class="reader-vocabulary-heading-copy">
+                    <span class="reader-vocabulary-kicker">
+                        <span>Vocabulary</span>
+                        <i data-vocabulary-count>{{ $savedEntries->count() }}</i>
+                    </span>
+                    <strong class="reader-vocabulary-subtitle">Save words as you read</strong>
                 </div>
-                <button type="button" class="reader-panel-close" data-reader-vocab-close aria-label="Close vocabulary">×</button>
+                <button type="button" class="reader-panel-close" data-reader-vocab-close aria-label="Close vocabulary">
+                    <svg viewBox="0 0 20 20" aria-hidden="true">
+                        <path d="M5.5 5.5 14.5 14.5M14.5 5.5 5.5 14.5"></path>
+                    </svg>
+                </button>
             </div>
             <div class="reader-side-empty" data-vocabulary-empty @if($savedEntries->isNotEmpty()) hidden @endif>
                 <span>Aa</span>
@@ -197,7 +204,8 @@
                     <button type="button" class="reader-vocabulary-item" data-vocabulary-original="{{ $entry->original_text }}" aria-expanded="false">
                         <strong>{{ $entry->original_text }}</strong>
                         <span>{{ $entry->translated_text }}</span>
-                        <em>Expand</em>
+                        <small class="reader-vocabulary-context">{{ $entry->context ?: 'No saved context yet.' }}</small>
+                        <em>More</em>
                     </button>
                 @endforeach
             </div>

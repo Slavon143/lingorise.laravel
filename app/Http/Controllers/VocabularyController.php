@@ -115,6 +115,7 @@ class VocabularyController extends Controller
             'entry' => [
                 'original_text' => $entry->original_text,
                 'translated_text' => $entry->translated_text,
+                'context' => $entry->context,
             ],
         ]);
     }
