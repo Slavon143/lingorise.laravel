@@ -51,7 +51,8 @@ Route::middleware('auth')->group(function () {
     Route::patch('/library/{book}/visibility', [LibraryController::class, 'toggleVisibility'])->name('library.visibility');
     Route::get('/library/public', [PublicLibraryController::class, 'index'])->name('library.public');
     Route::post('/library/public/{book}/add', [PublicLibraryController::class, 'addToMyLibrary'])->name('library.public.add');
-    Route::get('/read/{book}', [ReaderController::class, 'show'])->name('reader.show');
+    Route::get('/read/{book}/page/{page}', [ReaderController::class, 'show'])->whereNumber('page')->name('reader.show');
+    Route::get('/read/{book}', [ReaderController::class, 'show'])->name('reader.legacy');
     Route::post('/read/{book}/translate', WordTranslationController::class)->middleware('throttle:ai-translation')->name('reader.translate');
     Route::post('/read/{book}/context-explain', ContextExplanationController::class)->middleware('throttle:ai-translation')->name('reader.context-explain');
     Route::post('/read/{book}/grammar-explain', GrammarExplanationController::class)->middleware('throttle:ai-translation')->name('reader.grammar-explain');

@@ -88,7 +88,7 @@
                         <h2>{{ $book->title }}</h2>
                         <p>{{ $book->author ?: 'Added by you' }}</p>
                         <div class="user-book-actions">
-                            <a href="{{ route('reader.show', $book) }}" class="btn-read">
+                            <a href="{{ route('reader.show', ['book' => $book, 'page' => 1]) }}" class="btn-read">
                                 <svg viewBox="0 0 20 20"><path d="M5 4h10a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1Z"/><path d="M8 7 13 10 8 13Z"/></svg>
                                 Read
                             </a>

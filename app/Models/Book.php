@@ -149,6 +149,27 @@ class Book extends Model
         return (bool) $this->is_featured;
     }
 
+    public function getRouteKeyName(): string
+    {
+        return 'slug';
+    }
+
+    public function getRouteKey(): mixed
+    {
+        return $this->slug ?: $this->getKey();
+    }
+
+    public function resolveRouteBinding($value, $field = null): ?self
+    {
+        if ($field && $field !== $this->getRouteKeyName()) {
+            return $this->where($field, $value)->first();
+        }
+
+        return $this->where('slug', $value)
+            ->orWhere($this->getKeyName(), $value)
+            ->first();
+    }
+
     protected static function booted(): void
     {
         static::creating(function (Book $book): void {

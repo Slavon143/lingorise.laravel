@@ -6,18 +6,37 @@ use App\Models\Book;
 use App\Services\Plans\ReaderEntitlementService;
 use App\Services\ReaderTextFormatter;
 use Illuminate\Http\Request;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 
 class ReaderController extends Controller
 {
-    public function show(Request $request, Book $book, ReaderTextFormatter $formatter, ReaderEntitlementService $entitlements): View
+    public function show(Request $request, Book $book, ReaderTextFormatter $formatter, ReaderEntitlementService $entitlements): View|RedirectResponse
     {
         abort_unless($book->owner_id === $request->user()->id || $book->isPublic(), 403);
 
         $pages = $formatter->pages($book->content);
         $totalPages = count($pages);
-        $page = min(max((int) $request->integer('page', 1), 1), $totalPages);
+        $requestedPage = (int) ($request->route('page') ?: $request->integer('page', 1));
+        $page = min(max($requestedPage, 1), $totalPages);
+
+        $canonicalKey = (string) $book->getRouteKey();
+        $currentKey = (string) $request->segment(2);
+        $currentRoutePage = $request->route('page');
+
+        if (
+            ($book->slug && $currentKey !== $canonicalKey)
+            || ! $currentRoutePage
+            || (int) $currentRoutePage !== $page
+            || $request->query->has('page')
+        ) {
+            return redirect()->route('reader.show', array_merge(
+                ['book' => $book, 'page' => $page],
+                $request->except('page'),
+            ), 301);
+        }
+
         $pageBlocks = $pages[$page - 1];
         $pageWordCount = array_sum(array_map(
             fn (array $block): int => count(preg_split('/\s+/u', trim($block['text']), -1, PREG_SPLIT_NO_EMPTY) ?: []),

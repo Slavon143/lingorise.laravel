@@ -165,7 +165,7 @@
                             <strong>{{ $percentage }}%</strong>
                         </div>
                         <div class="reader-progress-track" aria-label="{{ $percentage }}% complete"><i style="width: {{ $percentage }}%"></i></div>
-                        <form class="page-jump" action="{{ route('reader.show', $book) }}" method="GET" onsubmit="return jumpToPage(this)">
+                        <form class="page-jump" action="{{ route('reader.show', ['book' => $book, 'page' => $page]) }}" data-reader-page-url="{{ route('reader.show', ['book' => $book, 'page' => '__PAGE__']) }}" method="GET" onsubmit="return jumpToPage(this)">
                             <label for="jump-input" class="sr-only">Jump to page</label>
                             <input id="jump-input" type="number" min="1" max="{{ $totalPages }}" placeholder="{{ $page }}/{{ $totalPages }}" required>
                             <button type="submit">Go</button>
@@ -439,7 +439,10 @@
         const input = form.querySelector('#jump-input');
         const page = parseInt(input.value, 10);
         if (page < 1 || page > {{ $totalPages }}) return false;
-        const url = form.action + '?page=' + page;
+        const template = form.dataset.readerPageUrl || form.action;
+        const url = template.includes('__PAGE__')
+            ? template.replace('__PAGE__', page)
+            : form.action.replace(/\/page\/\d+$/u, '/page/' + page);
         if (window.LingoRiseReaderNavigate) {
             window.LingoRiseReaderNavigate(url);
         } else {

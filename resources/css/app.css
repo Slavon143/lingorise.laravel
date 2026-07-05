@@ -8365,6 +8365,31 @@ html[data-theme="light"] {
     -webkit-box-decoration-break: clone;
 }
 
+.reader-page .reader-back {
+    height: 44px !important;
+    align-items: center !important;
+    gap: 9px !important;
+}
+
+.reader-page .reader-back span[aria-hidden="true"] {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 26px !important;
+    height: 26px !important;
+    padding: 0 !important;
+    font-size: 17px !important;
+    font-weight: 900 !important;
+    line-height: 1 !important;
+    transform: translateY(-1px);
+}
+
+.reader-page .reader-back strong {
+    display: inline-flex !important;
+    align-items: center !important;
+    line-height: 1 !important;
+}
+
 .reader-navigation,
 .reader-pagination {
     overflow: visible !important;

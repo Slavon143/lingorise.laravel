@@ -54,7 +54,7 @@
                 <p style="color:#596273;font-size:14px;margin:0 0 16px;">
                     {{ number_format(mb_strlen($managedBook->content)) }} characters of text are stored.
                 </p>
-                <a class="admin-link-button" href="{{ route('reader.show', $managedBook) }}" target="_blank" rel="noopener">Preview in reader →</a>
+                <a class="admin-link-button" href="{{ route('reader.show', ['book' => $managedBook, 'page' => 1]) }}" target="_blank" rel="noopener">Preview in reader →</a>
             @else
                 <p style="color:#7b8499;font-size:14px;margin:0 0 16px;">
                     This book has no imported content yet.
