@@ -8151,6 +8151,11 @@ html[data-theme="light"] {
     text-rendering: optimizeLegibility;
 }
 
+.reader-page .reading-text {
+    user-select: none;
+    -webkit-user-select: none;
+}
+
 .reading-text p { margin: 0 0 1.15em; }
 .reading-section-title { color: var(--reader-text-primary) !important; border-color: var(--reader-border-strong) !important; }
 .reading-text ::selection,
@@ -8339,19 +8344,21 @@ html[data-theme="light"] {
 
 .reader-page .reader-token:hover,
 .reader-page .reader-token.is-selected,
+.reader-page .reader-token.is-drag-preview,
 .reader-page .reader-token.is-auto-reading-word {
     color: var(--reader-accent-text) !important;
     background: var(--reader-accent) !important;
-    border-radius: .26em;
-    box-shadow: 0 0 0 2px color-mix(in srgb, var(--reader-accent-text) 16%, transparent), 0 8px 18px color-mix(in srgb, var(--reader-accent) 18%, transparent) !important;
+    border-radius: .22em;
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--reader-accent-text) 10%, transparent) !important;
     text-shadow: none !important;
 }
 
 .reader-page .reading-text .reader-token {
     display: inline;
-    padding: .02em .09em;
+    padding: .01em .055em;
     margin-inline: 0;
-    border-radius: .24em;
+    border-radius: .22em;
+    cursor: pointer;
     line-height: inherit;
     vertical-align: baseline;
     box-decoration-break: clone;

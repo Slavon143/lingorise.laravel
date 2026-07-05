@@ -953,52 +953,89 @@ if (readerPage && readingText && wordCard) {
         }
     }
 
-    readingText.addEventListener('click', (event) => {
+    let dragSelection = null;
+
+    const clearDragPreview = () => {
+        allTokens.forEach((token) => token.classList.remove('is-drag-preview'));
+    };
+
+    const previewTokenRange = (startToken, endToken) => {
+        const start = allTokens.indexOf(startToken);
+        const end = allTokens.indexOf(endToken);
+        if (start < 0 || end < 0) return [];
+
+        const from = Math.min(start, end);
+        const to = Math.min(Math.max(start, end), from + translationMaxWords - 1);
+        const tokens = allTokens.slice(from, to + 1);
+
+        clearDragPreview();
+        tokens.forEach((token) => token.classList.add('is-drag-preview'));
+        return tokens;
+    };
+
+    readingText.addEventListener('pointerdown', (event) => {
         const token = event.target.closest('.reader-token');
-        if (!token || !token.dataset.readerWord) return;
+        if (!token || !token.dataset.readerWord || event.button !== 0) return;
 
-        if (suppressNextClick) {
-            suppressNextClick = false;
-            return;
-        }
-
-        if (event.shiftKey && selectionAnchor) {
-            const start = allTokens.indexOf(selectionAnchor);
-            const end = allTokens.indexOf(token);
-            const from = Math.min(start, end);
-            const to = Math.max(start, end);
-
-            if (to - from + 1 > translationMaxWords) {
-                statusNode.textContent = `Select up to ${translationMaxWords} words.`;
-                openTranslation(allTokens.slice(from, from + translationMaxWords));
-                return;
-            }
-
-            openTranslation(allTokens.slice(from, to + 1));
-            return;
-        }
-
-        selectionAnchor = token;
-        openTranslation([token]);
+        dragSelection = {
+            startToken: token,
+            endToken: token,
+            moved: false,
+            pointerId: event.pointerId,
+        };
+        readingText.setPointerCapture?.(event.pointerId);
+        previewTokenRange(token, token);
+        window.getSelection()?.removeAllRanges();
+        event.preventDefault();
     });
 
-    readingText.addEventListener('mouseup', () => {
-        const selection = window.getSelection();
-        if (!selection || selection.isCollapsed || !selection.rangeCount) return;
+    readingText.addEventListener('pointermove', (event) => {
+        if (!dragSelection) return;
 
-        const range = selection.getRangeAt(0);
-        const selectedTokens = allTokens.filter((token) => range.intersectsNode(token));
-        if (!selectedTokens.length) return;
+        const element = document.elementFromPoint(event.clientX, event.clientY);
+        const token = element?.closest?.('.reader-token');
+        if (!token || !token.dataset.readerWord) return;
+
+        if (token !== dragSelection.endToken) {
+            dragSelection.endToken = token;
+            dragSelection.moved = true;
+            previewTokenRange(dragSelection.startToken, token);
+        }
+    });
+
+    const finishPointerSelection = (event) => {
+        if (!dragSelection) return;
+
+        const { startToken, endToken, moved, pointerId } = dragSelection;
+        dragSelection = null;
+        readingText.releasePointerCapture?.(pointerId);
+
+        const tokens = previewTokenRange(startToken, endToken);
+        clearDragPreview();
+
+        if (!tokens.length) return;
 
         suppressNextClick = true;
-        selectionAnchor = selectedTokens[0];
-        openTranslation(selectedTokens.slice(0, translationMaxWords));
-
-        if (selectedTokens.length > translationMaxWords) {
+        selectionAnchor = startToken;
+        if (tokens.length >= translationMaxWords && moved) {
             statusNode.textContent = `Only the first ${translationMaxWords} words were selected.`;
         }
+        openTranslation(tokens);
+        window.getSelection()?.removeAllRanges();
+        event?.preventDefault?.();
+    };
 
-        selection.removeAllRanges();
+    readingText.addEventListener('pointerup', finishPointerSelection);
+    readingText.addEventListener('pointercancel', () => {
+        dragSelection = null;
+        clearDragPreview();
+    });
+
+    readingText.addEventListener('click', (event) => {
+        if (suppressNextClick) {
+            suppressNextClick = false;
+            event.preventDefault();
+        }
     });
 
     readingText.addEventListener('keydown', (event) => {
